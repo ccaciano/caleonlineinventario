@@ -1,30 +1,30 @@
 [
   {
-    "_id": "96829da2-4a8c-4d9c-a2db-77f524bf8148",
+    "_id": "5170108a-c587-44bb-8773-fcd56b497dee",
     "code": "001",
     "ean": "7891234567890",
     "description": "Creme Hidratante 250ml",
-    "created_at": "2026-03-11T15:33:51.536309"
+    "created_at": "2026-03-11T15:36:39.057594"
   },
   {
-    "_id": "f5dd50eb-d679-4201-ae5f-114e26eb9f4f",
-    "code": "002",
-    "ean": "7891234567891",
-    "description": "Sabonete Líquido 300ml",
-    "created_at": "2026-03-11T15:33:51.536381"
+    "_id": "6cedd333-88ad-4198-bbe4-cdeb9ecd5ea7",
+    "code": "27HS030I23",
+    "ean": "3253581764299",
+    "description": "SERUM IMMORTELLE HARMONY 30ML",
+    "created_at": "2026-03-11T15:36:39.057656"
   },
   {
-    "_id": "5f857e4e-6794-422b-a10c-b5e8548bf728",
-    "code": "003",
-    "ean": "7891234567892",
-    "description": "Perfume Floral 100ml",
-    "created_at": "2026-03-11T15:33:51.536437"
+    "_id": "a0a711aa-b4f7-4e49-9ed7-91fb0b4233eb",
+    "code": "01SA050KK24H",
+    "ean": "3253581770900",
+    "description": "SABONETE KARITE CITRICO EXT SUAVE 50GR",
+    "created_at": "2026-03-11T15:36:39.057711"
   },
   {
-    "_id": "d3234f1c-1f83-4ccf-87dd-adc70ddd3943",
-    "code": "004",
-    "ean": "7891234567893",
-    "description": "Loção Corporal 400ml",
-    "created_at": "2026-03-11T15:33:51.536493"
+    "_id": "998b3d7d-6adb-4221-9e82-266292744120",
+    "code": "11AS075G24",
+    "ean": "3253581769867",
+    "description": "CONDICIONADOR REPARACAO INTENSIVA 75ML",
+    "created_at": "2026-03-11T15:36:39.057765"
   }
 ]
