@@ -4,6 +4,9 @@ import * as Sharing from 'expo-sharing';
 import { Platform, Alert, Linking } from 'react-native';
 import { ExportData } from '../services/api';
 
+// Constante para encoding Base64 (fallback se EncodingType não estiver disponível)
+const ENCODING_BASE64 = FileSystem.EncodingType?.Base64 || 'base64';
+
 // Função para converter AAAA-MM-DD para DD/MM/AAAA
 const convertFromISO = (isoStr: string): string => {
   if (!isoStr) return '';
@@ -167,7 +170,7 @@ const saveWithSAF = async (base64Content: string, fileName: string): Promise<str
 
     // Escreve o conteúdo no arquivo
     await FileSystem.writeAsStringAsync(fileUri, base64Content, {
-      encoding: FileSystem.EncodingType.Base64,
+      encoding: ENCODING_BASE64,
     });
 
     console.log('Conteúdo escrito com sucesso!');
@@ -236,7 +239,7 @@ const downloadForNative = async (data: ExportData): Promise<string> => {
     const fileUri = baseDir + fileName;
 
     await FileSystem.writeAsStringAsync(fileUri, base64Content, {
-      encoding: FileSystem.EncodingType.Base64,
+      encoding: ENCODING_BASE64,
     });
 
     return fileUri;
