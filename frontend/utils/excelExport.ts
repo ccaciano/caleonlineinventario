@@ -126,6 +126,48 @@ const downloadForWeb = (data: ExportData): void => {
   }
 };
 
+// Função para obter um diretório válido para salvar arquivos
+const getValidDirectory = async (): Promise<string> => {
+  // Lista de diretórios para tentar, em ordem de preferência
+  const directories = [
+    FileSystem.cacheDirectory,
+    FileSystem.documentDirectory,
+    FileSystem.bundleDirectory,
+  ].filter(Boolean) as string[];
+
+  console.log('Diretórios disponíveis:', {
+    cacheDirectory: FileSystem.cacheDirectory,
+    documentDirectory: FileSystem.documentDirectory,
+    bundleDirectory: FileSystem.bundleDirectory,
+  });
+
+  for (const dir of directories) {
+    try {
+      // Tenta verificar se o diretório existe e está acessível
+      const dirInfo = await FileSystem.getInfoAsync(dir);
+      console.log(`Verificando diretório ${dir}:`, dirInfo);
+      
+      if (dirInfo.exists && dirInfo.isDirectory) {
+        return dir;
+      }
+      
+      // Se não existe, tenta criar
+      if (!dirInfo.exists) {
+        try {
+          await FileSystem.makeDirectoryAsync(dir, { intermediates: true });
+          return dir;
+        } catch (mkdirError) {
+          console.log(`Não foi possível criar diretório ${dir}:`, mkdirError);
+        }
+      }
+    } catch (error) {
+      console.log(`Erro ao verificar diretório ${dir}:`, error);
+    }
+  }
+
+  throw new Error('Nenhum diretório de armazenamento disponível. Verifique as permissões do aplicativo.');
+};
+
 // Download para dispositivos nativos (iOS/Android)
 const downloadForNative = async (data: ExportData): Promise<string> => {
   const wb = createWorkbook(data);
@@ -134,14 +176,13 @@ const downloadForNative = async (data: ExportData): Promise<string> => {
   // Generate base64 string
   const wbout = XLSX.write(wb, { type: 'base64', bookType: 'xlsx' });
 
-  // No Android, usar cacheDirectory para evitar problemas de permissão
-  // cacheDirectory é sempre acessível sem permissões especiais
-  const baseDir = Platform.OS === 'android' 
-    ? FileSystem.cacheDirectory 
-    : (FileSystem.documentDirectory || FileSystem.cacheDirectory);
-    
-  if (!baseDir) {
-    throw new Error('Diretório de armazenamento não disponível');
+  // Obtém um diretório válido para salvar
+  let baseDir: string;
+  try {
+    baseDir = await getValidDirectory();
+  } catch (dirError) {
+    console.error('Erro ao obter diretório:', dirError);
+    throw new Error('Diretório de armazenamento não disponível. Verifique as permissões do aplicativo nas configurações.');
   }
 
   // Create file path
@@ -149,20 +190,25 @@ const downloadForNative = async (data: ExportData): Promise<string> => {
 
   console.log('Salvando arquivo em:', fileUri);
 
-  // Write file
-  await FileSystem.writeAsStringAsync(fileUri, wbout, {
-    encoding: FileSystem.EncodingType.Base64,
-  });
+  try {
+    // Write file
+    await FileSystem.writeAsStringAsync(fileUri, wbout, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
 
-  // Verificar se o arquivo foi criado
-  const fileInfo = await FileSystem.getInfoAsync(fileUri);
-  console.log('Arquivo criado:', fileInfo);
-  
-  if (!fileInfo.exists) {
-    throw new Error('Falha ao criar arquivo');
+    // Verificar se o arquivo foi criado
+    const fileInfo = await FileSystem.getInfoAsync(fileUri);
+    console.log('Arquivo criado:', fileInfo);
+    
+    if (!fileInfo.exists) {
+      throw new Error('O arquivo não foi criado corretamente');
+    }
+
+    return fileUri;
+  } catch (writeError) {
+    console.error('Erro ao escrever arquivo:', writeError);
+    throw new Error('Falha ao salvar o arquivo. Verifique o espaço disponível no dispositivo.');
   }
-
-  return fileUri;
 };
 
 export const generateExcelReport = async (data: ExportData): Promise<string> => {

@@ -2,10 +2,10 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Drawer } from 'expo-router/drawer';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { StyleSheet, View, Text, Platform } from 'react-native';
+import { StyleSheet, View, Text, Platform, AppState, AppStateStatus } from 'react-native';
 import { DrawerContentScrollView, DrawerItemList, DrawerContentComponentProps } from '@react-navigation/drawer';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useEffect } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import * as NavigationBar from 'expo-navigation-bar';
 import '../utils/i18n';
 
@@ -40,13 +40,38 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 
 export default function DrawerLayout() {
   const { t } = useTranslation();
+  const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const appState = useRef(AppState.currentState);
 
-  // Configurar Navigation Bar no Android para modo imersivo (oculta com gestos)
+  // Função para ocultar a Navigation Bar
+  const hideNavigationBar = useCallback(async () => {
+    if (Platform.OS === 'android') {
+      try {
+        await NavigationBar.setVisibilityAsync('hidden');
+      } catch (error) {
+        console.log('Error hiding navigation bar:', error);
+      }
+    }
+  }, []);
+
+  // Função para iniciar o timer de auto-ocultação
+  const startHideTimer = useCallback(() => {
+    // Limpa timer existente
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+    }
+    // Inicia novo timer de 3 segundos
+    hideTimerRef.current = setTimeout(() => {
+      hideNavigationBar();
+    }, 3000);
+  }, [hideNavigationBar]);
+
+  // Configurar Navigation Bar no Android para modo imersivo
   useEffect(() => {
     if (Platform.OS === 'android') {
       const setupNavigationBar = async () => {
         try {
-          // Definir comportamento da Navigation Bar para "immersive" 
+          // Definir comportamento da Navigation Bar para "overlay-swipe"
           // Isso faz a barra ocultar e reaparecer com gestos
           await NavigationBar.setVisibilityAsync('hidden');
           await NavigationBar.setBehaviorAsync('overlay-swipe');
@@ -59,8 +84,39 @@ export default function DrawerLayout() {
         }
       };
       setupNavigationBar();
+
+      // Listener para mudanças na visibilidade da Navigation Bar
+      const subscription = NavigationBar.addVisibilityListener(({ visibility }) => {
+        if (visibility === 'visible') {
+          // Navigation Bar ficou visível, iniciar timer para ocultar
+          startHideTimer();
+        } else {
+          // Navigation Bar foi ocultada, cancelar timer se existir
+          if (hideTimerRef.current) {
+            clearTimeout(hideTimerRef.current);
+            hideTimerRef.current = null;
+          }
+        }
+      });
+
+      // Listener para quando o app volta ao foco (foreground)
+      const appStateSubscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
+        if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+          // App voltou ao foreground, ocultar navigation bar
+          hideNavigationBar();
+        }
+        appState.current = nextAppState;
+      });
+
+      return () => {
+        subscription.remove();
+        appStateSubscription.remove();
+        if (hideTimerRef.current) {
+          clearTimeout(hideTimerRef.current);
+        }
+      };
     }
-  }, []);
+  }, [hideNavigationBar, startHideTimer]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
