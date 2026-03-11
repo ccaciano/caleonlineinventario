@@ -374,6 +374,20 @@ async def upload_products_csv(data: CSVUpload, clear_existing: bool = True):
         import io
         
         file_content = data.file_content
+        logging.info(f"CSV Upload - Content length: {len(file_content)}")
+        
+        # Try to detect and fix encoding issues
+        # If file was read as latin-1 but contains UTF-8, try to fix it
+        try:
+            # First, try to encode as latin-1 and decode as utf-8 (common mistake)
+            file_content_fixed = file_content.encode('latin-1').decode('utf-8')
+            file_content = file_content_fixed
+            logging.info("CSV Upload - Fixed encoding from latin-1 to utf-8")
+        except (UnicodeDecodeError, UnicodeEncodeError):
+            # If that fails, the content is likely already correct or needs different handling
+            pass
+        
+        logging.info(f"CSV Upload - First 200 chars: {file_content[:200]}")
         
         with file_locks['products']:
             if clear_existing:
@@ -384,18 +398,68 @@ async def upload_products_csv(data: CSVUpload, clear_existing: bool = True):
             csv_file = io.StringIO(file_content)
             reader = csv.DictReader(csv_file)
             
+            # Log the fieldnames detected
+            fieldnames = reader.fieldnames
+            logging.info(f"CSV Upload - Detected fieldnames: {fieldnames}")
+            
             products_added = 0
             products_updated = 0
             errors = []
             
             for row in reader:
                 try:
-                    code = row.get('Código Produto') or row.get('Codigo Produto') or row.get('code') or row.get('Code')
-                    ean = row.get('EAN') or row.get('ean')
-                    description = row.get('Descrição') or row.get('Descricao') or row.get('description') or row.get('Description')
+                    logging.info(f"CSV Upload - Processing row: {row}")
+                    
+                    # Normalize keys by stripping whitespace and handling encoding issues
+                    normalized_row = {}
+                    for key, value in row.items():
+                        if key:
+                            # Strip BOM and whitespace from keys
+                            clean_key = key.strip().lstrip('\ufeff')
+                            normalized_row[clean_key] = value.strip() if value else ''
+                    
+                    logging.info(f"CSV Upload - Normalized row: {normalized_row}")
+                    
+                    # Try multiple possible column names (including with/without accents)
+                    code = None
+                    ean = None
+                    description = None
+                    
+                    # Search for code column
+                    for possible_key in ['Código Produto', 'Codigo Produto', 'code', 'Code', 'Código', 'Codigo']:
+                        if possible_key in normalized_row and normalized_row[possible_key]:
+                            code = normalized_row[possible_key]
+                            break
+                    
+                    # Search for EAN column
+                    for possible_key in ['EAN', 'ean', 'Ean']:
+                        if possible_key in normalized_row and normalized_row[possible_key]:
+                            ean = normalized_row[possible_key]
+                            break
+                    
+                    # Search for description column
+                    for possible_key in ['Descrição', 'Descricao', 'description', 'Description', 'Desc']:
+                        if possible_key in normalized_row and normalized_row[possible_key]:
+                            description = normalized_row[possible_key]
+                            break
+                    
+                    # If still not found, try by column position (first 3 columns)
+                    if not code or not ean or not description:
+                        keys = list(normalized_row.keys())
+                        values = list(normalized_row.values())
+                        if len(keys) >= 3:
+                            if not code and values[0]:
+                                code = values[0]
+                            if not ean and values[1]:
+                                ean = values[1]
+                            if not description and values[2]:
+                                description = values[2]
+                    
+                    logging.info(f"CSV Upload - Extracted: code={code}, ean={ean}, description={description}")
                     
                     if not code or not ean or not description:
-                        errors.append(f"Missing fields in row: {row}")
+                        errors.append(f"Missing fields in row: {normalized_row}")
+                        logging.warning(f"CSV Upload - Missing fields in row: {normalized_row}")
                         continue
                     
                     if not clear_existing:
@@ -416,11 +480,14 @@ async def upload_products_csv(data: CSVUpload, clear_existing: bool = True):
                     }
                     all_products.append(new_product)
                     products_added += 1
+                    logging.info(f"CSV Upload - Added product: {new_product}")
                 
                 except Exception as e:
                     errors.append(f"Error processing row {row}: {str(e)}")
+                    logging.error(f"CSV Upload - Error processing row: {e}")
             
             write_json_file(PRODUCTS_FILE, all_products)
+            logging.info(f"CSV Upload - Total products saved: {len(all_products)}")
         
         return {
             "success": True,

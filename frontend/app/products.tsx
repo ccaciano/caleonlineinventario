@@ -132,17 +132,42 @@ export default function ProductsScreen() {
     const file = event.target?.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const csvContent = e.target?.result as string;
-      if (csvContent) {
-        await processCSVUpload(csvContent);
+    // Tenta ler com diferentes encodings
+    const tryReadWithEncoding = (encoding: string): Promise<string> => {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const result = e.target?.result as string;
+          if (result) {
+            resolve(result);
+          } else {
+            reject(new Error('Empty result'));
+          }
+        };
+        reader.onerror = () => reject(reader.error);
+        reader.readAsText(file, encoding);
+      });
+    };
+
+    try {
+      // Primeiro tenta UTF-8
+      let csvContent: string;
+      try {
+        csvContent = await tryReadWithEncoding('UTF-8');
+        // Verifica se há caracteres corrompidos (indicador de encoding errado)
+        if (csvContent.includes('�') || csvContent.includes('\ufffd')) {
+          // Tenta Latin-1/ISO-8859-1
+          csvContent = await tryReadWithEncoding('ISO-8859-1');
+        }
+      } catch {
+        // Fallback para Latin-1
+        csvContent = await tryReadWithEncoding('ISO-8859-1');
       }
-    };
-    reader.onerror = () => {
+      
+      await processCSVUpload(csvContent);
+    } catch (error) {
       Alert.alert(t('uploadError'), 'Falha ao ler o arquivo');
-    };
-    reader.readAsText(file);
+    }
 
     // Reset input para permitir selecionar o mesmo arquivo novamente
     if (event.target) {
