@@ -1,0 +1,23 @@
+# Atualizações Necessárias no counting/[id].tsx:
+
+1. Adicionar campo de Pesquisa no topo
+2. Buscar produto via searchProduct API ao escanear/digitar
+3. Preencher automaticamente: product_code, ean, description (read-only)
+4. Campos editáveis: quantity, lot, expiry_date
+5. Se produto não encontrado, mostrar AddProductModal
+6. Atualizar addCountedItem para incluir ean e description
+7. Atualizar renderItem para mostrar EAN e Description
+
+Estado adicional necessário:
+- searchQuery
+- searching (loading da busca)
+- productFound (produto encontrado ou null)
+- showAddProductModal (boolean)
+
+Fluxo:
+1. Usuário escaneia ou digita código
+2. Sistema busca na base (searchProduct API)
+3. Se encontrado: preenche code, ean, description automaticamente
+4. Se não: mostra modal "Produto não encontrado, deseja cadastrar?"
+5. Usuário preenche quantity, lot, expiry
+6. Adiciona item com todos os dados

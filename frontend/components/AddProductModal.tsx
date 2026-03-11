@@ -11,64 +11,69 @@ import {
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import Modal from 'react-native-modal';
-import { updateCountedItem, CountedItem } from '../services/api';
+import { createProduct } from '../services/api';
 
-interface EditItemModalProps {
+interface AddProductModalProps {
   visible: boolean;
-  item: CountedItem;
-  inventoryId: string;
+  initialCode: string;
   onClose: () => void;
-  onSuccess: () => void;
+  onSuccess: (product: { code: string; ean: string; description: string }) => void;
 }
 
-export default function EditItemModal({
+export default function AddProductModal({
   visible,
-  item,
-  inventoryId,
+  initialCode,
   onClose,
   onSuccess,
-}: EditItemModalProps) {
+}: AddProductModalProps) {
   const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    quantity: item.quantity.toString(),
-    lot: item.lot,
-    expiry_date: item.expiry_date,
+    code: initialCode,
+    ean: '',
+    description: '',
   });
 
-  const handleSave = async () => {
-    if (!formData.quantity || !formData.lot || !formData.expiry_date) {
-      Alert.alert(t('fillAllFields'));
-      return;
+  React.useEffect(() => {
+    if (visible) {
+      setFormData({
+        code: initialCode,
+        ean: '',
+        description: '',
+      });
     }
+  }, [visible, initialCode]);
 
-    const quantity = parseInt(formData.quantity);
-    if (isNaN(quantity) || quantity <= 0) {
-      Alert.alert(t('invalidQuantity'));
+  const handleAdd = async () => {
+    if (!formData.code || !formData.ean || !formData.description) {
+      Alert.alert(t('fillAllFields'));
       return;
     }
 
     try {
       setLoading(true);
-      await updateCountedItem(inventoryId, item._id!, {
-        quantity,
-        lot: formData.lot,
-        expiry_date: formData.expiry_date,
-      });
-      onSuccess();
+      await createProduct(formData);
+      onSuccess(formData);
     } catch (error) {
-      console.error('Error updating item:', error);
-      Alert.alert('Error', 'Failed to update item');
+      console.error('Error creating product:', error);
+      Alert.alert('Erro', error instanceof Error ? error.message : 'Falha ao cadastrar produto');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleClose = () => {
+    if (!loading) {
+      setFormData({ code: '', ean: '', description: '' });
+      onClose();
     }
   };
 
   return (
     <Modal
       isVisible={visible}
-      onBackdropPress={onClose}
-      onBackButtonPress={onClose}
+      onBackdropPress={handleClose}
+      onBackButtonPress={handleClose}
       animationIn="slideInUp"
       animationOut="slideOutDown"
       backdropOpacity={0.5}
@@ -76,65 +81,50 @@ export default function EditItemModal({
     >
       <View style={styles.modalContent}>
         <View style={styles.modalHeader}>
-          <Text style={styles.modalTitle}>{t('editItem')}</Text>
-          <TouchableOpacity onPress={onClose} disabled={loading}>
+          <Ionicons name="alert-circle" size={32} color="#FF9500" />
+          <Text style={styles.modalTitle}>{t('productNotFound')}</Text>
+          <TouchableOpacity onPress={handleClose} disabled={loading}>
             <Ionicons name="close" size={28} color="#8E8E93" />
           </TouchableOpacity>
         </View>
 
-        {/* Read-only fields */}
-        <View style={styles.readOnlySection}>
-          <View style={styles.readOnlyField}>
-            <Text style={styles.readOnlyLabel}>{t('productCode')}</Text>
-            <Text style={styles.readOnlyValue}>{item.product_code}</Text>
-          </View>
-          <View style={styles.readOnlyField}>
-            <Text style={styles.readOnlyLabel}>{t('ean')}</Text>
-            <Text style={styles.readOnlyValue}>{item.ean}</Text>
-          </View>
-          <View style={styles.readOnlyField}>
-            <Text style={styles.readOnlyLabel}>{t('description')}</Text>
-            <Text style={styles.readOnlyValue}>{item.description}</Text>
-          </View>
-        </View>
+        <Text style={styles.message}>{t('productNotFoundMessage')}</Text>
 
-        <View style={styles.divider} />
-
-        {/* Editable fields */}
         <View style={styles.form}>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>{t('quantity')}</Text>
+            <Text style={styles.label}>{t('productCode')}</Text>
             <TextInput
               style={styles.input}
-              value={formData.quantity}
-              onChangeText={(text) => setFormData({ ...formData, quantity: text })}
-              placeholder={t('quantity')}
-              placeholderTextColor="#999"
-              keyboardType="numeric"
-              editable={!loading}
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>{t('lot')}</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.lot}
-              onChangeText={(text) => setFormData({ ...formData, lot: text })}
-              placeholder={t('lot')}
+              value={formData.code}
+              onChangeText={(text) => setFormData({ ...formData, code: text })}
+              placeholder={t('productCode')}
               placeholderTextColor="#999"
               editable={!loading}
             />
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>{t('expiryDate')}</Text>
+            <Text style={styles.label}>{t('ean')}</Text>
             <TextInput
               style={styles.input}
-              value={formData.expiry_date}
-              onChangeText={(text) => setFormData({ ...formData, expiry_date: text })}
-              placeholder="YYYY-MM-DD"
+              value={formData.ean}
+              onChangeText={(text) => setFormData({ ...formData, ean: text })}
+              placeholder={t('ean')}
               placeholderTextColor="#999"
+              editable={!loading}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>{t('description')}</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              value={formData.description}
+              onChangeText={(text) => setFormData({ ...formData, description: text })}
+              placeholder={t('description')}
+              placeholderTextColor="#999"
+              multiline
+              numberOfLines={2}
               editable={!loading}
             />
           </View>
@@ -142,21 +132,21 @@ export default function EditItemModal({
           <View style={styles.buttons}>
             <TouchableOpacity
               style={[styles.button, styles.cancelButton]}
-              onPress={onClose}
+              onPress={handleClose}
               disabled={loading}
             >
               <Text style={styles.cancelButtonText}>{t('cancel')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              style={[styles.button, styles.saveButton, loading && styles.buttonDisabled]}
-              onPress={handleSave}
+              style={[styles.button, styles.addButton, loading && styles.buttonDisabled]}
+              onPress={handleAdd}
               disabled={loading}
             >
               {loading ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <Text style={styles.saveButtonText}>{t('save')}</Text>
+                <Text style={styles.addButtonText}>{t('registerProduct')}</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -176,44 +166,26 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
-    minHeight: 500,
+    minHeight: 450,
   },
   modalHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
-  },
-  readOnlySection: {
-    backgroundColor: '#F2F2F7',
-    borderRadius: 12,
-    padding: 16,
-    gap: 12,
+    justifyContent: 'space-between',
     marginBottom: 16,
   },
-  readOnlyField: {
-    gap: 4,
-  },
-  readOnlyLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: '#8E8E93',
-    textTransform: 'uppercase',
-  },
-  readOnlyValue: {
-    fontSize: 16,
+  modalTitle: {
+    flex: 1,
+    fontSize: 20,
+    fontWeight: 'bold',
     color: '#000',
-    fontWeight: '500',
+    marginLeft: 12,
   },
-  divider: {
-    height: 1,
-    backgroundColor: '#E5E5EA',
-    marginVertical: 8,
+  message: {
+    fontSize: 16,
+    color: '#8E8E93',
+    marginBottom: 24,
+    lineHeight: 22,
   },
   form: {
     gap: 16,
@@ -235,6 +207,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#000',
     minHeight: 52,
+  },
+  textArea: {
+    minHeight: 80,
+    textAlignVertical: 'top',
   },
   buttons: {
     flexDirection: 'row',
@@ -259,10 +235,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#000',
   },
-  saveButton: {
-    backgroundColor: '#007AFF',
+  addButton: {
+    backgroundColor: '#34C759',
   },
-  saveButtonText: {
+  addButtonText: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#FFFFFF',
