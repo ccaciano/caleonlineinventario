@@ -134,10 +134,14 @@ const downloadForNative = async (data: ExportData): Promise<string> => {
   // Generate base64 string
   const wbout = XLSX.write(wb, { type: 'base64', bookType: 'xlsx' });
 
-  // Verificar se o documentDirectory está disponível
-  const baseDir = FileSystem.documentDirectory || FileSystem.cacheDirectory;
+  // No Android, usar cacheDirectory para evitar problemas de permissão
+  // cacheDirectory é sempre acessível sem permissões especiais
+  const baseDir = Platform.OS === 'android' 
+    ? FileSystem.cacheDirectory 
+    : (FileSystem.documentDirectory || FileSystem.cacheDirectory);
+    
   if (!baseDir) {
-    throw new Error('Diretório de documentos não disponível');
+    throw new Error('Diretório de armazenamento não disponível');
   }
 
   // Create file path
