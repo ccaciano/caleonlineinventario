@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,188 +16,143 @@ interface BarcodeScannerComponentProps {
   onScan: (code: string) => void;
 }
 
-// Componente para Web usando API nativa do navegador
+// Componente para Web usando html5-qrcode
 function WebBarcodeScanner({ visible, onClose, onScan }: BarcodeScannerComponentProps) {
   const { t } = useTranslation();
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [cameraType, setCameraType] = useState<'user' | 'environment'>('user');
-  const [isScanning, setIsScanning] = useState(false);
+  const [cameraId, setCameraId] = useState<string>('');
+  const [cameras, setCameras] = useState<any[]>([]);
+  const [currentCameraIndex, setCurrentCameraIndex] = useState(0);
+  const [isStarted, setIsStarted] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const streamRef = useRef<MediaStream | null>(null);
-  const containerRef = useRef<View>(null);
-  const scanningRef = useRef(false);
+  const scannerRef = useRef<any>(null);
+  const html5QrCodeRef = useRef<any>(null);
 
+  // Inicializar scanner quando o modal abre
   useEffect(() => {
-    if (visible) {
-      startCamera();
-    } else {
-      stopCamera();
+    if (visible && Platform.OS === 'web') {
+      initializeScanner();
     }
     
     return () => {
-      stopCamera();
+      stopScanner();
     };
   }, [visible]);
 
-  useEffect(() => {
-    if (visible && hasPermission) {
-      // Reiniciar câmera quando o tipo mudar
-      startCamera();
-    }
-  }, [cameraType]);
-
-  const startCamera = async () => {
-    if (typeof window === 'undefined' || typeof navigator === 'undefined' || !navigator.mediaDevices) {
-      setHasPermission(false);
-      setError('Seu navegador não suporta acesso à câmera');
-      return;
-    }
+  const initializeScanner = async () => {
+    if (typeof window === 'undefined') return;
 
     try {
-      // Parar stream anterior
-      stopCamera();
-
-      const constraints = {
-        video: {
-          facingMode: cameraType,
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
-      };
-
-      const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      streamRef.current = stream;
-      setHasPermission(true);
-      setError(null);
-
-      // Aguardar um pouco para o DOM estar pronto
-      setTimeout(() => {
-        setupVideo(stream);
-      }, 100);
-
-    } catch (err: any) {
-      console.error('Error accessing camera:', err);
-      setHasPermission(false);
-      if (err.name === 'NotAllowedError') {
-        setError('Permissão para câmera negada. Por favor, permita o acesso à câmera.');
-      } else if (err.name === 'NotFoundError') {
-        setError('Nenhuma câmera encontrada no dispositivo.');
+      // Importar html5-qrcode dinamicamente
+      const { Html5Qrcode } = await import('html5-qrcode');
+      
+      // Obter lista de câmeras
+      const devices = await Html5Qrcode.getCameras();
+      
+      if (devices && devices.length > 0) {
+        setCameras(devices);
+        setHasPermission(true);
+        
+        // Preferir câmera frontal para notebooks (geralmente tem "front" ou "user" no label)
+        let frontCameraIndex = devices.findIndex((d: any) => 
+          d.label.toLowerCase().includes('front') || 
+          d.label.toLowerCase().includes('user') ||
+          d.label.toLowerCase().includes('facetime')
+        );
+        
+        // Se não encontrar câmera frontal, usar a primeira
+        if (frontCameraIndex === -1) frontCameraIndex = 0;
+        
+        setCurrentCameraIndex(frontCameraIndex);
+        setCameraId(devices[frontCameraIndex].id);
+        
+        // Aguardar DOM estar pronto e iniciar
+        setTimeout(() => {
+          startScanner(devices[frontCameraIndex].id);
+        }, 500);
       } else {
-        setError('Erro ao acessar a câmera: ' + err.message);
+        setHasPermission(false);
+        setError('Nenhuma câmera encontrada');
+      }
+    } catch (err: any) {
+      console.error('Error initializing scanner:', err);
+      setHasPermission(false);
+      setError(err.message || 'Erro ao acessar câmera');
+    }
+  };
+
+  const startScanner = async (camId: string) => {
+    if (typeof window === 'undefined' || !camId) return;
+    
+    try {
+      // Parar scanner anterior se existir
+      await stopScanner();
+      
+      const { Html5Qrcode } = await import('html5-qrcode');
+      
+      // Verificar se o elemento existe
+      const element = document.getElementById('html5-qrcode-scanner');
+      if (!element) {
+        console.error('Scanner element not found');
+        return;
+      }
+
+      html5QrCodeRef.current = new Html5Qrcode('html5-qrcode-scanner');
+      
+      await html5QrCodeRef.current.start(
+        camId,
+        {
+          fps: 10,
+          qrbox: { width: 250, height: 250 },
+          aspectRatio: 1.0,
+        },
+        (decodedText: string) => {
+          handleScan(decodedText);
+        },
+        (errorMessage: string) => {
+          // Ignorar erros de scan - são normais quando não há código na imagem
+        }
+      );
+      
+      setIsStarted(true);
+      setError(null);
+    } catch (err: any) {
+      console.error('Error starting scanner:', err);
+      setError(err.message || 'Erro ao iniciar scanner');
+    }
+  };
+
+  const stopScanner = async () => {
+    if (html5QrCodeRef.current && isStarted) {
+      try {
+        await html5QrCodeRef.current.stop();
+        html5QrCodeRef.current = null;
+        setIsStarted(false);
+      } catch (err) {
+        console.error('Error stopping scanner:', err);
       }
     }
   };
 
-  const setupVideo = (stream: MediaStream) => {
-    if (typeof document === 'undefined') return;
-
-    // Buscar o container
-    const container = document.querySelector('[data-scanner-container="true"]');
-    if (!container) {
-      console.error('Scanner container not found');
-      return;
-    }
-
-    // Limpar container
-    container.innerHTML = '';
-
-    // Criar elemento de vídeo
-    const video = document.createElement('video');
-    video.setAttribute('playsinline', 'true');
-    video.setAttribute('autoplay', 'true');
-    video.setAttribute('muted', 'true');
-    video.style.width = '100%';
-    video.style.height = '100%';
-    video.style.objectFit = 'cover';
-    video.srcObject = stream;
-    
-    container.appendChild(video);
-    videoRef.current = video;
-
-    video.play().then(() => {
-      setIsScanning(true);
-      scanningRef.current = true;
-      startBarcodeDetection(video);
-    }).catch(err => {
-      console.error('Error playing video:', err);
-    });
-  };
-
-  const stopCamera = () => {
-    scanningRef.current = false;
-    setIsScanning(false);
-    
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-      videoRef.current = null;
-    }
-
-    // Limpar container
-    if (typeof document !== 'undefined') {
-      const container = document.querySelector('[data-scanner-container="true"]');
-      if (container) {
-        container.innerHTML = '';
-      }
-    }
-  };
-
-  const startBarcodeDetection = (video: HTMLVideoElement) => {
-    // Verificar se BarcodeDetector está disponível (Chrome 83+)
-    if ('BarcodeDetector' in window) {
-      const barcodeDetector = new (window as any).BarcodeDetector({
-        formats: ['qr_code', 'ean_13', 'ean_8', 'code_128', 'code_39', 'upc_a', 'upc_e', 'codabar', 'itf']
-      });
-
-      const detectLoop = async () => {
-        if (!scanningRef.current || !video || video.readyState !== 4) {
-          if (scanningRef.current) {
-            requestAnimationFrame(detectLoop);
-          }
-          return;
-        }
-
-        try {
-          const barcodes = await barcodeDetector.detect(video);
-          if (barcodes.length > 0) {
-            const code = barcodes[0].rawValue;
-            if (code) {
-              handleScan(code);
-              return;
-            }
-          }
-        } catch (err) {
-          // Ignorar erros de detecção
-        }
-
-        if (scanningRef.current) {
-          requestAnimationFrame(detectLoop);
-        }
-      };
-
-      detectLoop();
-    } else {
-      console.log('BarcodeDetector API não disponível neste navegador.');
-    }
-  };
-
-  const handleScan = (code: string) => {
-    stopCamera();
+  const handleScan = async (code: string) => {
+    await stopScanner();
     onScan(code);
   };
 
-  const handleClose = () => {
-    stopCamera();
+  const handleClose = async () => {
+    await stopScanner();
     onClose();
   };
 
-  const toggleCameraType = () => {
-    setCameraType(current => current === 'user' ? 'environment' : 'user');
+  const toggleCamera = async () => {
+    if (cameras.length <= 1) return;
+    
+    const nextIndex = (currentCameraIndex + 1) % cameras.length;
+    setCurrentCameraIndex(nextIndex);
+    setCameraId(cameras[nextIndex].id);
+    
+    // Reiniciar com nova câmera
+    await startScanner(cameras[nextIndex].id);
   };
 
   if (!visible) return null;
@@ -215,7 +170,7 @@ function WebBarcodeScanner({ visible, onClose, onScan }: BarcodeScannerComponent
           <Text style={styles.permissionTitle}>
             {error || t('cameraPermission')}
           </Text>
-          <TouchableOpacity style={styles.permissionButton} onPress={startCamera}>
+          <TouchableOpacity style={styles.permissionButton} onPress={initializeScanner}>
             <Text style={styles.permissionButtonText}>Tentar Novamente</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.cancelButton} onPress={handleClose}>
@@ -239,9 +194,11 @@ function WebBarcodeScanner({ visible, onClose, onScan }: BarcodeScannerComponent
         <View style={styles.header}>
           <Text style={styles.title}>{t('scannerTitle')}</Text>
           <View style={styles.headerButtons}>
-            <TouchableOpacity onPress={toggleCameraType} style={styles.switchCameraButton}>
-              <Ionicons name="camera-reverse" size={28} color="#FFFFFF" />
-            </TouchableOpacity>
+            {cameras.length > 1 && (
+              <TouchableOpacity onPress={toggleCamera} style={styles.switchCameraButton}>
+                <Ionicons name="camera-reverse" size={28} color="#FFFFFF" />
+              </TouchableOpacity>
+            )}
             <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
               <Ionicons name="close" size={32} color="#FFFFFF" />
             </TouchableOpacity>
@@ -249,20 +206,24 @@ function WebBarcodeScanner({ visible, onClose, onScan }: BarcodeScannerComponent
         </View>
 
         <View style={styles.cameraContainer}>
-          <View 
-            data-scanner-container="true"
-            style={styles.videoContainer as any}
-          />
-          <View style={styles.overlay}>
-            <View style={styles.scanArea} />
-          </View>
+          {Platform.OS === 'web' && (
+            <View 
+              style={styles.webScannerWrapper}
+              // @ts-ignore - Web-specific attribute
+              dangerouslySetInnerHTML={{
+                __html: '<div id="html5-qrcode-scanner" style="width:100%;height:100%;background:#000;"></div>'
+              }}
+            />
+          )}
         </View>
 
         <View style={styles.instructions}>
           <Text style={styles.instructionsText}>{t('scannerInstructions')}</Text>
-          <Text style={styles.cameraTypeText}>
-            Câmera: {cameraType === 'user' ? 'Frontal' : 'Traseira'}
-          </Text>
+          {cameras.length > 0 && (
+            <Text style={styles.cameraTypeText}>
+              Câmera: {cameras[currentCameraIndex]?.label || 'Desconhecida'}
+            </Text>
+          )}
           <Text style={styles.tipText}>
             💡 Se a leitura automática não funcionar, digite o código manualmente
           </Text>
@@ -491,14 +452,6 @@ const styles = StyleSheet.create({
     position: 'relative',
     overflow: 'hidden',
   },
-  videoContainer: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: '#000',
-  },
   overlay: {
     position: 'absolute',
     top: 0,
@@ -524,6 +477,14 @@ const styles = StyleSheet.create({
     gap: 12,
     zIndex: 10,
   },
+  webScannerWrapper: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: '#000',
+  },
   instructionsText: {
     fontSize: 16,
     color: '#FFFFFF',
@@ -533,6 +494,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#34C759',
     fontWeight: '600',
+    textAlign: 'center',
   },
   tipText: {
     fontSize: 12,
