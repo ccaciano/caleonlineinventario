@@ -51,6 +51,8 @@ class Inventory(BaseModel):
 
 class CountedItemCreate(BaseModel):
     product_code: str
+    ean: str
+    description: str
     quantity: int
     lot: str
     expiry_date: str
@@ -59,6 +61,8 @@ class CountedItem(BaseModel):
     id: Optional[str] = None
     inventory_id: str
     product_code: str
+    ean: str
+    description: str
     quantity: int
     lot: str
     expiry_date: str
@@ -69,6 +73,18 @@ class CountedItemUpdate(BaseModel):
     quantity: Optional[int] = None
     lot: Optional[str] = None
     expiry_date: Optional[str] = None
+
+class Product(BaseModel):
+    id: Optional[str] = None
+    code: str
+    ean: str
+    description: str
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+class ProductCreate(BaseModel):
+    code: str
+    ean: str
+    description: str
 
 # Store Configuration Endpoints
 @api_router.post("/store/config")
@@ -206,6 +222,120 @@ async def get_export_data(inventory_id: str):
             "inventory": serialize_doc(inventory),
             "items": [serialize_doc(item) for item in items]
         }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# Products Endpoints
+@api_router.get("/products")
+async def get_products():
+    products = await db.products.find().sort("code", 1).to_list(10000)
+    return [serialize_doc(product) for product in products]
+
+@api_router.get("/products/search")
+async def search_product(query: str):
+    # Search by code or ean
+    product = await db.products.find_one({
+        "$or": [
+            {"code": query},
+            {"ean": query}
+        ]
+    })
+    if not product:
+        return None
+    return serialize_doc(product)
+
+@api_router.post("/products")
+async def create_product(product: ProductCreate):
+    # Check if product already exists
+    existing = await db.products.find_one({
+        "$or": [
+            {"code": product.code},
+            {"ean": product.ean}
+        ]
+    })
+    if existing:
+        raise HTTPException(status_code=400, detail="Product with this code or EAN already exists")
+    
+    product_dict = product.dict()
+    product_dict["created_at"] = datetime.utcnow()
+    result = await db.products.insert_one(product_dict)
+    product_dict["_id"] = str(result.inserted_id)
+    return serialize_doc(product_dict)
+
+@api_router.post("/products/upload")
+async def upload_products_csv(file_content: str):
+    try:
+        import csv
+        import io
+        
+        # Parse CSV
+        csv_file = io.StringIO(file_content)
+        reader = csv.DictReader(csv_file)
+        
+        products_added = 0
+        products_updated = 0
+        errors = []
+        
+        for row in reader:
+            try:
+                # Get fields (handle different column names)
+                code = row.get('Código Produto') or row.get('Codigo Produto') or row.get('code') or row.get('Code')
+                ean = row.get('EAN') or row.get('ean')
+                description = row.get('Descrição') or row.get('Descricao') or row.get('description') or row.get('Description')
+                
+                if not code or not ean or not description:
+                    errors.append(f"Missing fields in row: {row}")
+                    continue
+                
+                # Check if product exists
+                existing = await db.products.find_one({
+                    "$or": [
+                        {"code": code},
+                        {"ean": ean}
+                    ]
+                })
+                
+                if existing:
+                    # Update existing product
+                    await db.products.update_one(
+                        {"_id": existing["_id"]},
+                        {"$set": {
+                            "code": code,
+                            "ean": ean,
+                            "description": description
+                        }}
+                    )
+                    products_updated += 1
+                else:
+                    # Insert new product
+                    await db.products.insert_one({
+                        "code": code,
+                        "ean": ean,
+                        "description": description,
+                        "created_at": datetime.utcnow()
+                    })
+                    products_added += 1
+                    
+            except Exception as e:
+                errors.append(f"Error processing row {row}: {str(e)}")
+        
+        return {
+            "success": True,
+            "products_added": products_added,
+            "products_updated": products_updated,
+            "errors": errors if errors else None
+        }
+        
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Error processing CSV: {str(e)}")
+
+@api_router.delete("/products/{product_id}")
+async def delete_product(product_id: str):
+    try:
+        result = await db.products.delete_one({"_id": ObjectId(product_id)})
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Product not found")
+        return {"success": True, "message": "Product deleted"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

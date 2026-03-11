@@ -21,9 +21,19 @@ export interface CountedItem {
   _id?: string;
   inventory_id: string;
   product_code: string;
+  ean: string;
+  description: string;
   quantity: number;
   lot: string;
   expiry_date: string;
+  created_at?: string;
+}
+
+export interface Product {
+  _id?: string;
+  code: string;
+  ean: string;
+  description: string;
   created_at?: string;
 }
 
@@ -132,5 +142,54 @@ export const deleteCountedItem = async (inventoryId: string, itemId: string): Pr
 export const getExportData = async (inventoryId: string): Promise<ExportData> => {
   const response = await fetch(`${API_URL}/inventories/${inventoryId}/export`);
   if (!response.ok) throw new Error('Failed to get export data');
+  return response.json();
+};
+
+// Products
+export const getProducts = async (): Promise<Product[]> => {
+  const response = await fetch(`${API_URL}/products`);
+  if (!response.ok) throw new Error('Failed to get products');
+  return response.json();
+};
+
+export const searchProduct = async (query: string): Promise<Product | null> => {
+  const response = await fetch(`${API_URL}/products/search?query=${encodeURIComponent(query)}`);
+  if (!response.ok) throw new Error('Failed to search product');
+  const data = await response.json();
+  return data;
+};
+
+export const createProduct = async (product: Omit<Product, '_id' | 'created_at'>): Promise<Product> => {
+  const response = await fetch(`${API_URL}/products`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(product),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Failed to create product');
+  }
+  return response.json();
+};
+
+export const uploadProductsCSV = async (csvContent: string): Promise<any> => {
+  const response = await fetch(`${API_URL}/products/upload`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ file_content: csvContent }),
+  });
+  if (!response.ok) throw new Error('Failed to upload CSV');
+  return response.json();
+};
+
+export const deleteProduct = async (productId: string): Promise<any> => {
+  const response = await fetch(`${API_URL}/products/${productId}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) throw new Error('Failed to delete product');
   return response.json();
 };

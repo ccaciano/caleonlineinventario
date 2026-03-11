@@ -1,94 +1,13 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const LANGUAGE_KEY = '@app_language';
 
 const resources = {
-  en: {
-    translation: {
-      // Tabs
-      storeConfig: 'Store Config',
-      inventories: 'Inventories',
-      
-      // Store Config Screen
-      storeConfigTitle: 'Store Configuration',
-      storeId: 'Store ID',
-      storeName: 'Store Name',
-      email: 'Email',
-      managerPhone: 'Manager Phone',
-      managerName: 'Manager Name',
-      saveConfig: 'Save Configuration',
-      configSaved: 'Configuration saved successfully!',
-      fillAllFields: 'Please fill all fields',
-      
-      // Inventories Screen
-      inventoriesTitle: 'Inventory Sessions',
-      createInventory: 'Create New Inventory',
-      noInventories: 'No inventories yet',
-      createFirst: 'Create your first inventory to start counting',
-      items: 'items',
-      open: 'Open',
-      closed: 'Closed',
-      
-      // Create Inventory Modal
-      newInventory: 'New Inventory',
-      description: 'Description',
-      date: 'Date',
-      create: 'Create',
-      cancel: 'Cancel',
-      
-      // Counting Screen
-      countingTitle: 'Item Counting',
-      scanBarcode: 'Scan Barcode',
-      productCode: 'Product Code',
-      quantity: 'Quantity',
-      lot: 'Lot',
-      expiryDate: 'Expiry Date',
-      addItem: 'Add Item',
-      countedItems: 'Counted Items',
-      noItems: 'No items counted yet',
-      startScanning: 'Scan or add items to begin',
-      edit: 'Edit',
-      delete: 'Delete',
-      confirmDelete: 'Are you sure you want to delete this item?',
-      yes: 'Yes',
-      no: 'No',
-      
-      // Export Screen
-      exportTitle: 'Export Report',
-      exportAndClose: 'Export & Close Inventory',
-      download: 'Download Excel',
-      sendEmail: 'Send via Email',
-      totalItems: 'Total Items',
-      inventoryClosed: 'This inventory is closed',
-      exportSuccess: 'Report exported successfully!',
-      exportError: 'Error exporting report',
-      
-      // Edit Item Modal
-      editItem: 'Edit Item',
-      save: 'Save',
-      
-      // Scanner
-      scannerTitle: 'Scan Barcode/QR Code',
-      scannerInstructions: 'Point camera at barcode or QR code',
-      cameraPermission: 'Camera permission required',
-      grantPermission: 'Grant Permission',
-      
-      // Validation
-      invalidDate: 'Invalid date format',
-      invalidQuantity: 'Quantity must be greater than 0',
-      
-      // Settings
-      language: 'Language',
-      selectLanguage: 'Select Language',
-    }
-  },
   pt: {
     translation: {
       // Tabs
       storeConfig: 'Config. Loja',
       inventories: 'Inventários',
+      products: 'Base de Produtos',
       
       // Store Config Screen
       storeConfigTitle: 'Configuração da Loja',
@@ -117,10 +36,28 @@ const resources = {
       create: 'Criar',
       cancel: 'Cancelar',
       
+      // Products Screen
+      productsTitle: 'Base de Cadastro de Produtos',
+      uploadCSV: 'Importar CSV',
+      noProducts: 'Nenhum produto cadastrado',
+      uploadFirst: 'Faça upload de um arquivo CSV para começar',
+      selectCSVFile: 'Selecionar Arquivo CSV',
+      uploadSuccess: 'Produtos importados com sucesso!',
+      productsAdded: 'produtos adicionados',
+      productsUpdated: 'produtos atualizados',
+      uploadError: 'Erro ao fazer upload do CSV',
+      deleteProduct: 'Excluir Produto',
+      confirmDeleteProduct: 'Tem certeza que deseja excluir este produto?',
+      productDeleted: 'Produto excluído com sucesso',
+      csvFormat: 'Formato CSV: Código Produto, EAN, Descrição',
+      
       // Counting Screen
       countingTitle: 'Contagem de Itens',
       scanBarcode: 'Escanear Código',
+      search: 'Pesquisar',
+      searchPlaceholder: 'Digite o Código ou EAN',
       productCode: 'Código do Produto',
+      ean: 'EAN',
       quantity: 'Quantidade',
       lot: 'Lote',
       expiryDate: 'Validade',
@@ -133,6 +70,10 @@ const resources = {
       confirmDelete: 'Tem certeza que deseja excluir este item?',
       yes: 'Sim',
       no: 'Não',
+      productNotFound: 'Produto não encontrado',
+      productNotFoundMessage: 'Produto não encontrado na base de dados. Deseja cadastrar?',
+      registerProduct: 'Cadastrar Produto',
+      searching: 'Buscando...',
       
       // Export Screen
       exportTitle: 'Exportar Relatório',
@@ -148,6 +89,11 @@ const resources = {
       editItem: 'Editar Item',
       save: 'Salvar',
       
+      // Add Product Modal
+      newProduct: 'Novo Produto',
+      addProduct: 'Adicionar Produto',
+      productAdded: 'Produto cadastrado com sucesso!',
+      
       // Scanner
       scannerTitle: 'Escanear Código de Barras/QR',
       scannerInstructions: 'Aponte a câmera para o código de barras ou QR',
@@ -157,47 +103,21 @@ const resources = {
       // Validation
       invalidDate: 'Formato de data inválido',
       invalidQuantity: 'Quantidade deve ser maior que 0',
-      
-      // Settings
-      language: 'Idioma',
-      selectLanguage: 'Selecionar Idioma',
+      productExists: 'Produto com este código ou EAN já existe',
     }
   }
 };
 
-// Initialize i18n
-const initI18n = async () => {
-  let savedLanguage = 'pt'; // Default to Portuguese
-  try {
-    const stored = await AsyncStorage.getItem(LANGUAGE_KEY);
-    if (stored) {
-      savedLanguage = stored;
+// Initialize i18n with Portuguese only
+i18n
+  .use(initReactI18next)
+  .init({
+    resources,
+    lng: 'pt',
+    fallbackLng: 'pt',
+    interpolation: {
+      escapeValue: false
     }
-  } catch (error) {
-    console.error('Error loading language preference:', error);
-  }
-
-  i18n
-    .use(initReactI18next)
-    .init({
-      resources,
-      lng: savedLanguage,
-      fallbackLng: 'en',
-      interpolation: {
-        escapeValue: false
-      }
-    });
-};
-
-export const changeLanguage = async (lang: string) => {
-  try {
-    await AsyncStorage.setItem(LANGUAGE_KEY, lang);
-    await i18n.changeLanguage(lang);
-  } catch (error) {
-    console.error('Error saving language preference:', error);
-  }
-};
-
-initI18n();
+  });
 
 export default i18n;

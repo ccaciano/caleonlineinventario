@@ -15,10 +15,9 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { saveStoreConfig, getStoreConfig, StoreConfig } from '../services/api';
 import { saveStoreConfigLocal, getStoreConfigLocal } from '../utils/storage';
-import { changeLanguage } from '../utils/i18n';
 
 export default function StoreConfigScreen() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<StoreConfig>({
     store_id: '',
@@ -92,11 +91,6 @@ export default function StoreConfigScreen() {
     }
   };
 
-  const toggleLanguage = async () => {
-    const newLang = i18n.language === 'pt' ? 'en' : 'pt';
-    await changeLanguage(newLang);
-  };
-
   if (loading && !formData.store_id) {
     return (
       <View style={styles.loadingContainer}>
@@ -113,12 +107,6 @@ export default function StoreConfigScreen() {
       <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
           <Text style={styles.title}>{t('storeConfigTitle')}</Text>
-          <TouchableOpacity style={styles.languageButton} onPress={toggleLanguage}>
-            <Ionicons name="language" size={24} color="#007AFF" />
-            <Text style={styles.languageText}>
-              {i18n.language === 'pt' ? 'PT' : 'EN'}
-            </Text>
-          </TouchableOpacity>
         </View>
 
         <View style={styles.form}>
@@ -218,30 +206,12 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     marginBottom: 24,
   },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
     color: '#000',
-  },
-  languageButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    padding: 8,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E5E5EA',
-  },
-  languageText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#007AFF',
   },
   form: {
     gap: 16,
