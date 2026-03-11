@@ -51,20 +51,27 @@ export default function ProductFormModal({
   }, [product, visible]);
 
   const handleSave = async () => {
-    if (!formData.code || !formData.ean || !formData.description) {
-      Alert.alert(t('fillAllFields'));
+    // Apenas código e descrição são obrigatórios, EAN é opcional
+    if (!formData.code || !formData.description) {
+      Alert.alert(t('fillAllFields'), 'Código e Descrição são obrigatórios');
       return;
     }
 
     try {
       setLoading(true);
+      const productData = {
+        code: formData.code,
+        ean: formData.ean || '', // EAN pode ser vazio
+        description: formData.description,
+      };
+      
       if (product && product._id) {
         // Update existing product
-        await updateProduct(product._id, formData);
+        await updateProduct(product._id, productData);
         Alert.alert(t('productUpdated'));
       } else {
         // Create new product
-        await createProduct(formData);
+        await createProduct(productData);
         Alert.alert(t('productAdded'));
       }
       onSuccess();
@@ -105,7 +112,7 @@ export default function ProductFormModal({
 
         <View style={styles.form}>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>{t('productCode')}</Text>
+            <Text style={styles.label}>{t('productCode')} *</Text>
             <TextInput
               style={styles.input}
               value={formData.code}
@@ -117,7 +124,7 @@ export default function ProductFormModal({
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>{t('ean')}</Text>
+            <Text style={styles.label}>{t('ean')} (opcional)</Text>
             <TextInput
               style={styles.input}
               value={formData.ean}
@@ -129,7 +136,7 @@ export default function ProductFormModal({
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>{t('description')}</Text>
+            <Text style={styles.label}>{t('description')} *</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
               value={formData.description}

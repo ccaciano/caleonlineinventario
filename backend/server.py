@@ -327,15 +327,17 @@ async def create_product(product: ProductCreate):
     with file_locks['products']:
         all_products = read_json_file(PRODUCTS_FILE, default=[])
         
-        # Check for duplicates
-        existing = next((p for p in all_products if p.get('code') == product.code or p.get('ean') == product.ean), None)
-        if existing:
-            raise HTTPException(status_code=400, detail="Product with this code or EAN already exists")
+        # Check for duplicates - apenas verificar EAN se não estiver vazio
+        for p in all_products:
+            if p.get('code') == product.code:
+                raise HTTPException(status_code=400, detail="Product with this code already exists")
+            if product.ean and p.get('ean') == product.ean:
+                raise HTTPException(status_code=400, detail="Product with this EAN already exists")
         
         new_product = {
             "_id": generate_id(),
             "code": product.code,
-            "ean": product.ean,
+            "ean": product.ean or "",  # EAN pode ser vazio
             "description": product.description,
             "created_at": datetime.utcnow().isoformat()
         }
@@ -350,17 +352,20 @@ async def update_product(product_id: str, product: ProductCreate):
     with file_locks['products']:
         all_products = read_json_file(PRODUCTS_FILE, default=[])
         
-        # Check for duplicates (excluding current product)
-        existing = next((p for p in all_products if p.get('_id') != product_id and (p.get('code') == product.code or p.get('ean') == product.ean)), None)
-        if existing:
-            raise HTTPException(status_code=400, detail="Another product with this code or EAN already exists")
+        # Check for duplicates (excluding current product) - apenas verificar EAN se não estiver vazio
+        for p in all_products:
+            if p.get('_id') != product_id:
+                if p.get('code') == product.code:
+                    raise HTTPException(status_code=400, detail="Another product with this code already exists")
+                if product.ean and p.get('ean') == product.ean:
+                    raise HTTPException(status_code=400, detail="Another product with this EAN already exists")
         
         target_product = next((p for p in all_products if p.get('_id') == product_id), None)
         if not target_product:
             raise HTTPException(status_code=404, detail="Product not found")
         
         target_product['code'] = product.code
-        target_product['ean'] = product.ean
+        target_product['ean'] = product.ean or ""  # EAN pode ser vazio
         target_product['description'] = product.description
         
         write_json_file(PRODUCTS_FILE, all_products)
