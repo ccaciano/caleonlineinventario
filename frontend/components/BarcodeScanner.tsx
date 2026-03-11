@@ -107,12 +107,15 @@ function WebBarcodeScanner({ visible, onClose, onScan }: BarcodeScannerComponent
       container.id = containerIdRef.current;
       container.style.cssText = `
         position: fixed;
-        top: 80px;
-        left: 0;
-        right: 0;
-        bottom: 120px;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 320px;
+        height: 320px;
         z-index: 9999;
         background: #000;
+        border-radius: 16px;
+        overflow: hidden;
       `;
       document.body.appendChild(container);
 
