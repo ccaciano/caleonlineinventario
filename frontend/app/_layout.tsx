@@ -1,71 +1,170 @@
-import { Tabs } from 'expo-router';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { Drawer } from 'expo-router/drawer';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
+import { StyleSheet, View, Text, Image } from 'react-native';
+import { DrawerContentScrollView, DrawerItemList, DrawerContentComponentProps } from '@react-navigation/drawer';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Platform } from 'react-native';
 import '../utils/i18n';
 
-export default function TabLayout() {
+// Componente customizado para o conteúdo do Drawer
+function CustomDrawerContent(props: DrawerContentComponentProps) {
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
-  
-  // Calcula a altura da tab bar considerando o safe area do Android
-  const tabBarHeight = Platform.OS === 'android' ? 60 + insets.bottom : 60;
-  const tabBarPaddingBottom = Platform.OS === 'android' ? insets.bottom + 8 : 8;
 
   return (
-    <Tabs
-      screenOptions={{
-        tabBarActiveTintColor: '#007AFF',
-        tabBarInactiveTintColor: '#8E8E93',
-        tabBarStyle: {
-          backgroundColor: '#FFFFFF',
-          borderTopWidth: 1,
-          borderTopColor: '#E5E5EA',
-          height: tabBarHeight,
-          paddingBottom: tabBarPaddingBottom,
-          paddingTop: 8,
-        },
-        tabBarLabelStyle: {
-          fontSize: 12,
-          fontWeight: '600',
-        },
-        headerStyle: {
-          backgroundColor: '#007AFF',
-        },
-        headerTintColor: '#FFFFFF',
-        headerTitleStyle: {
-          fontWeight: 'bold',
-        },
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: t('storeConfig'),
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="products"
-        options={{
-          title: t('products'),
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="cube-outline" size={size} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="inventories"
-        options={{
-          title: t('inventories'),
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="list-outline" size={size} color={color} />
-          ),
-        }}
-      />
-    </Tabs>
+    <View style={styles.drawerContainer}>
+      {/* Header do Drawer */}
+      <View style={[styles.drawerHeader, { paddingTop: insets.top + 16 }]}>
+        <View style={styles.logoContainer}>
+          <Ionicons name="cube" size={48} color="#FFFFFF" />
+        </View>
+        <Text style={styles.appTitle}>{t('appTitle') || 'Inventory Manager'}</Text>
+        <Text style={styles.appSubtitle}>{t('appSubtitle') || 'Gestão de Estoque'}</Text>
+      </View>
+
+      {/* Lista de itens do menu */}
+      <DrawerContentScrollView {...props} contentContainerStyle={styles.drawerScrollContent}>
+        <DrawerItemList {...props} />
+      </DrawerContentScrollView>
+
+      {/* Footer do Drawer */}
+      <View style={[styles.drawerFooter, { paddingBottom: insets.bottom + 16 }]}>
+        <Text style={styles.versionText}>v1.0.0</Text>
+      </View>
+    </View>
   );
 }
+
+export default function DrawerLayout() {
+  const { t } = useTranslation();
+
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <Drawer
+        drawerContent={(props) => <CustomDrawerContent {...props} />}
+        screenOptions={{
+          drawerActiveTintColor: '#007AFF',
+          drawerInactiveTintColor: '#3C3C43',
+          drawerActiveBackgroundColor: '#E3F2FD',
+          drawerLabelStyle: {
+            fontSize: 16,
+            fontWeight: '600',
+            marginLeft: -16,
+          },
+          drawerItemStyle: {
+            borderRadius: 12,
+            marginHorizontal: 12,
+            marginVertical: 4,
+            paddingHorizontal: 8,
+          },
+          headerStyle: {
+            backgroundColor: '#007AFF',
+            elevation: 4,
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.2,
+            shadowRadius: 4,
+          },
+          headerTintColor: '#FFFFFF',
+          headerTitleStyle: {
+            fontWeight: 'bold',
+            fontSize: 18,
+          },
+          drawerType: 'front',
+          swipeEnabled: true,
+          swipeEdgeWidth: 100,
+        }}
+      >
+        <Drawer.Screen
+          name="index"
+          options={{
+            drawerLabel: t('storeConfig'),
+            title: t('storeConfig'),
+            drawerIcon: ({ color, size }) => (
+              <Ionicons name="settings-outline" size={size} color={color} />
+            ),
+          }}
+        />
+        <Drawer.Screen
+          name="products"
+          options={{
+            drawerLabel: t('products'),
+            title: t('products'),
+            drawerIcon: ({ color, size }) => (
+              <Ionicons name="cube-outline" size={size} color={color} />
+            ),
+          }}
+        />
+        <Drawer.Screen
+          name="inventories"
+          options={{
+            drawerLabel: t('inventories'),
+            title: t('inventories'),
+            drawerIcon: ({ color, size }) => (
+              <Ionicons name="list-outline" size={size} color={color} />
+            ),
+          }}
+        />
+        <Drawer.Screen
+          name="counting/[id]"
+          options={{
+            drawerLabel: t('counting'),
+            title: t('counting'),
+            drawerItemStyle: { display: 'none' }, // Ocultar do menu drawer
+            drawerIcon: ({ color, size }) => (
+              <Ionicons name="barcode-outline" size={size} color={color} />
+            ),
+          }}
+        />
+      </Drawer>
+    </GestureHandlerRootView>
+  );
+}
+
+const styles = StyleSheet.create({
+  drawerContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  drawerHeader: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+    borderBottomLeftRadius: 0,
+    borderBottomRightRadius: 0,
+  },
+  logoContainer: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  appTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 4,
+  },
+  appSubtitle: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+  },
+  drawerScrollContent: {
+    paddingTop: 16,
+  },
+  drawerFooter: {
+    borderTopWidth: 1,
+    borderTopColor: '#E5E5EA',
+    paddingHorizontal: 20,
+    paddingTop: 16,
+  },
+  versionText: {
+    fontSize: 12,
+    color: '#8E8E93',
+    textAlign: 'center',
+  },
+});

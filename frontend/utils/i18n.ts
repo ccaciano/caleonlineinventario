@@ -4,10 +4,15 @@ import { initReactI18next } from 'react-i18next';
 const resources = {
   pt: {
     translation: {
-      // Tabs
+      // App Info
+      appTitle: 'Inventory Manager',
+      appSubtitle: 'Gestão de Estoque',
+      
+      // Menu / Navigation
       storeConfig: 'Config. Loja',
       inventories: 'Inventários',
       products: 'Base de Produtos',
+      counting: 'Contagem',
       
       // Store Config Screen
       storeConfigTitle: 'Configuração da Loja',
