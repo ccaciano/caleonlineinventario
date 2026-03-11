@@ -12,11 +12,10 @@ import {
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { getInventories, getExportData, getStoreConfig, Inventory } from '../services/api';
+import { getInventories, getExportData, Inventory } from '../services/api';
 import Modal from 'react-native-modal';
 import CreateInventoryModal from '../components/CreateInventoryModal';
 import { generateExcelReport, shareExcelFile } from '../utils/excelExport';
-import * as MailComposer from 'expo-mail-composer';
 
 // Função para converter AAAA-MM-DD para DD/MM/AAAA
 const convertFromISO = (isoStr: string): string => {
@@ -86,60 +85,6 @@ export default function InventoriesScreen() {
     }
   };
 
-  const handleSendEmail = async (inventory: Inventory) => {
-    if (!inventory._id) return;
-    
-    try {
-      setExportingId(inventory._id);
-      
-      const storeConfig = await getStoreConfig();
-      const isAvailable = await MailComposer.isAvailableAsync();
-      
-      if (!isAvailable) {
-        Alert.alert('Erro', 'E-mail não disponível neste dispositivo');
-        setExportingId(null);
-        return;
-      }
-
-      const exportData = await getExportData(inventory._id);
-      const fileUri = await generateExcelReport(exportData);
-
-      await MailComposer.composeAsync({
-        recipients: storeConfig?.email ? [storeConfig.email] : [],
-        subject: `Relatório de Inventário - ${exportData.inventory.description}`,
-        body: `Segue em anexo o relatório de inventário para ${exportData.inventory.description} datado de ${convertFromISO(exportData.inventory.date)}.`,
-        attachments: [fileUri],
-      });
-      
-    } catch (error) {
-      console.error('Error sending email:', error);
-      Alert.alert('Erro', 'Falha ao enviar e-mail');
-    } finally {
-      setExportingId(null);
-    }
-  };
-
-  const handleExportOptions = (inventory: Inventory) => {
-    Alert.alert(
-      'Exportar Relatório',
-      'Escolha uma opção:',
-      [
-        {
-          text: 'Cancelar',
-          style: 'cancel',
-        },
-        {
-          text: 'Baixar Excel',
-          onPress: () => handleDownload(inventory),
-        },
-        {
-          text: 'Enviar por E-mail',
-          onPress: () => handleSendEmail(inventory),
-        },
-      ]
-    );
-  };
-
   const renderInventoryItem = ({ item }: { item: Inventory }) => {
     const isClosed = item.status === 'closed';
     const isExporting = exportingId === item._id;
@@ -207,21 +152,6 @@ export default function InventoriesScreen() {
                 <>
                   <Ionicons name="download-outline" size={20} color="#007AFF" />
                   <Text style={styles.downloadButtonText}>Baixar Excel</Text>
-                </>
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.exportButton, styles.emailButton]}
-              onPress={() => handleSendEmail(item)}
-              disabled={isExporting}
-            >
-              {isExporting ? (
-                <ActivityIndicator size="small" color="#34C759" />
-              ) : (
-                <>
-                  <Ionicons name="mail-outline" size={20} color="#34C759" />
-                  <Text style={styles.emailButtonText}>Enviar E-mail</Text>
                 </>
               )}
             </TouchableOpacity>
@@ -388,16 +318,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#007AFF',
-  },
-  emailButton: {
-    backgroundColor: '#E8F5E9',
-    borderWidth: 1,
-    borderColor: '#34C759',
-  },
-  emailButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#34C759',
   },
   emptyState: {
     alignItems: 'center',
