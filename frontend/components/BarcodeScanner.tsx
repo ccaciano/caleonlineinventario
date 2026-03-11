@@ -1,20 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import Modal from 'react-native-modal';
-import { BarCodeScanner } from 'expo-barcode-scanner';
+import { BarCodeScanner, BarCodeScannerProps } from 'expo-barcode-scanner';
+import { Camera } from 'expo-camera';
 
-interface BarcodeScannerProps {
+interface BarcodeScannerComponentProps {
   visible: boolean;
   onClose: () => void;
   onScan: (code: string) => void;
 }
 
-export default function BarcodeScanner({ visible, onClose, onScan }: BarcodeScannerProps) {
+export default function BarcodeScanner({ visible, onClose, onScan }: BarcodeScannerComponentProps) {
   const { t } = useTranslation();
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanned, setScanned] = useState(false);
+  // Na web, usar câmera frontal por padrão (notebooks só têm frontal)
+  // Em dispositivos móveis, usar câmera traseira por padrão
+  const [cameraType, setCameraType] = useState<'front' | 'back'>(
+    Platform.OS === 'web' ? 'front' : 'back'
+  );
 
   useEffect(() => {
     if (visible) {
@@ -38,6 +44,10 @@ export default function BarcodeScanner({ visible, onClose, onScan }: BarcodeScan
   const handleClose = () => {
     setScanned(false);
     onClose();
+  };
+
+  const toggleCameraType = () => {
+    setCameraType(current => current === 'back' ? 'front' : 'back');
   };
 
   if (hasPermission === null) {
@@ -78,15 +88,22 @@ export default function BarcodeScanner({ visible, onClose, onScan }: BarcodeScan
       <View style={styles.scannerContainer}>
         <View style={styles.header}>
           <Text style={styles.title}>{t('scannerTitle')}</Text>
-          <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-            <Ionicons name="close" size={32} color="#FFFFFF" />
-          </TouchableOpacity>
+          <View style={styles.headerButtons}>
+            {/* Botão para alternar câmera */}
+            <TouchableOpacity onPress={toggleCameraType} style={styles.switchCameraButton}>
+              <Ionicons name="camera-reverse" size={28} color="#FFFFFF" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
+              <Ionicons name="close" size={32} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.cameraContainer}>
           <BarCodeScanner
             onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
             style={StyleSheet.absoluteFillObject}
+            type={cameraType}
             barCodeTypes={[
               'ean13',
               'ean8',
@@ -109,13 +126,16 @@ export default function BarcodeScanner({ visible, onClose, onScan }: BarcodeScan
 
         <View style={styles.instructions}>
           <Text style={styles.instructionsText}>{t('scannerInstructions')}</Text>
+          <Text style={styles.cameraTypeText}>
+            Câmera: {cameraType === 'front' ? 'Frontal' : 'Traseira'}
+          </Text>
           {scanned && (
             <TouchableOpacity
               style={styles.scanAgainButton}
               onPress={() => setScanned(false)}
             >
               <Ionicons name="refresh" size={20} color="#FFFFFF" />
-              <Text style={styles.scanAgainText}>Scan Again</Text>
+              <Text style={styles.scanAgainText}>Escanear Novamente</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -178,10 +198,20 @@ const styles = StyleSheet.create({
     paddingTop: 48,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#FFFFFF',
+  },
+  switchCameraButton: {
+    padding: 8,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderRadius: 8,
   },
   closeButton: {
     padding: 4,
@@ -207,12 +237,17 @@ const styles = StyleSheet.create({
     padding: 24,
     backgroundColor: 'rgba(0, 0, 0, 0.7)',
     alignItems: 'center',
-    gap: 16,
+    gap: 12,
   },
   instructionsText: {
     fontSize: 16,
     color: '#FFFFFF',
     textAlign: 'center',
+  },
+  cameraTypeText: {
+    fontSize: 14,
+    color: '#34C759',
+    fontWeight: '600',
   },
   scanAgainButton: {
     flexDirection: 'row',
