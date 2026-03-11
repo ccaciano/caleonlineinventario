@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
@@ -53,7 +54,12 @@ export default function ProductFormModal({
   const handleSave = async () => {
     // Apenas código e descrição são obrigatórios, EAN é opcional
     if (!formData.code || !formData.description) {
-      Alert.alert(t('fillAllFields'), 'Código e Descrição são obrigatórios');
+      const message = 'Código e Descrição são obrigatórios';
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.alert(message);
+      } else {
+        Alert.alert(t('fillAllFields'), message);
+      }
       return;
     }
 
@@ -68,16 +74,29 @@ export default function ProductFormModal({
       if (product && product._id) {
         // Update existing product
         await updateProduct(product._id, productData);
-        Alert.alert(t('productUpdated'));
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          window.alert('Produto atualizado com sucesso!');
+        } else {
+          Alert.alert(t('productUpdated'));
+        }
       } else {
         // Create new product
         await createProduct(productData);
-        Alert.alert(t('productAdded'));
+        if (Platform.OS === 'web' && typeof window !== 'undefined') {
+          window.alert('Produto cadastrado com sucesso!');
+        } else {
+          Alert.alert(t('productAdded'));
+        }
       }
       onSuccess();
     } catch (error) {
       console.error('Error saving product:', error);
-      Alert.alert('Erro', error instanceof Error ? error.message : 'Falha ao salvar produto');
+      const errorMessage = error instanceof Error ? error.message : 'Falha ao salvar produto';
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.alert(errorMessage);
+      } else {
+        Alert.alert('Erro', errorMessage);
+      }
     } finally {
       setLoading(false);
     }

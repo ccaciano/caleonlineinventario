@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  Platform,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
@@ -47,7 +48,11 @@ export default function AddProductModal({
   const handleAdd = async () => {
     // Apenas código e descrição são obrigatórios, EAN é opcional
     if (!formData.code || !formData.description) {
-      Alert.alert(t('fillAllFields'), 'Código e Descrição são obrigatórios');
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.alert('Código e Descrição são obrigatórios');
+      } else {
+        Alert.alert(t('fillAllFields'), 'Código e Descrição são obrigatórios');
+      }
       return;
     }
 
@@ -62,7 +67,12 @@ export default function AddProductModal({
       onSuccess(productData);
     } catch (error) {
       console.error('Error creating product:', error);
-      Alert.alert('Erro', error instanceof Error ? error.message : 'Falha ao cadastrar produto');
+      const errorMessage = error instanceof Error ? error.message : 'Falha ao cadastrar produto';
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        window.alert(errorMessage);
+      } else {
+        Alert.alert('Erro', errorMessage);
+      }
     } finally {
       setLoading(false);
     }

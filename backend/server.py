@@ -330,9 +330,9 @@ async def create_product(product: ProductCreate):
         # Check for duplicates - apenas verificar EAN se não estiver vazio
         for p in all_products:
             if p.get('code') == product.code:
-                raise HTTPException(status_code=400, detail="Product with this code already exists")
+                raise HTTPException(status_code=400, detail="Já existe um produto com este Código")
             if product.ean and p.get('ean') == product.ean:
-                raise HTTPException(status_code=400, detail="Product with this EAN already exists")
+                raise HTTPException(status_code=400, detail="Já existe um produto com este EAN")
         
         new_product = {
             "_id": generate_id(),
@@ -356,13 +356,13 @@ async def update_product(product_id: str, product: ProductCreate):
         for p in all_products:
             if p.get('_id') != product_id:
                 if p.get('code') == product.code:
-                    raise HTTPException(status_code=400, detail="Another product with this code already exists")
+                    raise HTTPException(status_code=400, detail="Já existe outro produto com este Código")
                 if product.ean and p.get('ean') == product.ean:
-                    raise HTTPException(status_code=400, detail="Another product with this EAN already exists")
+                    raise HTTPException(status_code=400, detail="Já existe outro produto com este EAN")
         
         target_product = next((p for p in all_products if p.get('_id') == product_id), None)
         if not target_product:
-            raise HTTPException(status_code=404, detail="Product not found")
+            raise HTTPException(status_code=404, detail="Produto não encontrado")
         
         target_product['code'] = product.code
         target_product['ean'] = product.ean or ""  # EAN pode ser vazio
