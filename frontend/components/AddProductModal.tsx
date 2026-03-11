@@ -45,15 +45,21 @@ export default function AddProductModal({
   }, [visible, initialCode]);
 
   const handleAdd = async () => {
-    if (!formData.code || !formData.ean || !formData.description) {
-      Alert.alert(t('fillAllFields'));
+    // Apenas código e descrição são obrigatórios, EAN é opcional
+    if (!formData.code || !formData.description) {
+      Alert.alert(t('fillAllFields'), 'Código e Descrição são obrigatórios');
       return;
     }
 
     try {
       setLoading(true);
-      await createProduct(formData);
-      onSuccess(formData);
+      const productData = {
+        code: formData.code,
+        ean: formData.ean || '', // EAN pode ser vazio
+        description: formData.description,
+      };
+      await createProduct(productData);
+      onSuccess(productData);
     } catch (error) {
       console.error('Error creating product:', error);
       Alert.alert('Erro', error instanceof Error ? error.message : 'Falha ao cadastrar produto');
@@ -92,7 +98,7 @@ export default function AddProductModal({
 
         <View style={styles.form}>
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>{t('productCode')}</Text>
+            <Text style={styles.label}>{t('productCode')} *</Text>
             <TextInput
               style={styles.input}
               value={formData.code}
@@ -104,7 +110,7 @@ export default function AddProductModal({
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>{t('ean')}</Text>
+            <Text style={styles.label}>{t('ean')} (opcional)</Text>
             <TextInput
               style={styles.input}
               value={formData.ean}
@@ -116,7 +122,7 @@ export default function AddProductModal({
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>{t('description')}</Text>
+            <Text style={styles.label}>{t('description')} *</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
               value={formData.description}
