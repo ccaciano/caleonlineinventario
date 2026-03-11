@@ -96,6 +96,14 @@ export const closeInventory = async (id: string): Promise<any> => {
   return response.json();
 };
 
+export const deleteInventory = async (id: string): Promise<any> => {
+  const response = await fetch(`${API_URL}/inventories/${id}`, {
+    method: 'DELETE',
+  });
+  if (!response.ok) throw new Error('Failed to delete inventory');
+  return response.json();
+};
+
 // Counted Items
 export const getCountedItems = async (inventoryId: string): Promise<CountedItem[]> => {
   const response = await fetch(`${API_URL}/inventories/${inventoryId}/items`);

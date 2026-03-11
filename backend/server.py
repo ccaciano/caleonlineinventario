@@ -185,6 +185,27 @@ async def close_inventory(inventory_id: str):
     
     return {"success": True, "message": "Inventory closed"}
 
+@api_router.delete("/inventories/{inventory_id}")
+async def delete_inventory(inventory_id: str):
+    with file_locks['inventories']:
+        inventories = read_json_file(INVENTORIES_FILE, default=[])
+        
+        inventory = next((inv for inv in inventories if inv.get('_id') == inventory_id), None)
+        if not inventory:
+            raise HTTPException(status_code=404, detail="Inventário não encontrado")
+        
+        # Remover o inventário da lista
+        inventories = [inv for inv in inventories if inv.get('_id') != inventory_id]
+        write_json_file(INVENTORIES_FILE, inventories)
+    
+    # Também remover todos os itens contados deste inventário
+    with file_locks['items']:
+        all_items = read_json_file(COUNTED_ITEMS_FILE, default=[])
+        remaining_items = [item for item in all_items if item.get('inventory_id') != inventory_id]
+        write_json_file(COUNTED_ITEMS_FILE, remaining_items)
+    
+    return {"success": True, "message": "Inventário excluído com sucesso"}
+
 # Counted Items Endpoints
 @api_router.get("/inventories/{inventory_id}/items")
 async def get_counted_items(inventory_id: str):

@@ -8,11 +8,12 @@ import {
   Alert,
   ActivityIndicator,
   RefreshControl,
+  Platform,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { getInventories, getExportData, Inventory } from '../services/api';
+import { getInventories, getExportData, deleteInventory, Inventory } from '../services/api';
 import Modal from 'react-native-modal';
 import CreateInventoryModal from '../components/CreateInventoryModal';
 import { generateExcelReport, shareExcelFile } from '../utils/excelExport';
@@ -32,6 +33,7 @@ export default function InventoriesScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [exportingId, setExportingId] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     loadInventories();
@@ -85,16 +87,69 @@ export default function InventoriesScreen() {
     }
   };
 
+  const handleDeleteInventory = async (inventory: Inventory) => {
+    if (!inventory._id) return;
+
+    const confirmMessage = t('confirmDeleteInventory');
+    
+    // Usar confirmação específica da plataforma
+    if (Platform.OS === 'web') {
+      const confirmed = window.confirm(confirmMessage);
+      if (confirmed) {
+        await performDelete(inventory._id);
+      }
+    } else {
+      Alert.alert(
+        t('deleteInventory'),
+        confirmMessage,
+        [
+          { text: t('cancel'), style: 'cancel' },
+          { 
+            text: t('yes'), 
+            style: 'destructive',
+            onPress: () => performDelete(inventory._id!)
+          },
+        ]
+      );
+    }
+  };
+
+  const performDelete = async (inventoryId: string) => {
+    try {
+      setDeletingId(inventoryId);
+      await deleteInventory(inventoryId);
+      
+      if (Platform.OS === 'web') {
+        window.alert(t('inventoryDeleted'));
+      } else {
+        Alert.alert('Sucesso', t('inventoryDeleted'));
+      }
+      
+      loadInventories();
+    } catch (error) {
+      console.error('Error deleting inventory:', error);
+      const errorMsg = 'Falha ao excluir inventário';
+      if (Platform.OS === 'web') {
+        window.alert(errorMsg);
+      } else {
+        Alert.alert('Erro', errorMsg);
+      }
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   const renderInventoryItem = ({ item }: { item: Inventory }) => {
     const isClosed = item.status === 'closed';
     const isExporting = exportingId === item._id;
+    const isDeleting = deletingId === item._id;
 
     return (
       <View style={styles.inventoryCard}>
         <TouchableOpacity
           onPress={() => handleInventoryPress(item)}
           activeOpacity={0.7}
-          disabled={isExporting}
+          disabled={isExporting || isDeleting}
         >
           <View style={styles.cardHeader}>
             <View style={styles.cardTitleContainer}>
@@ -139,12 +194,13 @@ export default function InventoriesScreen() {
           )}
         </TouchableOpacity>
 
+        {/* Actions for closed inventories */}
         {isClosed && (
           <View style={styles.exportActions}>
             <TouchableOpacity
               style={[styles.exportButton, styles.downloadButton]}
               onPress={() => handleDownload(item)}
-              disabled={isExporting}
+              disabled={isExporting || isDeleting}
             >
               {isExporting ? (
                 <ActivityIndicator size="small" color="#007AFF" />
@@ -153,6 +209,37 @@ export default function InventoriesScreen() {
                   <Ionicons name="download-outline" size={20} color="#007AFF" />
                   <Text style={styles.downloadButtonText}>Baixar Excel</Text>
                 </>
+              )}
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.exportButton, styles.deleteButton]}
+              onPress={() => handleDeleteInventory(item)}
+              disabled={isExporting || isDeleting}
+            >
+              {isDeleting ? (
+                <ActivityIndicator size="small" color="#FF3B30" />
+              ) : (
+                <>
+                  <Ionicons name="trash-outline" size={20} color="#FF3B30" />
+                  <Text style={styles.deleteButtonText}>{t('deleteInventory')}</Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* Delete button for open inventories */}
+        {!isClosed && (
+          <View style={styles.openInventoryActions}>
+            <TouchableOpacity
+              style={[styles.deleteButtonSmall]}
+              onPress={() => handleDeleteInventory(item)}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <ActivityIndicator size="small" color="#FF3B30" />
+              ) : (
+                <Ionicons name="trash-outline" size={20} color="#FF3B30" />
               )}
             </TouchableOpacity>
           </View>
@@ -318,6 +405,26 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     color: '#007AFF',
+  },
+  deleteButton: {
+    backgroundColor: '#FFF0F0',
+    borderWidth: 1,
+    borderColor: '#FF3B30',
+  },
+  deleteButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FF3B30',
+  },
+  openInventoryActions: {
+    position: 'absolute',
+    top: 16,
+    right: 16,
+  },
+  deleteButtonSmall: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#FFF0F0',
   },
   emptyState: {
     alignItems: 'center',

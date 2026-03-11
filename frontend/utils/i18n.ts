@@ -33,6 +33,9 @@ const resources = {
       items: 'itens',
       open: 'Aberto',
       closed: 'Fechado',
+      deleteInventory: 'Excluir Inventário',
+      confirmDeleteInventory: 'Tem certeza que deseja excluir este inventário? Esta ação não pode ser desfeita e todos os itens contados serão perdidos.',
+      inventoryDeleted: 'Inventário excluído com sucesso',
       
       // Create Inventory Modal
       newInventory: 'Novo Inventário',
@@ -54,6 +57,7 @@ const resources = {
       deleteProduct: 'Excluir Produto',
       confirmDeleteProduct: 'Tem certeza que deseja excluir este produto?',
       productDeleted: 'Produto excluído com sucesso',
+      yes: 'Sim',
       csvFormat: 'Formato CSV: Código Produto, EAN, Descrição',
       csvWillReplace: 'ATENÇÃO: O upload irá SOBRESCREVER todos os produtos existentes!',
       searchProducts: 'Pesquisar produtos...',
