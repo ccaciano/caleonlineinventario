@@ -1,284 +1,260 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  FlatList,
-  Alert,
-  ActivityIndicator,
-  RefreshControl,
-  TextInput,
-  Platform,
-} from 'react-native';
-import { useTranslation } from 'react-i18next';
-import { Ionicons } from '@expo/vector-icons';
-import { getProducts, deleteProduct, uploadProductsFromContent, Product } from '../services/api';
-import * as DocumentPicker from 'expo-document-picker';
-import ProductFormModal from '../components/ProductFormModal';
+import React, { useState, useEffect, useCallback, useRef } from "react"
+import { View, Text, TouchableOpacity, StyleSheet, FlatList, Alert, ActivityIndicator, RefreshControl, TextInput, Platform } from "react-native"
+import { useTranslation } from "react-i18next"
+import { Ionicons } from "@expo/vector-icons"
+import { getProducts, deleteProduct, uploadProductsFromContent, Product } from "../services/api"
+import * as DocumentPicker from "expo-document-picker"
+import ProductFormModal from "../components/ProductFormModal"
 
 export default function ProductsScreen() {
-  const { t } = useTranslation();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [modalVisible, setModalVisible] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  const [loadingMore, setLoadingMore] = useState(false);
-  
+  const { t } = useTranslation()
+  const [products, setProducts] = useState<Product[]>([])
+  const [loading, setLoading] = useState(false)
+  const [refreshing, setRefreshing] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [page, setPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [modalVisible, setModalVisible] = useState(false)
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [loadingMore, setLoadingMore] = useState(false)
+
   // Ref para o input de arquivo web
-  const webFileInputRef = useRef<HTMLInputElement | null>(null);
+  const webFileInputRef = useRef<HTMLInputElement | null>(null)
 
   // Criar input de arquivo para web
   useEffect(() => {
-    if (Platform.OS === 'web' && typeof document !== 'undefined') {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = '.csv,text/csv,text/plain,.txt';
-      input.style.display = 'none';
-      input.id = 'csv-file-input';
-      document.body.appendChild(input);
-      webFileInputRef.current = input;
-      
+    if (Platform.OS === "web" && typeof document !== "undefined") {
+      const input = document.createElement("input")
+      input.type = "file"
+      input.accept = ".csv,text/csv,text/plain,.txt"
+      input.style.display = "none"
+      input.id = "csv-file-input"
+      document.body.appendChild(input)
+      webFileInputRef.current = input
+
       return () => {
         if (input.parentNode) {
-          document.body.removeChild(input);
+          document.body.removeChild(input)
         }
-      };
+      }
     }
-  }, []);
+  }, [])
 
   useEffect(() => {
-    loadProducts(1, searchQuery);
-  }, []);
+    loadProducts(1, searchQuery)
+  }, [])
 
-  const loadProducts = async (pageNum: number = 1, search: string = '') => {
+  const loadProducts = async (pageNum: number = 1, search: string = "") => {
     try {
       if (pageNum === 1) {
-        setLoading(true);
+        setLoading(true)
       } else {
-        setLoadingMore(true);
+        setLoadingMore(true)
       }
-      
-      const data = await getProducts(pageNum, 50, search);
-      
+
+      const data = await getProducts(pageNum, 50, search)
+
       if (pageNum === 1) {
-        setProducts(data.products);
+        setProducts(data.products)
       } else {
-        setProducts(prev => [...prev, ...data.products]);
+        setProducts((prev) => [...prev, ...data.products])
       }
-      
-      setPage(data.page);
-      setTotalPages(data.total_pages);
+
+      setPage(data.page)
+      setTotalPages(data.totalPages)
     } catch (error) {
-      console.error('Error loading products:', error);
-      Alert.alert('Erro', 'Falha ao carregar produtos');
+      console.error("Error loading products:", error)
+      Alert.alert("Erro", "Falha ao carregar produtos")
     } finally {
-      setLoading(false);
-      setLoadingMore(false);
+      setLoading(false)
+      setLoadingMore(false)
     }
-  };
+  }
 
   const handleRefresh = async () => {
-    setRefreshing(true);
-    setPage(1);
-    await loadProducts(1, searchQuery);
-    setRefreshing(false);
-  };
+    setRefreshing(true)
+    setPage(1)
+    await loadProducts(1, searchQuery)
+    setRefreshing(false)
+  }
 
   const handleSearch = useCallback((text: string) => {
-    setSearchQuery(text);
-    setPage(1);
-    loadProducts(1, text);
-  }, []);
+    setSearchQuery(text)
+    setPage(1)
+    loadProducts(1, text)
+  }, [])
 
   const handleLoadMore = () => {
     if (!loadingMore && page < totalPages) {
-      loadProducts(page + 1, searchQuery);
+      loadProducts(page + 1, searchQuery)
     }
-  };
+  }
 
   // Processa o conteúdo CSV após upload
   const processCSVUpload = async (csvContent: string) => {
     try {
-      setUploading(true);
-      
+      setUploading(true)
+
       // Upload usando armazenamento local
-      const uploadResult = await uploadProductsFromContent(csvContent, true);
-      
-      Alert.alert(
-        t('uploadSuccess'),
-        `${uploadResult.count} ${t('productsAdded')}`
-      );
-      
+      const uploadResult = await uploadProductsFromContent(csvContent, true)
+
+      Alert.alert(t("uploadSuccess"), `${uploadResult.count} ${t("productsAdded")}`)
+
       // Reload products
-      setPage(1);
-      await loadProducts(1, '');
-      setSearchQuery('');
+      setPage(1)
+      await loadProducts(1, "")
+      setSearchQuery("")
     } catch (error) {
-      console.error('Error uploading CSV:', error);
-      Alert.alert(t('uploadError'), error instanceof Error ? error.message : 'Unknown error');
+      console.error("Error uploading CSV:", error)
+      Alert.alert(t("uploadError"), error instanceof Error ? error.message : "Unknown error")
     } finally {
-      setUploading(false);
+      setUploading(false)
     }
-  };
+  }
 
   // Handler para web file input
   const handleWebFileSelect = async (event: any) => {
-    const file = event.target?.files?.[0];
-    if (!file) return;
+    const file = event.target?.files?.[0]
+    if (!file) return
 
     // Tenta ler com diferentes encodings
     const tryReadWithEncoding = (encoding: string): Promise<string> => {
       return new Promise((resolve, reject) => {
-        const reader = new FileReader();
+        const reader = new FileReader()
         reader.onload = (e) => {
-          const result = e.target?.result as string;
+          const result = e.target?.result as string
           if (result) {
-            resolve(result);
+            resolve(result)
           } else {
-            reject(new Error('Empty result'));
+            reject(new Error("Empty result"))
           }
-        };
-        reader.onerror = () => reject(reader.error);
-        reader.readAsText(file, encoding);
-      });
-    };
+        }
+        reader.onerror = () => reject(reader.error)
+        reader.readAsText(file, encoding)
+      })
+    }
 
     try {
       // Primeiro tenta UTF-8
-      let csvContent: string;
+      let csvContent: string
       try {
-        csvContent = await tryReadWithEncoding('UTF-8');
+        csvContent = await tryReadWithEncoding("UTF-8")
         // Verifica se há caracteres corrompidos (indicador de encoding errado)
-        if (csvContent.includes('�') || csvContent.includes('\ufffd')) {
+        if (csvContent.includes("�") || csvContent.includes("\ufffd")) {
           // Tenta Latin-1/ISO-8859-1
-          csvContent = await tryReadWithEncoding('ISO-8859-1');
+          csvContent = await tryReadWithEncoding("ISO-8859-1")
         }
       } catch {
         // Fallback para Latin-1
-        csvContent = await tryReadWithEncoding('ISO-8859-1');
+        csvContent = await tryReadWithEncoding("ISO-8859-1")
       }
-      
-      await processCSVUpload(csvContent);
+
+      await processCSVUpload(csvContent)
     } catch (error) {
-      Alert.alert(t('uploadError'), 'Falha ao ler o arquivo');
+      Alert.alert(t("uploadError"), "Falha ao ler o arquivo")
     }
 
     // Reset input para permitir selecionar o mesmo arquivo novamente
     if (event.target) {
-      event.target.value = '';
+      event.target.value = ""
     }
-  };
+  }
 
   // Upload CSV - versão para mobile (nativo)
   const handleNativeUpload = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: 'text/csv',
+        type: "text/csv",
         copyToCacheDirectory: true,
-      });
+      })
 
-      if (result.canceled) return;
+      if (result.canceled) return
 
       // Read file content
-      const response = await fetch(result.assets[0].uri);
-      const csvContent = await response.text();
-      
-      await processCSVUpload(csvContent);
+      const response = await fetch(result.assets[0].uri)
+      const csvContent = await response.text()
+
+      await processCSVUpload(csvContent)
     } catch (error) {
-      console.error('Error picking document:', error);
-      Alert.alert(t('uploadError'), error instanceof Error ? error.message : 'Unknown error');
+      console.error("Error picking document:", error)
+      Alert.alert(t("uploadError"), error instanceof Error ? error.message : "Unknown error")
     }
-  };
+  }
 
   // Upload CSV - versão principal que detecta a plataforma
   const handleUploadCSV = async () => {
-    if (Platform.OS === 'web') {
+    if (Platform.OS === "web") {
       // Na web, o Alert não funciona bem, então mostramos um confirm nativo
-      if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-        const confirmed = window.confirm(
-          'Atenção: O upload irá substituir todos os produtos existentes. Deseja continuar?'
-        );
-        
+      if (typeof window !== "undefined" && typeof document !== "undefined") {
+        const confirmed = window.confirm("Atenção: O upload irá substituir todos os produtos existentes. Deseja continuar?")
+
         if (confirmed) {
-          const input = document.createElement('input');
-          input.type = 'file';
-          input.accept = '.csv,text/csv,text/plain';
-          input.style.display = 'none';
-          input.onchange = handleWebFileSelect;
-          document.body.appendChild(input);
-          input.click();
+          const input = document.createElement("input")
+          input.type = "file"
+          input.accept = ".csv,text/csv,text/plain"
+          input.style.display = "none"
+          input.onchange = handleWebFileSelect
+          document.body.appendChild(input)
+          input.click()
           // Remove o input após um pequeno delay
           setTimeout(() => {
             if (input.parentNode) {
-              document.body.removeChild(input);
+              document.body.removeChild(input)
             }
-          }, 1000);
+          }, 1000)
         }
       }
     } else {
       // Em dispositivos nativos, usa o Alert normal
-      Alert.alert(
-        t('uploadCSV'),
-        t('csvWillReplace'),
-        [
-          { text: t('cancel'), style: 'cancel' },
-          {
-            text: t('continue') || 'Continuar',
-            style: 'destructive',
-            onPress: async () => {
-              await handleNativeUpload();
-            },
-          },
-        ]
-      );
-    }
-  };
-
-  const handleAddProduct = () => {
-    setEditingProduct(null);
-    setModalVisible(true);
-  };
-
-  const handleEditProduct = (product: Product) => {
-    setEditingProduct(product);
-    setModalVisible(true);
-  };
-
-  const handleDeleteProduct = (product: Product) => {
-    Alert.alert(
-      t('deleteProduct'),
-      t('confirmDeleteProduct'),
-      [
-        { text: t('no'), style: 'cancel' },
+      Alert.alert(t("uploadCSV"), t("csvWillReplace"), [
+        { text: t("cancel"), style: "cancel" },
         {
-          text: t('yes'),
-          style: 'destructive',
+          text: t("continue") || "Continuar",
+          style: "destructive",
           onPress: async () => {
-            try {
-              await deleteProduct(product._id!);
-              Alert.alert(t('productDeleted'));
-              handleRefresh();
-            } catch (error) {
-              console.error('Error deleting product:', error);
-              Alert.alert('Erro', 'Falha ao excluir produto');
-            }
+            await handleNativeUpload()
           },
         },
-      ]
-    );
-  };
+      ])
+    }
+  }
+
+  const handleAddProduct = () => {
+    setEditingProduct(null)
+    setModalVisible(true)
+  }
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product)
+    setModalVisible(true)
+  }
+
+  const handleDeleteProduct = (product: Product) => {
+    Alert.alert(t("deleteProduct"), t("confirmDeleteProduct"), [
+      { text: t("no"), style: "cancel" },
+      {
+        text: t("yes"),
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteProduct(product._id!)
+            Alert.alert(t("productDeleted"))
+            handleRefresh()
+          } catch (error) {
+            console.error("Error deleting product:", error)
+            Alert.alert("Erro", "Falha ao excluir produto")
+          }
+        },
+      },
+    ])
+  }
 
   const handleModalSuccess = () => {
-    setModalVisible(false);
-    setEditingProduct(null);
-    handleRefresh();
-  };
+    setModalVisible(false)
+    setEditingProduct(null)
+    handleRefresh()
+  }
 
   const renderProduct = ({ item }: { item: Product }) => (
     <View style={styles.productCard}>
@@ -291,48 +267,42 @@ export default function ProductsScreen() {
           </Text>
         </View>
         <View style={styles.productActions}>
-          <TouchableOpacity
-            onPress={() => handleEditProduct(item)}
-            style={styles.actionButton}
-          >
+          <TouchableOpacity onPress={() => handleEditProduct(item)} style={styles.actionButton}>
             <Ionicons name="create-outline" size={22} color="#007AFF" />
           </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => handleDeleteProduct(item)}
-            style={styles.actionButton}
-          >
+          <TouchableOpacity onPress={() => handleDeleteProduct(item)} style={styles.actionButton}>
             <Ionicons name="trash-outline" size={22} color="#FF3B30" />
           </TouchableOpacity>
         </View>
       </View>
     </View>
-  );
+  )
 
   const renderFooter = () => {
-    if (!loadingMore) return null;
+    if (!loadingMore) return null
     return (
       <View style={styles.footer}>
         <ActivityIndicator size="small" color="#007AFF" />
-        <Text style={styles.footerText}>{t('loadingMore')}</Text>
+        <Text style={styles.footerText}>{t("loadingMore")}</Text>
       </View>
-    );
-  };
+    )
+  }
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
       <Ionicons name="cube-outline" size={80} color="#C7C7CC" />
-      <Text style={styles.emptyTitle}>{t('noProducts')}</Text>
-      <Text style={styles.emptySubtitle}>{t('uploadFirst')}</Text>
-      <Text style={styles.csvFormatHint}>{t('csvFormat')}</Text>
+      <Text style={styles.emptyTitle}>{t("noProducts")}</Text>
+      <Text style={styles.emptySubtitle}>{t("uploadFirst")}</Text>
+      <Text style={styles.csvFormatHint}>{t("csvFormat")}</Text>
     </View>
-  );
+  )
 
   if (loading && products.length === 0) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#007AFF" />
       </View>
-    );
+    )
   }
 
   return (
@@ -340,32 +310,22 @@ export default function ProductsScreen() {
       <View style={styles.header}>
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={20} color="#8E8E93" style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            value={searchQuery}
-            onChangeText={handleSearch}
-            placeholder={t('searchProducts')}
-            placeholderTextColor="#999"
-          />
+          <TextInput style={styles.searchInput} value={searchQuery} onChangeText={handleSearch} placeholder={t("searchProducts")} placeholderTextColor="#999" />
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => handleSearch('')}>
+            <TouchableOpacity onPress={() => handleSearch("")}>
               <Ionicons name="close-circle" size={20} color="#8E8E93" />
             </TouchableOpacity>
           )}
         </View>
 
         <View style={styles.actionButtons}>
-          <TouchableOpacity
-            style={[styles.uploadButton, uploading && styles.buttonDisabled]}
-            onPress={handleUploadCSV}
-            disabled={uploading}
-          >
+          <TouchableOpacity style={[styles.uploadButton, uploading && styles.buttonDisabled]} onPress={handleUploadCSV} disabled={uploading}>
             {uploading ? (
               <ActivityIndicator color="#FFFFFF" size="small" />
             ) : (
               <>
                 <Ionicons name="cloud-upload" size={20} color="#FFFFFF" />
-                <Text style={styles.uploadButtonText}>{t('uploadCSV')}</Text>
+                <Text style={styles.uploadButtonText}>{t("uploadCSV")}</Text>
               </>
             )}
           </TouchableOpacity>
@@ -380,15 +340,10 @@ export default function ProductsScreen() {
         data={products}
         renderItem={renderProduct}
         keyExtractor={(item) => item._id || item.code}
-        contentContainerStyle={[
-          styles.listContent,
-          products.length === 0 && styles.listContentEmpty,
-        ]}
+        contentContainerStyle={[styles.listContent, products.length === 0 && styles.listContentEmpty]}
         ListEmptyComponent={renderEmptyState}
         ListFooterComponent={renderFooter}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />}
         onEndReached={handleLoadMore}
         onEndReachedThreshold={0.5}
       />
@@ -397,37 +352,37 @@ export default function ProductsScreen() {
         visible={modalVisible}
         product={editingProduct}
         onClose={() => {
-          setModalVisible(false);
-          setEditingProduct(null);
+          setModalVisible(false)
+          setEditingProduct(null)
         }}
         onSuccess={handleModalSuccess}
       />
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
+    backgroundColor: "#F2F2F7",
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F2F2F7',
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F2F2F7",
   },
   header: {
     padding: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderBottomWidth: 1,
-    borderBottomColor: '#E5E5EA',
+    borderBottomColor: "#E5E5EA",
     gap: 12,
   },
   searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F2F2F7',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F2F2F7",
     borderRadius: 12,
     paddingHorizontal: 12,
     height: 48,
@@ -438,35 +393,35 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#000',
+    color: "#000",
   },
   actionButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
   },
   uploadButton: {
     flex: 1,
-    backgroundColor: '#34C759',
+    backgroundColor: "#34C759",
     borderRadius: 12,
     padding: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
     minHeight: 48,
   },
   uploadButtonText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   addButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: "#007AFF",
     borderRadius: 12,
     width: 48,
     height: 48,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   buttonDisabled: {
     opacity: 0.6,
@@ -477,21 +432,21 @@ const styles = StyleSheet.create({
   },
   listContentEmpty: {
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   productCard: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     padding: 16,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
   },
   productHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   productInfo: {
     flex: 1,
@@ -499,57 +454,57 @@ const styles = StyleSheet.create({
   },
   productCode: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#000',
+    fontWeight: "bold",
+    color: "#000",
     marginBottom: 4,
   },
   productEan: {
     fontSize: 14,
-    color: '#007AFF',
+    color: "#007AFF",
     marginBottom: 4,
   },
   productDescription: {
     fontSize: 14,
-    color: '#8E8E93',
+    color: "#8E8E93",
     lineHeight: 20,
   },
   productActions: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 8,
   },
   actionButton: {
     padding: 8,
   },
   emptyState: {
-    alignItems: 'center',
+    alignItems: "center",
     padding: 32,
   },
   emptyTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#000',
+    fontWeight: "bold",
+    color: "#000",
     marginTop: 16,
   },
   emptySubtitle: {
     fontSize: 16,
-    color: '#8E8E93',
+    color: "#8E8E93",
     marginTop: 8,
-    textAlign: 'center',
+    textAlign: "center",
   },
   csvFormatHint: {
     fontSize: 12,
-    color: '#C7C7CC',
+    color: "#C7C7CC",
     marginTop: 16,
-    textAlign: 'center',
-    fontStyle: 'italic',
+    textAlign: "center",
+    fontStyle: "italic",
   },
   footer: {
     paddingVertical: 16,
-    alignItems: 'center',
+    alignItems: "center",
     gap: 8,
   },
   footerText: {
     fontSize: 14,
-    color: '#8E8E93',
+    color: "#8E8E93",
   },
-});
+})
