@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { getProducts, deleteProduct, uploadProductsCSV, Product } from '../services/api';
+import { getProducts, deleteProduct, uploadProductsFromContent, Product } from '../services/api';
 import * as DocumentPicker from 'expo-document-picker';
 import ProductFormModal from '../components/ProductFormModal';
 
@@ -107,12 +107,12 @@ export default function ProductsScreen() {
     try {
       setUploading(true);
       
-      // Upload to API
-      const uploadResult = await uploadProductsCSV(csvContent, true);
+      // Upload usando armazenamento local
+      const uploadResult = await uploadProductsFromContent(csvContent, true);
       
       Alert.alert(
         t('uploadSuccess'),
-        `${uploadResult.products_added} ${t('productsAdded')}`
+        `${uploadResult.count} ${t('productsAdded')}`
       );
       
       // Reload products
