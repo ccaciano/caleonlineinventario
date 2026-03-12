@@ -2,12 +2,11 @@
   "expo": {
     "extra": {
       "eas": {
-        "projectId": "4c68533a-e21a-4737-9e95-eb0a67d7087d"
+        "projectId": "d24dde2b-807f-44ee-a62a-c0e2525f6daf"
       }
     },
     "android": {
-      "package": "com.ccaciano.frontend"
-    },
-    "owner": "ccaciano"
+      "package": "com.ccaciano.inventorymanager"
+    }
   }
 }

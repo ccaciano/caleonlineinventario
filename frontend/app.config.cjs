@@ -1,7 +1,7 @@
 module.exports = {
   expo: {
     name: "CaléOnline Inventário",
-    slug: "cale-online-inventario",
+    slug: "caleo-online-v1",
     version: "1.0.0",
     orientation: "portrait",
     icon: "./assets/images/icon.png",
@@ -10,10 +10,10 @@ module.exports = {
     newArchEnabled: true,
     ios: {
       supportsTablet: true,
-      bundleIdentifier: "com.marcosmascarenhas.inventorymanager",
+      bundleIdentifier: "com.ccaciano.inventorymanager",
     },
     android: {
-      package: "com.marcosmascarenhas.inventorymanager",
+      package: "com.ccaciano.inventorymanager",
       versionCode: 1,
       adaptiveIcon: {
         foregroundImage: "./assets/images/adaptive-icon.png",
@@ -23,7 +23,7 @@ module.exports = {
     },
     plugins: ["expo-router", ["expo-camera", { cameraPermission: "Permitir uso da câmera." }], ["expo-file-system", { copyToCacheDirectory: true }], "expo-sharing", "expo-document-picker"],
     extra: {
-      eas: {},
+      eas: { projectId: "d24dde2b-807f-44ee-a62a-c0e2525f6daf" },
     },
   },
 }
