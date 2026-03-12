@@ -1,18 +1,18 @@
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { Drawer } from 'expo-router/drawer';
-import { Ionicons } from '@expo/vector-icons';
-import { useTranslation } from 'react-i18next';
-import { StyleSheet, View, Text, Platform, AppState, AppStateStatus } from 'react-native';
-import { DrawerContentScrollView, DrawerItemList, DrawerContentComponentProps } from '@react-navigation/drawer';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useEffect, useRef, useCallback } from 'react';
-import * as NavigationBar from 'expo-navigation-bar';
-import '../utils/i18n';
+import { GestureHandlerRootView } from "react-native-gesture-handler"
+import { Drawer } from "expo-router/drawer"
+import { Ionicons } from "@expo/vector-icons"
+import { useTranslation } from "react-i18next"
+import { StyleSheet, View, Text, Platform, AppState, AppStateStatus } from "react-native"
+import { DrawerContentScrollView, DrawerItemList, DrawerContentComponentProps } from "@react-navigation/drawer"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { useEffect, useRef, useCallback } from "react"
+import * as NavigationBar from "expo-navigation-bar"
+import "../utils/i18n"
 
 // Componente customizado para o conteúdo do Drawer
 function CustomDrawerContent(props: DrawerContentComponentProps) {
-  const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
+  const { t } = useTranslation()
+  const insets = useSafeAreaInsets()
 
   return (
     <View style={styles.drawerContainer}>
@@ -21,8 +21,8 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         <View style={styles.logoContainer}>
           <Ionicons name="cube" size={48} color="#FFFFFF" />
         </View>
-        <Text style={styles.appTitle}>{t('appTitle') || 'Inventory Manager'}</Text>
-        <Text style={styles.appSubtitle}>{t('appSubtitle') || 'Gestão de Estoque'}</Text>
+        <Text style={styles.appTitle}>{t("appTitle") || "CaléOnline Inventário"}</Text>
+        <Text style={styles.appSubtitle}>{t("appSubtitle") || "Gestão de Estoque"}</Text>
       </View>
 
       {/* Lista de itens do menu */}
@@ -35,100 +35,100 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
         <Text style={styles.versionText}>v1.0.0</Text>
       </View>
     </View>
-  );
+  )
 }
 
 export default function DrawerLayout() {
-  const { t } = useTranslation();
-  const hideTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const appState = useRef(AppState.currentState);
+  const { t } = useTranslation()
+  const hideTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const appState = useRef(AppState.currentState)
 
   // Função para ocultar a Navigation Bar
   const hideNavigationBar = useCallback(async () => {
-    if (Platform.OS === 'android') {
+    if (Platform.OS === "android") {
       try {
-        await NavigationBar.setVisibilityAsync('hidden');
+        await NavigationBar.setVisibilityAsync("hidden")
       } catch (error) {
-        console.log('Error hiding navigation bar:', error);
+        console.log("Error hiding navigation bar:", error)
       }
     }
-  }, []);
+  }, [])
 
   // Função para iniciar o timer de auto-ocultação
   const startHideTimer = useCallback(() => {
     // Limpa timer existente
     if (hideTimerRef.current) {
-      clearTimeout(hideTimerRef.current);
+      clearTimeout(hideTimerRef.current)
     }
     // Inicia novo timer de 3 segundos
     hideTimerRef.current = setTimeout(() => {
-      hideNavigationBar();
-    }, 3000);
-  }, [hideNavigationBar]);
+      hideNavigationBar()
+    }, 3000)
+  }, [hideNavigationBar])
 
   // Configurar Navigation Bar no Android para modo imersivo
   useEffect(() => {
-    if (Platform.OS === 'android') {
+    if (Platform.OS === "android") {
       const setupNavigationBar = async () => {
         try {
           // Definir comportamento da Navigation Bar para "overlay-swipe"
           // Isso faz a barra ocultar e reaparecer com gestos
-          await NavigationBar.setVisibilityAsync('hidden');
-          await NavigationBar.setBehaviorAsync('overlay-swipe');
-          
+          await NavigationBar.setVisibilityAsync("hidden")
+          await NavigationBar.setBehaviorAsync("overlay-swipe")
+
           // Definir cor de fundo transparente quando visível
-          await NavigationBar.setBackgroundColorAsync('#00000000');
-          await NavigationBar.setButtonStyleAsync('light');
+          await NavigationBar.setBackgroundColorAsync("#00000000")
+          await NavigationBar.setButtonStyleAsync("light")
         } catch (error) {
-          console.log('NavigationBar setup error:', error);
+          console.log("NavigationBar setup error:", error)
         }
-      };
-      setupNavigationBar();
+      }
+      setupNavigationBar()
 
       // Listener para mudanças na visibilidade da Navigation Bar
       const subscription = NavigationBar.addVisibilityListener(({ visibility }) => {
-        if (visibility === 'visible') {
+        if (visibility === "visible") {
           // Navigation Bar ficou visível, iniciar timer para ocultar
-          startHideTimer();
+          startHideTimer()
         } else {
           // Navigation Bar foi ocultada, cancelar timer se existir
           if (hideTimerRef.current) {
-            clearTimeout(hideTimerRef.current);
-            hideTimerRef.current = null;
+            clearTimeout(hideTimerRef.current)
+            hideTimerRef.current = null
           }
         }
-      });
+      })
 
       // Listener para quando o app volta ao foco (foreground)
-      const appStateSubscription = AppState.addEventListener('change', (nextAppState: AppStateStatus) => {
-        if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+      const appStateSubscription = AppState.addEventListener("change", (nextAppState: AppStateStatus) => {
+        if (appState.current.match(/inactive|background/) && nextAppState === "active") {
           // App voltou ao foreground, ocultar navigation bar
-          hideNavigationBar();
+          hideNavigationBar()
         }
-        appState.current = nextAppState;
-      });
+        appState.current = nextAppState
+      })
 
       return () => {
-        subscription.remove();
-        appStateSubscription.remove();
+        subscription.remove()
+        appStateSubscription.remove()
         if (hideTimerRef.current) {
-          clearTimeout(hideTimerRef.current);
+          clearTimeout(hideTimerRef.current)
         }
-      };
+      }
     }
-  }, [hideNavigationBar, startHideTimer]);
+  }, [hideNavigationBar, startHideTimer])
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <Drawer
         drawerContent={(props) => <CustomDrawerContent {...props} />}
         screenOptions={{
-          drawerActiveTintColor: '#007AFF',
-          drawerInactiveTintColor: '#3C3C43',
-          drawerActiveBackgroundColor: '#E3F2FD',
+          drawerActiveTintColor: "#007AFF",
+          drawerInactiveTintColor: "#3C3C43",
+          drawerActiveBackgroundColor: "#E3F2FD",
           drawerLabelStyle: {
             fontSize: 16,
-            fontWeight: '600',
+            fontWeight: "600",
             marginLeft: -16,
           },
           drawerItemStyle: {
@@ -138,19 +138,19 @@ export default function DrawerLayout() {
             paddingHorizontal: 8,
           },
           headerStyle: {
-            backgroundColor: '#007AFF',
+            backgroundColor: "#007AFF",
             elevation: 4,
-            shadowColor: '#000',
+            shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.2,
             shadowRadius: 4,
           },
-          headerTintColor: '#FFFFFF',
+          headerTintColor: "#FFFFFF",
           headerTitleStyle: {
-            fontWeight: 'bold',
+            fontWeight: "bold",
             fontSize: 18,
           },
-          drawerType: 'front',
+          drawerType: "front",
           swipeEnabled: true,
           swipeEdgeWidth: 100,
         }}
@@ -158,56 +158,48 @@ export default function DrawerLayout() {
         <Drawer.Screen
           name="index"
           options={{
-            drawerLabel: t('inventories'),
-            title: t('inventories'),
-            drawerIcon: ({ color, size }) => (
-              <Ionicons name="list-outline" size={size} color={color} />
-            ),
+            drawerLabel: t("inventories"),
+            title: t("inventories"),
+            drawerIcon: ({ color, size }) => <Ionicons name="list-outline" size={size} color={color} />,
           }}
         />
         <Drawer.Screen
           name="products"
           options={{
-            drawerLabel: t('products'),
-            title: t('products'),
-            drawerIcon: ({ color, size }) => (
-              <Ionicons name="cube-outline" size={size} color={color} />
-            ),
+            drawerLabel: t("products"),
+            title: t("products"),
+            drawerIcon: ({ color, size }) => <Ionicons name="cube-outline" size={size} color={color} />,
           }}
         />
         <Drawer.Screen
           name="store-config"
           options={{
-            drawerLabel: t('storeConfig'),
-            title: t('storeConfig'),
-            drawerIcon: ({ color, size }) => (
-              <Ionicons name="settings-outline" size={size} color={color} />
-            ),
+            drawerLabel: t("storeConfig"),
+            title: t("storeConfig"),
+            drawerIcon: ({ color, size }) => <Ionicons name="settings-outline" size={size} color={color} />,
           }}
         />
         <Drawer.Screen
           name="counting/[id]"
           options={{
-            drawerLabel: t('counting'),
-            title: t('counting'),
-            drawerItemStyle: { display: 'none' }, // Ocultar do menu drawer
-            drawerIcon: ({ color, size }) => (
-              <Ionicons name="barcode-outline" size={size} color={color} />
-            ),
+            drawerLabel: t("counting"),
+            title: t("counting"),
+            drawerItemStyle: { display: "none" }, // Ocultar do menu drawer
+            drawerIcon: ({ color, size }) => <Ionicons name="barcode-outline" size={size} color={color} />,
           }}
         />
       </Drawer>
     </GestureHandlerRootView>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
   drawerContainer: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: "#FFFFFF",
   },
   drawerHeader: {
-    backgroundColor: '#007AFF',
+    backgroundColor: "#007AFF",
     paddingHorizontal: 20,
     paddingBottom: 24,
     borderBottomLeftRadius: 0,
@@ -217,33 +209,33 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 12,
   },
   appTitle: {
     fontSize: 22,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
+    fontWeight: "bold",
+    color: "#FFFFFF",
     marginBottom: 4,
   },
   appSubtitle: {
     fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: "rgba(255, 255, 255, 0.8)",
   },
   drawerScrollContent: {
     paddingTop: 16,
   },
   drawerFooter: {
     borderTopWidth: 1,
-    borderTopColor: '#E5E5EA',
+    borderTopColor: "#E5E5EA",
     paddingHorizontal: 20,
     paddingTop: 16,
   },
   versionText: {
     fontSize: 12,
-    color: '#8E8E93',
-    textAlign: 'center',
+    color: "#8E8E93",
+    textAlign: "center",
   },
-});
+})
