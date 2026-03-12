@@ -45,15 +45,9 @@ export default function StoreConfigScreen() {
   };
 
   const handleSave = async () => {
-    // Validate all fields
-    if (
-      !formData.store_id ||
-      !formData.store_name ||
-      !formData.email ||
-      !formData.manager_phone ||
-      !formData.manager_name
-    ) {
-      Alert.alert(t('fillAllFields'));
+    // Validate required fields only (Código da Loja e Nome da Loja)
+    if (!formData.store_id || !formData.store_name) {
+      Alert.alert('Atenção', 'Preencha os campos obrigatórios: Código da Loja e Nome da Loja');
       return;
     }
 
