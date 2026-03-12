@@ -75,13 +75,22 @@ export default function InventoriesScreen() {
     
     try {
       setExportingId(inventory._id);
+      console.log('Iniciando download do inventário:', inventory._id);
+      
       const exportData = await getExportData(inventory._id);
+      console.log('Dados de exportação obtidos:', exportData ? 'OK' : 'ERRO');
+      
       const fileUri = await generateExcelReport(exportData);
-      await shareExcelFile(fileUri);
-      Alert.alert('Sucesso', 'Relatório baixado com sucesso!');
-    } catch (error) {
+      console.log('Arquivo gerado:', fileUri);
+      
+      if (Platform.OS !== 'web' && fileUri !== 'web-download') {
+        await shareExcelFile(fileUri);
+      }
+      
+      Alert.alert('Sucesso', 'Relatório exportado com sucesso!');
+    } catch (error: any) {
       console.error('Error downloading report:', error);
-      Alert.alert('Erro', 'Falha ao baixar relatório');
+      Alert.alert('Erro', error.message || 'Falha ao baixar relatório');
     } finally {
       setExportingId(null);
     }

@@ -108,7 +108,41 @@ const downloadForWeb = (data: ExportData): void => {
   }
 };
 
-// Download para dispositivos nativos - SIMPLIFICADO
+// Função para obter um diretório válido
+const getAvailableDirectory = async (): Promise<string> => {
+  // Lista de diretórios para tentar em ordem de preferência
+  const directories = [
+    FileSystem.cacheDirectory,
+    FileSystem.documentDirectory,
+  ];
+
+  console.log('Verificando diretórios disponíveis:', {
+    cacheDirectory: FileSystem.cacheDirectory,
+    documentDirectory: FileSystem.documentDirectory,
+  });
+
+  for (const dir of directories) {
+    if (dir) {
+      try {
+        // Verifica se o diretório está acessível tentando obter info
+        const info = await FileSystem.getInfoAsync(dir);
+        console.log(`Diretório ${dir} info:`, info);
+        if (info.exists || info.isDirectory !== false) {
+          return dir;
+        }
+      } catch (e) {
+        console.log(`Erro ao verificar diretório ${dir}:`, e);
+      }
+    }
+  }
+
+  // Se nenhum diretório está disponível, tentar criar no documentDirectory
+  const fallbackDir = FileSystem.documentDirectory || 'file:///data/user/0/com.emergent.inventorymanager/files/';
+  console.log('Usando diretório fallback:', fallbackDir);
+  return fallbackDir;
+};
+
+// Download para dispositivos nativos
 const downloadForNative = async (data: ExportData): Promise<string> => {
   const wb = createWorkbook(data);
   const fileName = generateFileName(data.inventory.description);
@@ -116,35 +150,62 @@ const downloadForNative = async (data: ExportData): Promise<string> => {
   // Gera base64 string
   const base64Content = XLSX.write(wb, { type: 'base64', bookType: 'xlsx' });
 
-  // Usa sempre o cacheDirectory que é garantido estar disponível
-  const cacheDir = FileSystem.cacheDirectory;
-  
-  if (!cacheDir) {
-    throw new Error('Diretório de cache não disponível');
-  }
-
-  const fileUri = cacheDir + fileName;
+  // Obtém um diretório válido
+  const baseDir = await getAvailableDirectory();
+  const fileUri = baseDir + fileName;
   
   console.log('Salvando arquivo em:', fileUri);
+  console.log('Tamanho do conteúdo base64:', base64Content.length);
 
-  // Escreve o arquivo usando encoding direto como string
-  await FileSystem.writeAsStringAsync(fileUri, base64Content, {
-    encoding: 'base64',
-  });
+  try {
+    // Escreve o arquivo
+    await FileSystem.writeAsStringAsync(fileUri, base64Content, {
+      encoding: FileSystem.EncodingType.Base64,
+    });
 
-  // Verifica se o arquivo foi criado
-  const fileInfo = await FileSystem.getInfoAsync(fileUri);
-  console.log('Arquivo criado:', fileInfo);
-  
-  if (!fileInfo.exists) {
-    throw new Error('Falha ao criar arquivo');
+    // Verifica se o arquivo foi criado
+    const fileInfo = await FileSystem.getInfoAsync(fileUri);
+    console.log('Info do arquivo criado:', fileInfo);
+    
+    if (!fileInfo.exists) {
+      throw new Error('Arquivo não foi criado');
+    }
+
+    return fileUri;
+  } catch (writeError: any) {
+    console.error('Erro ao escrever arquivo:', writeError);
+    
+    // Tenta uma abordagem alternativa usando o SAF
+    try {
+      console.log('Tentando abordagem alternativa com SAF...');
+      const permissions = await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
+      
+      if (permissions.granted) {
+        const safUri = await FileSystem.StorageAccessFramework.createFileAsync(
+          permissions.directoryUri,
+          fileName,
+          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        );
+        
+        await FileSystem.writeAsStringAsync(safUri, base64Content, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        
+        return safUri;
+      }
+    } catch (safError) {
+      console.error('Erro SAF:', safError);
+    }
+    
+    throw new Error('Não foi possível salvar o arquivo. Verifique as permissões do aplicativo.');
   }
-
-  return fileUri;
 };
 
 export const generateExcelReport = async (data: ExportData): Promise<string> => {
   try {
+    console.log('Iniciando geração do relatório Excel...');
+    console.log('Plataforma:', Platform.OS);
+    
     if (Platform.OS === 'web') {
       downloadForWeb(data);
       return 'web-download';
@@ -159,12 +220,17 @@ export const generateExcelReport = async (data: ExportData): Promise<string> => 
 
 export const shareExcelFile = async (fileUri: string): Promise<void> => {
   try {
+    console.log('Iniciando compartilhamento do arquivo:', fileUri);
+    
     // Na web, o download já foi feito automaticamente
     if (Platform.OS === 'web' || fileUri === 'web-download') {
       return;
     }
     
+    // Verifica se o compartilhamento está disponível
     const canShare = await Sharing.isAvailableAsync();
+    console.log('Compartilhamento disponível:', canShare);
+    
     if (canShare) {
       await Sharing.shareAsync(fileUri, {
         mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
