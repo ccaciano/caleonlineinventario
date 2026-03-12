@@ -2,194 +2,192 @@
 // Este arquivo foi refatorado para funcionar 100% offline
 // usando armazenamento local em vez de chamadas HTTP
 
-import * as LocalStorage from './localStorage';
+import * as LocalStorage from "./localStorage"
 
 // Re-exportar tipos do localStorage
-export type Product = LocalStorage.Product;
-export type Inventory = LocalStorage.Inventory;
-export type CountedItem = LocalStorage.CountedItem;
-export type StoreConfig = LocalStorage.StoreConfig;
+export type Product = LocalStorage.Product
+export type Inventory = LocalStorage.Inventory
+export type CountedItem = LocalStorage.CountedItem
+export type StoreConfig = LocalStorage.StoreConfig
 
 // Tipo para dados de exportação
 export interface ExportData {
-  inventory: Inventory;
-  items: CountedItem[];
-  store: StoreConfig | null;
+  inventory: Inventory
+  items: CountedItem[]
+  store: StoreConfig | null
 }
 
 // ==================== CONFIGURAÇÃO DA LOJA ====================
 
 export const getStoreConfig = async (): Promise<StoreConfig | null> => {
-  return LocalStorage.getStoreConfig();
-};
+  return LocalStorage.getStoreConfig()
+}
 
 export const saveStoreConfig = async (config: StoreConfig): Promise<StoreConfig> => {
-  return LocalStorage.saveStoreConfig(config);
-};
+  return LocalStorage.saveStoreConfig(config)
+}
 
 // ==================== PRODUTOS ====================
 
-export const getProducts = async (
-  page: number = 1,
-  limit: number = 50,
-  search?: string
-): Promise<{ products: Product[]; total: number; page: number; totalPages: number }> => {
-  return LocalStorage.getProductsPaginated(page, limit, search);
-};
+export const getProducts = async (page: number = 1, limit: number = 50, search?: string): Promise<{ products: Product[]; total: number; page: number; totalPages: number }> => {
+  return LocalStorage.getProductsPaginated(page, limit, search)
+}
 
-export const createProduct = async (product: Omit<Product, '_id'>): Promise<Product> => {
+export const createProduct = async (product: Omit<Product, "_id">): Promise<Product> => {
   // Verificar se já existe produto com mesmo código
-  const existing = await LocalStorage.searchProductByCodeOrEan(product.code);
+  const existing = await LocalStorage.searchProductByCodeOrEan(product.code)
   if (existing) {
-    throw new Error(`Produto com código "${product.code}" já existe`);
+    throw new Error(`Produto com código "${product.code}" já existe`)
   }
-  
+
   // Verificar EAN se fornecido
   if (product.ean) {
-    const existingByEan = await LocalStorage.searchProductByCodeOrEan(product.ean);
+    const existingByEan = await LocalStorage.searchProductByCodeOrEan(product.ean)
     if (existingByEan) {
-      throw new Error(`Produto com EAN "${product.ean}" já existe`);
+      throw new Error(`Produto com EAN "${product.ean}" já existe`)
     }
   }
-  
-  return LocalStorage.addProduct(product);
-};
+
+  return LocalStorage.addProduct(product)
+}
 
 export const updateProduct = async (id: string, product: Partial<Product>): Promise<Product> => {
-  const updated = await LocalStorage.updateProduct(id, product);
+  const updated = await LocalStorage.updateProduct(id, product)
   if (!updated) {
-    throw new Error('Produto não encontrado');
+    throw new Error("Produto não encontrado")
   }
-  return updated;
-};
+  return updated
+}
 
 export const deleteProduct = async (id: string): Promise<void> => {
-  const success = await LocalStorage.deleteProduct(id);
+  const success = await LocalStorage.deleteProduct(id)
   if (!success) {
-    throw new Error('Produto não encontrado');
+    throw new Error("Produto não encontrado")
   }
-};
+}
 
 export const searchProduct = async (query: string): Promise<Product | null> => {
-  return LocalStorage.searchProductByCodeOrEan(query);
-};
+  return LocalStorage.searchProductByCodeOrEan(query)
+}
 
-export const uploadProducts = async (
-  file: { uri: string; name: string; type: string },
-  clearExisting: boolean = true
-): Promise<{ count: number; message: string }> => {
+export const uploadProducts = async (file: { uri: string; name: string; type: string }, clearExisting: boolean = true): Promise<{ count: number; message: string }> => {
   // Esta função é chamada do componente de upload
   // O conteúdo do CSV já é processado diretamente
-  throw new Error('Use uploadProductsFromContent instead');
-};
+  throw new Error("Use uploadProductsFromContent instead")
+}
 
-export const uploadProductsFromContent = async (
-  csvContent: string,
-  clearExisting: boolean = true
-): Promise<{ count: number; message: string }> => {
-  const count = await LocalStorage.importProductsFromCSV(csvContent);
+export const uploadProductsFromContent = async (csvContent: string, clearExisting: boolean = true): Promise<{ count: number; message: string }> => {
+  const count = await LocalStorage.importProductsFromCSV(csvContent)
   return {
     count,
     message: `${count} produtos importados com sucesso`,
-  };
-};
+  }
+}
 
 // ==================== INVENTÁRIOS ====================
 
 export const getInventories = async (): Promise<Inventory[]> => {
-  return LocalStorage.getInventories();
-};
+  // 1. Pega a lista básica de inventários
+  const inventories = await LocalStorage.getInventories()
+
+  // 2. Para cada inventário, vamos garantir que o contador reflita a realidade dos itens
+  const updatedInventories = inventories.map((inv) => {
+    // Se o inventário tem a lista de itens dentro dele, usamos o tamanho dela
+    // Caso contrário, mantemos o que já estava (0)
+    const actualCount = inv.items ? inv.items.length : 0
+
+    return {
+      ...inv,
+      item_count: actualCount,
+    }
+  })
+
+  return updatedInventories
+}
 
 export const createInventory = async (description: string, date: string): Promise<Inventory> => {
-  return LocalStorage.createInventory(description, date);
-};
+  return LocalStorage.createInventory(description, date)
+}
 
 export const getInventory = async (id: string): Promise<Inventory> => {
-  const inventory = await LocalStorage.getInventoryById(id);
+  const inventory = await LocalStorage.getInventoryById(id)
   if (!inventory) {
-    throw new Error('Inventário não encontrado');
+    throw new Error("Inventário não encontrado")
   }
-  return inventory;
-};
+  return inventory
+}
 
 export const updateInventory = async (id: string, updates: Partial<Inventory>): Promise<Inventory> => {
-  const updated = await LocalStorage.updateInventory(id, updates);
+  const updated = await LocalStorage.updateInventory(id, updates)
   if (!updated) {
-    throw new Error('Inventário não encontrado');
+    throw new Error("Inventário não encontrado")
   }
-  return updated;
-};
+  return updated
+}
 
 export const deleteInventory = async (id: string): Promise<void> => {
-  const success = await LocalStorage.deleteInventory(id);
+  const success = await LocalStorage.deleteInventory(id)
   if (!success) {
-    throw new Error('Inventário não encontrado');
+    throw new Error("Inventário não encontrado")
   }
-};
+}
 
 export const closeInventory = async (id: string): Promise<Inventory> => {
-  const closed = await LocalStorage.closeInventory(id);
+  const closed = await LocalStorage.closeInventory(id)
   if (!closed) {
-    throw new Error('Inventário não encontrado');
+    throw new Error("Inventário não encontrado")
   }
-  return closed;
-};
+  return closed
+}
 
 // ==================== ITENS CONTADOS ====================
 
 export const getCountedItems = async (inventoryId: string): Promise<CountedItem[]> => {
-  return LocalStorage.getCountedItems(inventoryId);
-};
+  return LocalStorage.getCountedItems(inventoryId)
+}
 
-export const addCountedItem = async (
-  inventoryId: string,
-  item: Omit<CountedItem, '_id' | 'inventory_id'>
-): Promise<CountedItem> => {
-  const added = await LocalStorage.addCountedItem(inventoryId, item);
+export const addCountedItem = async (inventoryId: string, item: Omit<CountedItem, "_id" | "inventory_id">): Promise<CountedItem> => {
+  const added = await LocalStorage.addCountedItem(inventoryId, item)
   if (!added) {
-    throw new Error('Inventário não encontrado');
+    throw new Error("Inventário não encontrado")
   }
-  return added;
-};
+  return added
+}
 
-export const updateCountedItem = async (
-  inventoryId: string,
-  itemId: string,
-  updates: Partial<CountedItem>
-): Promise<CountedItem> => {
-  const updated = await LocalStorage.updateCountedItem(inventoryId, itemId, updates);
+export const updateCountedItem = async (inventoryId: string, itemId: string, updates: Partial<CountedItem>): Promise<CountedItem> => {
+  const updated = await LocalStorage.updateCountedItem(inventoryId, itemId, updates)
   if (!updated) {
-    throw new Error('Item não encontrado');
+    throw new Error("Item não encontrado")
   }
-  return updated;
-};
+  return updated
+}
 
 export const deleteCountedItem = async (inventoryId: string, itemId: string): Promise<void> => {
-  const success = await LocalStorage.deleteCountedItem(inventoryId, itemId);
+  const success = await LocalStorage.deleteCountedItem(inventoryId, itemId)
   if (!success) {
-    throw new Error('Item não encontrado');
+    throw new Error("Item não encontrado")
   }
-};
+}
 
 // ==================== EXPORTAÇÃO ====================
 
 export const getExportData = async (inventoryId: string): Promise<ExportData> => {
-  const inventory = await LocalStorage.getInventoryById(inventoryId);
+  const inventory = await LocalStorage.getInventoryById(inventoryId)
   if (!inventory) {
-    throw new Error('Inventário não encontrado');
+    throw new Error("Inventário não encontrado")
   }
-  
-  const store = await LocalStorage.getStoreConfig();
-  
+
+  const store = await LocalStorage.getStoreConfig()
+
   return {
     inventory,
     items: inventory.items,
     store,
-  };
-};
+  }
+}
 
 // ==================== UTILITÁRIOS ====================
 
 export const clearAllData = async (): Promise<void> => {
-  await LocalStorage.clearAllData();
-};
+  await LocalStorage.clearAllData()
+}
