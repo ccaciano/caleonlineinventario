@@ -13,8 +13,7 @@ import {
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { saveStoreConfig, getStoreConfig, StoreConfig } from '../services/api';
-import { saveStoreConfigLocal, getStoreConfigLocal } from '../utils/storage';
+import { saveStoreConfig, getStoreConfig, StoreConfig, clearAllData } from '../services/api';
 
 export default function StoreConfigScreen() {
   const { t } = useTranslation();
@@ -34,24 +33,12 @@ export default function StoreConfigScreen() {
   const loadConfig = async () => {
     try {
       setLoading(true);
-      // Try to load from API first
-      const apiConfig = await getStoreConfig();
-      if (apiConfig) {
-        setFormData(apiConfig);
-      } else {
-        // Fall back to local storage
-        const localConfig = await getStoreConfigLocal();
-        if (localConfig) {
-          setFormData(localConfig);
-        }
+      const config = await getStoreConfig();
+      if (config) {
+        setFormData(config);
       }
     } catch (error) {
       console.error('Error loading config:', error);
-      // Try local storage on error
-      const localConfig = await getStoreConfigLocal();
-      if (localConfig) {
-        setFormData(localConfig);
-      }
     } finally {
       setLoading(false);
     }
@@ -72,23 +59,50 @@ export default function StoreConfigScreen() {
 
     try {
       setLoading(true);
-      // Save to API
       await saveStoreConfig(formData);
-      // Save to local storage as backup
-      await saveStoreConfigLocal(formData);
       Alert.alert(t('configSaved'));
     } catch (error) {
       console.error('Error saving config:', error);
-      // Save to local storage even if API fails
-      try {
-        await saveStoreConfigLocal(formData);
-        Alert.alert(t('configSaved'));
-      } catch (localError) {
-        Alert.alert('Error', 'Failed to save configuration');
-      }
+      Alert.alert('Erro', 'Falha ao salvar configuração');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleClearAllData = () => {
+    Alert.alert(
+      'Limpar Todos os Dados',
+      'ATENÇÃO: Esta ação irá apagar permanentemente:\n\n• Configuração da Loja\n• Todos os Produtos\n• Todos os Inventários\n\nEsta ação não pode ser desfeita. Deseja continuar?',
+      [
+        {
+          text: 'Cancelar',
+          style: 'cancel',
+        },
+        {
+          text: 'Apagar Tudo',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setLoading(true);
+              await clearAllData();
+              setFormData({
+                store_id: '',
+                store_name: '',
+                email: '',
+                manager_phone: '',
+                manager_name: '',
+              });
+              Alert.alert('Sucesso', 'Todos os dados foram apagados com sucesso!');
+            } catch (error) {
+              console.error('Error clearing data:', error);
+              Alert.alert('Erro', 'Falha ao limpar os dados');
+            } finally {
+              setLoading(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   if (loading && !formData.store_id) {
@@ -182,6 +196,15 @@ export default function StoreConfigScreen() {
               </>
             )}
           </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.clearButton, loading && styles.clearButtonDisabled]}
+            onPress={handleClearAllData}
+            disabled={loading}
+          >
+            <Ionicons name="trash-outline" size={24} color="#FFFFFF" />
+            <Text style={styles.clearButtonText}>Limpar Todos os Dados</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -249,6 +272,25 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   saveButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  clearButton: {
+    backgroundColor: '#FF3B30',
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    marginTop: 32,
+    minHeight: 56,
+  },
+  clearButtonDisabled: {
+    opacity: 0.6,
+  },
+  clearButtonText: {
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: 'bold',
