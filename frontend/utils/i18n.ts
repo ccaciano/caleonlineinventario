@@ -109,8 +109,8 @@ const resources = {
       productAdded: "Produto cadastrado com sucesso!",
 
       // Scanner
-      scannerTitle: "Escanear Código de Barras/QR",
-      scannerInstructions: "Aponte a câmera para o código de barras ou QR",
+      scannerTitle: "Escanear Cód.Bar/QR",
+      scannerInstructions: "Aponte a câmera para o código de barras ou QRcode",
       cameraPermission: "Permissão de câmera necessária",
       grantPermission: "Conceder Permissão",
 

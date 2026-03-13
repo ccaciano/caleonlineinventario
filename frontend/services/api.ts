@@ -150,6 +150,12 @@ export const getCountedItems = async (inventoryId: string): Promise<CountedItem[
 }
 
 export const addCountedItem = async (inventoryId: string, item: Omit<CountedItem, "_id" | "inventory_id">): Promise<CountedItem> => {
+  // Validação de Status
+  const inventory = await LocalStorage.getInventoryById(inventoryId)
+  if (inventory?.status !== "open") {
+    throw new Error("Não é possível adicionar itens: esta contagem não está aberta.")
+  }
+
   const added = await LocalStorage.addCountedItem(inventoryId, item)
   if (!added) {
     throw new Error("Inventário não encontrado")
@@ -158,6 +164,12 @@ export const addCountedItem = async (inventoryId: string, item: Omit<CountedItem
 }
 
 export const updateCountedItem = async (inventoryId: string, itemId: string, updates: Partial<CountedItem>): Promise<CountedItem> => {
+  // Validação de Status
+  const inventory = await LocalStorage.getInventoryById(inventoryId)
+  if (inventory?.status !== "open") {
+    throw new Error("Não é possível alterar itens: esta contagem já foi encerrada.")
+  }
+
   const updated = await LocalStorage.updateCountedItem(inventoryId, itemId, updates)
   if (!updated) {
     throw new Error("Item não encontrado")
@@ -166,6 +178,12 @@ export const updateCountedItem = async (inventoryId: string, itemId: string, upd
 }
 
 export const deleteCountedItem = async (inventoryId: string, itemId: string): Promise<void> => {
+  // Validação de Status
+  const inventory = await LocalStorage.getInventoryById(inventoryId)
+  if (inventory?.status !== "open") {
+    throw new Error("Não é possível excluir itens: esta contagem já foi encerrada.")
+  }
+
   const success = await LocalStorage.deleteCountedItem(inventoryId, itemId)
   if (!success) {
     throw new Error("Item não encontrado")
