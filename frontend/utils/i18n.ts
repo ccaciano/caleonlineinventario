@@ -5,22 +5,22 @@ const resources = {
   pt: {
     translation: {
       // App Info
-      appTitle: "Inventory Manager",
+      appTitle: "CaléOnline Inventário",
       appSubtitle: "Gestão de Estoque",
 
       // Menu / Navigation
-      storeConfig: "Config. Loja",
-      inventories: "Inventários",
-      products: "Base de Produtos",
+      storeConfig: "  Config. Loja",
+      inventories: "  Inventários",
+      products: "  Base de Produtos",
       counting: "Contagem",
 
       // Store Config Screen
       storeConfigTitle: "Configuração da Loja",
-      storeId: "Código da Loja",
-      storeName: "Nome da Loja",
-      email: "E-mail",
-      managerPhone: "Celular do Gerente",
-      managerName: "Nome do Gerente",
+      storeId: "Código da Loja *",
+      storeName: "Nome da Loja *",
+      email: "E-mail (opcional)",
+      managerPhone: "Celular do Gerente (opcional)",
+      managerName: "Nome do Gerente (opcional)",
       saveConfig: "Salvar Configuração",
       configSaved: "Configuração salva com sucesso!",
       fillAllFields: "Por favor, preencha todos os campos",
