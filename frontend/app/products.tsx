@@ -5,6 +5,8 @@ import { Ionicons } from "@expo/vector-icons"
 import { getProducts, deleteProduct, uploadProductsFromContent, Product } from "../services/api"
 import * as DocumentPicker from "expo-document-picker"
 import ProductFormModal from "../components/ProductFormModal"
+import * as FileSystem from "expo-file-system/legacy"
+import { Buffer } from "buffer"
 
 export default function ProductsScreen() {
   const { t } = useTranslation()
@@ -165,20 +167,36 @@ export default function ProductsScreen() {
   const handleNativeUpload = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: "text/csv",
+        type: "*/*",
         copyToCacheDirectory: true,
       })
 
       if (result.canceled) return
+      const fileUri = result.assets[0].uri
 
-      // Read file content
-      const response = await fetch(result.assets[0].uri)
-      const csvContent = await response.text()
+      // Lemos como Base64 para não dar erro de Java no Android
+      const base64Content = await FileSystem.readAsStringAsync(fileUri, {
+        encoding: FileSystem.EncodingType.Base64,
+      })
 
-      await processCSVUpload(csvContent)
+      // Criamos o Buffer a partir do Base64
+      const buffer = Buffer.from(base64Content, "base64")
+
+      // Tenta UTF-8
+      let csvContent = buffer.toString("utf8")
+
+      // Se houver sinal de erro de encoding (caractere diamante com interrogação)
+      if (csvContent.includes("\ufffd") || csvContent.includes("")) {
+        console.log("🔄 Detectado erro de encoding. Convertendo para Latin1...")
+        csvContent = buffer.toString("latin1")
+      }
+
+      if (csvContent) {
+        await processCSVUpload(csvContent)
+      }
     } catch (error) {
-      console.error("Error picking document:", error)
-      Alert.alert(t("uploadError"), error instanceof Error ? error.message : "Unknown error")
+      console.error("❌ Error picking document:", error)
+      Alert.alert("Erro", "Falha ao processar o arquivo CSV.")
     }
   }
 
