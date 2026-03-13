@@ -35,21 +35,30 @@ export const getProducts = async (page: number = 1, limit: number = 50, search?:
 }
 
 export const createProduct = async (product: Omit<Product, "_id">): Promise<Product> => {
-  // Verificar se já existe produto com mesmo código
-  const existing = await LocalStorage.searchProductByCodeOrEan(product.code)
-  if (existing) {
-    throw new Error(`Produto com código "${product.code}" já existe`)
+  // 1. Criar um objeto "limpo" aplicando trim nos campos chave
+  const cleanProduct = {
+    ...product,
+    code: product.code.trim(),
+    ean: product.ean ? product.ean.trim() : "",
+    description: product.description.trim(),
   }
 
-  // Verificar EAN se fornecido
-  if (product.ean) {
-    const existingByEan = await LocalStorage.searchProductByCodeOrEan(product.ean)
+  // 2. Verificar duplicidade usando o código limpo
+  const existing = await LocalStorage.searchProductByCodeOrEan(cleanProduct.code)
+  if (existing) {
+    throw new Error(`Produto com código "${cleanProduct.code}" já existe`)
+  }
+
+  // 3. Verificar EAN (usando o valor limpo)
+  if (cleanProduct.ean) {
+    const existingByEan = await LocalStorage.searchProductByCodeOrEan(cleanProduct.ean)
     if (existingByEan) {
-      throw new Error(`Produto com EAN "${product.ean}" já existe`)
+      throw new Error(`Produto com EAN "${cleanProduct.ean}" já existe`)
     }
   }
 
-  return LocalStorage.addProduct(product)
+  // 4. Salva o objeto já higienizado
+  return LocalStorage.addProduct(cleanProduct)
 }
 
 export const updateProduct = async (id: string, product: Partial<Product>): Promise<Product> => {
@@ -68,7 +77,8 @@ export const deleteProduct = async (id: string): Promise<void> => {
 }
 
 export const searchProduct = async (query: string): Promise<Product | null> => {
-  return LocalStorage.searchProductByCodeOrEan(query)
+  const cleanQuery = query ? query.trim() : ""
+  return LocalStorage.searchProductByCodeOrEan(cleanQuery)
 }
 
 export const uploadProducts = async (file: { uri: string; name: string; type: string }, clearExisting: boolean = true): Promise<{ count: number; message: string }> => {
@@ -113,12 +123,13 @@ export const createInventory = async (description: string, date: string): Promis
   return LocalStorage.createInventory(description, date)
 }
 
+// No arquivo api.ts
 export const getInventory = async (id: string): Promise<Inventory> => {
   const inventory = await LocalStorage.getInventoryById(id)
   if (!inventory) {
     throw new Error("Inventário não encontrado")
   }
-  return inventory
+  return inventory // O localStorage agora já garante a nova referência
 }
 
 export const updateInventory = async (id: string, updates: Partial<Inventory>): Promise<Inventory> => {
@@ -136,12 +147,11 @@ export const deleteInventory = async (id: string): Promise<void> => {
   }
 }
 
-export const closeInventory = async (id: string): Promise<Inventory> => {
-  const closed = await LocalStorage.closeInventory(id)
-  if (!closed) {
-    throw new Error("Inventário não encontrado")
-  }
-  return closed
+export const closeInventory = async (id: string): Promise<Inventory | null> => {
+  // O await aqui é fundamental para garantir que o arquivo foi escrito
+  const updated = await updateInventory(id, { status: "closed" })
+  console.log("Arquivo atualizado com status closed para o ID:", id)
+  return updated
 }
 
 // ==================== ITENS CONTADOS ====================

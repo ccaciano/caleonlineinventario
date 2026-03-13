@@ -112,7 +112,7 @@ export const searchProductByCodeOrEan = async (query: string): Promise<Product |
   const products = await getProducts()
   const queryLower = query.toLowerCase()
 
-  return products.find((p) => p.code.toLowerCase() === queryLower || p.ean.toLowerCase() === queryLower) || null
+  return products.find((p) => p.code.toLowerCase().replace(" ", "") === queryLower || p.ean.toLowerCase().replace(" ", "") === queryLower) || null
 }
 
 export const getProductsPaginated = async (page: number, limit: number, search?: string): Promise<{ products: Product[]; total: number; page: number; totalPages: number }> => {
@@ -181,9 +181,16 @@ export const createInventory = async (description: string, date: string): Promis
   return newInventory
 }
 
+// No arquivo localStorage.ts
 export const getInventoryById = async (id: string): Promise<Inventory | null> => {
   const inventories = await getInventories()
-  return inventories.find((inv) => inv._id === id) || null
+  const inv = inventories.find((inv) => inv._id === id)
+
+  if (!inv) return null
+
+  // IMPORTANTE: Retorne uma CÓPIA PROFUNDA.
+  // Isso força o React a ver um novo objeto e atualizar a tela.
+  return JSON.parse(JSON.stringify(inv))
 }
 
 export const updateInventory = async (id: string, updates: Partial<Inventory>): Promise<Inventory | null> => {

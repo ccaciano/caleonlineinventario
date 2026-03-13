@@ -70,27 +70,27 @@ export default function StoreConfigScreen() {
         <View style={styles.form}>
           <View style={styles.inputGroup}>
             <Text style={styles.label}>{t("storeId")}</Text>
-            <TextInput style={styles.input} value={formData.store_id} onChangeText={(text) => setFormData({ ...formData, store_id: text })} placeholder={t("storeId")} placeholderTextColor="#999" />
+            <TextInput style={styles.input} value={formData.store_id} onChangeText={(text) => setFormData({ ...formData, store_id: text })} placeholder={t("storeIdInput")} placeholderTextColor="#999" />
           </View>
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>{t("storeName")}</Text>
-            <TextInput style={styles.input} value={formData.store_name} onChangeText={(text) => setFormData({ ...formData, store_name: text })} placeholder={t("storeName")} placeholderTextColor="#999" />
+            <TextInput style={styles.input} value={formData.store_name} onChangeText={(text) => setFormData({ ...formData, store_name: text })} placeholder={t("storeNameInput")} placeholderTextColor="#999" />
           </View>
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>{t("email")}</Text>
-            <TextInput style={styles.input} value={formData.email} onChangeText={(text) => setFormData({ ...formData, email: text })} placeholder={t("email")} placeholderTextColor="#999" keyboardType="email-address" autoCapitalize="none" />
+            <TextInput style={styles.input} value={formData.email} onChangeText={(text) => setFormData({ ...formData, email: text })} placeholder={t("emailInput")} placeholderTextColor="#999" keyboardType="email-address" autoCapitalize="none" />
           </View>
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>{t("managerPhone")}</Text>
-            <TextInput style={styles.input} value={formData.manager_phone} onChangeText={(text) => setFormData({ ...formData, manager_phone: text })} placeholder={t("managerPhone")} placeholderTextColor="#999" keyboardType="phone-pad" />
+            <TextInput style={styles.input} value={formData.manager_phone} onChangeText={(text) => setFormData({ ...formData, manager_phone: text })} placeholder={t("managerPhoneInput")} placeholderTextColor="#999" keyboardType="phone-pad" />
           </View>
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>{t("managerName")}</Text>
-            <TextInput style={styles.input} value={formData.manager_name} onChangeText={(text) => setFormData({ ...formData, manager_name: text })} placeholder={t("managerName")} placeholderTextColor="#999" />
+            <TextInput style={styles.input} value={formData.manager_name} onChangeText={(text) => setFormData({ ...formData, manager_name: text })} placeholder={t("managerNameInput")} placeholderTextColor="#999" />
           </View>
 
           <TouchableOpacity style={[styles.saveButton, loading && styles.saveButtonDisabled]} onPress={handleSave} disabled={loading}>

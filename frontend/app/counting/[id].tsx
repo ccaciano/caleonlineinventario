@@ -7,6 +7,8 @@ import { getInventory, getCountedItems, addCountedItem, deleteCountedItem, close
 import BarcodeScanner from "../../components/BarcodeScanner"
 import EditItemModal from "../../components/EditItemModal"
 import AddProductModal from "../../components/AddProductModal"
+import { useFocusEffect } from "expo-router"
+import { useCallback } from "react"
 
 // Função para validar data no formato DD/MM/AAAA
 const isValidDate = (dateStr: string): boolean => {
@@ -33,14 +35,14 @@ const convertToISO = (dateStr: string): string => {
 
 // Função para converter AAAA-MM-DD para DD/MM/AAAA (com proteção total)
 const convertFromISO = (isoStr: any): string => {
-  // Se não for string ou estiver vazio, retorna um traço ou vazio
-  if (!isoStr || typeof isoStr !== "string") {
-    return "-"
-  }
+  if (!isoStr || typeof isoStr !== "string") return "-"
 
   try {
-    const parts = isoStr.split("-")
-    if (parts.length !== 3) return isoStr // Retorna o original se não estiver no formato ISO
+    // Pega apenas a parte YYYY-MM-DD ignorando o que vem após o 'T'
+    const datePart = isoStr.split("T")[0]
+    const parts = datePart.split("-")
+
+    if (parts.length !== 3) return isoStr
 
     const [year, month, day] = parts
     return `${day}/${month}/${year}`
@@ -76,23 +78,30 @@ export default function CountingScreen() {
     expiry_date: "",
   })
 
-  useEffect(() => {
-    loadData()
-  }, [inventoryId])
-
-  const loadData = async () => {
+  // Altere o seu loadData para limpar o estado ANTES de qualquer coisa
+  const loadData = useCallback(async () => {
+    if (!inventoryId) return
+    setLoading(true)
     try {
-      setLoading(true)
-      const [invData, itemsData] = await Promise.all([getInventory(inventoryId), getCountedItems(inventoryId)])
+      const invData = await getInventory(inventoryId)
+      const itemsData = await getCountedItems(inventoryId)
       setInventory(invData)
       setItems(itemsData)
     } catch (error) {
-      console.error("Error loading data:", error)
-      Alert.alert("Erro", "Falha ao carregar dados")
+      console.error("Erro ao carregar:", error)
     } finally {
       setLoading(false)
     }
-  }
+  }, [inventoryId])
+
+  useFocusEffect(
+    useCallback(() => {
+      loadData()
+      return () => {
+        /* Cleanup limpo */
+      }
+    }, [loadData]),
+  )
 
   const handleSearch = async (query: string) => {
     if (!query.trim()) {
@@ -242,8 +251,7 @@ export default function CountingScreen() {
       return
     }
 
-    // Confirmação antes de fechar
-    Alert.alert("Fechar Inventário", "Deseja realmente fechar este inventário? Após fechado, não será possível adicionar novos itens.", [
+    Alert.alert("Fechar Inventário", "Deseja realmente fechar este inventário?", [
       { text: "Cancelar", style: "cancel" },
       {
         text: "Fechar",
@@ -251,12 +259,13 @@ export default function CountingScreen() {
         onPress: async () => {
           try {
             setLoading(true)
-            await closeInventory(inventoryId)
-
-            Alert.alert("Sucesso", "Inventário fechado com sucesso! Você pode compartilhar o relatório na tela de Inventários.", [{ text: "OK", onPress: () => router.back() }])
+            const result = await closeInventory(inventoryId)
+            if (result) {
+              setInventory(result) // Atualiza estado local instantaneamente
+              Alert.alert("Sucesso", "Inventário fechado com sucesso!")
+            }
           } catch (error) {
-            console.error("Error closing inventory:", error)
-            Alert.alert("Erro", (error as Error).message || "Falha ao fechar inventário")
+            Alert.alert("Erro", "Não foi possível fechar o inventário.")
           } finally {
             setLoading(false)
           }
@@ -274,9 +283,9 @@ export default function CountingScreen() {
         </View>
         <View style={styles.itemActions}>
           <TouchableOpacity
-            onPress={() => setEditItem(item)}
-            style={[styles.actionButton, isClosed && { opacity: 0.3 }]} // Opacidade baixa se fechado
-            disabled={isClosed} // Impede o clique
+            onPress={() => !isClosed && setEditItem(item)} // Trava lógica
+            style={[styles.actionButton, isClosed && { opacity: 0.3 }]}
+            disabled={isClosed}
           >
             <Ionicons name="create-outline" size={20} color="#007AFF" />
           </TouchableOpacity>
@@ -325,7 +334,17 @@ export default function CountingScreen() {
     return null
   }
 
-  const isClosed = inventory.status === "closed"
+  const isClosed = inventory?.status === "closed"
+
+  if (loading && !inventory) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#007AFF" />
+      </View>
+    )
+  }
+
+  if (!inventory) return null
 
   return (
     <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : "height"}>
@@ -336,7 +355,6 @@ export default function CountingScreen() {
           </TouchableOpacity>
 
           <View style={styles.headerContent}>
-            {/* 1º O Aviso (Status) */}
             {isClosed && (
               <View style={styles.alertBanner}>
                 <Ionicons name="lock-closed" size={16} color="#D32F2F" />
@@ -344,7 +362,6 @@ export default function CountingScreen() {
               </View>
             )}
 
-            {/* 2º Informações do Inventário */}
             <View style={styles.headerInfo}>
               <Text style={styles.title} numberOfLines={1}>
                 {inventory.description}
