@@ -3,7 +3,8 @@
 // usando armazenamento local em vez de chamadas HTTP
 
 import * as LocalStorage from "./localStorage"
-import initialProducts from "../assets/data/products.json"
+import initialProductsData from "../assets/data/products.json"
+const initialProducts = initialProductsData as Product[]
 
 // Re-exportar tipos do localStorage
 export type Product = LocalStorage.Product
@@ -229,20 +230,21 @@ export const seedDatabaseIfNeeded = async (): Promise<void> => {
   try {
     const result = await getProducts(1, 1)
 
+    // Forçamos o TypeScript a entender que initialProducts é uma lista de Product
+    const productsSource = initialProducts as Product[]
+
     if (result.total === 0) {
       console.log("🚚 Base vazia. Injetando base L'Occitane...")
 
-      // Mapeamos o JSON para garantir que cada item tenha um _id (UUID)
-      const productsWithIds: Product[] = initialProducts.map((prod) => ({
-        _id: prod._id || Math.random().toString(36).substring(2, 9), // Usa o ID do JSON ou gera um
+      // Agora o TS sabe que 'productsSource' tem o método .map()
+      const productsWithIds: Product[] = productsSource.map((prod: Product) => ({
+        _id: prod._id || Math.random().toString(36).substring(2, 9),
         code: prod.code,
         ean: prod.ean || "",
         description: prod.description,
       }))
 
-      // Salva o blocão de uma vez (Alta performance)
       await LocalStorage.saveRawProducts(productsWithIds)
-
       console.log(`✅ ${productsWithIds.length} produtos carregados.`)
     }
   } catch (error) {
