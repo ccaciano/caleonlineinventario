@@ -1,5 +1,5 @@
 import React, { useState } from "react"
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from "react-native"
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Platform, KeyboardAvoidingView, ScrollView } from "react-native"
 import { useTranslation } from "react-i18next"
 import { Ionicons } from "@expo/vector-icons"
 import Modal from "react-native-modal"
@@ -98,38 +98,42 @@ export default function CreateInventoryModal({ visible, onClose, onSuccess }: Cr
   }
 
   return (
-    <Modal isVisible={visible} onBackdropPress={handleClose} onBackButtonPress={handleClose} animationIn="slideInUp" animationOut="slideOutDown" backdropOpacity={0.5} style={styles.modal}>
-      <View style={styles.modalContent}>
-        <View style={styles.modalHeader}>
-          <Text style={styles.modalTitle}>{t("newInventory")}</Text>
-          <TouchableOpacity onPress={handleClose} disabled={loading}>
-            <Ionicons name="close" size={28} color="#8E8E93" />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.form}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>{t("description")}</Text>
-            <TextInput style={styles.input} value={description} onChangeText={setDescription} placeholder={t("description")} placeholderTextColor="#999" editable={!loading} />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>{t("date")}</Text>
-            <TextInput style={styles.input} value={date} onChangeText={handleDateChange} placeholder="DD/MM/AAAA" placeholderTextColor="#999" keyboardType="numeric" maxLength={10} editable={!loading} />
-            <Text style={styles.hint}>Formato: DD/MM/AAAA</Text>
-          </View>
-
-          <View style={styles.buttons}>
-            <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={handleClose} disabled={loading}>
-              <Text style={styles.cancelButtonText}>{t("cancel")}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={[styles.button, styles.createButton, loading && styles.buttonDisabled]} onPress={handleCreate} disabled={loading}>
-              {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.createButtonText}>{t("create")}</Text>}
+    <Modal isVisible={visible} onBackdropPress={handleClose} onBackButtonPress={handleClose} avoidKeyboard={true} animationIn="slideInUp" animationOut="slideOutDown" backdropOpacity={0.5} style={styles.modal}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1, justifyContent: "flex-end" }}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>{t("newInventory")}</Text>
+            <TouchableOpacity onPress={handleClose} disabled={loading}>
+              <Ionicons name="close" size={28} color="#8E8E93" />
             </TouchableOpacity>
           </View>
+
+          <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
+            <View style={styles.form}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>{t("description")}</Text>
+                <TextInput style={styles.input} value={description} onChangeText={setDescription} placeholder={t("description")} placeholderTextColor="#999" editable={!loading} />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>{t("date")}</Text>
+                <TextInput style={styles.input} value={date} onChangeText={handleDateChange} placeholder="DD/MM/AAAA" placeholderTextColor="#999" keyboardType="numeric" maxLength={10} editable={!loading} />
+                <Text style={styles.hint}>Formato: DD/MM/AAAA</Text>
+              </View>
+
+              <View style={styles.buttons}>
+                <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={handleClose} disabled={loading}>
+                  <Text style={styles.cancelButtonText}>{t("cancel")}</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={[styles.button, styles.createButton, loading && styles.buttonDisabled]} onPress={handleCreate} disabled={loading}>
+                  {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.createButtonText}>{t("create")}</Text>}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   )
 }
@@ -205,6 +209,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#000",
+    textAlign: "center",
   },
   createButton: {
     backgroundColor: "#007AFF",
@@ -213,6 +218,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     color: "#FFFFFF",
+    textAlign: "center",
   },
   buttonDisabled: {
     opacity: 0.6,

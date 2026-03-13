@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react"
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from "react-native"
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Platform, KeyboardAvoidingView, ScrollView } from "react-native"
 import { useTranslation } from "react-i18next"
 import { Ionicons } from "@expo/vector-icons"
 import Modal from "react-native-modal"
@@ -101,92 +101,96 @@ export default function EditItemModal({ visible, item, inventoryId, onClose, onS
   }
 
   return (
-    <Modal isVisible={visible} onBackdropPress={onClose} onBackButtonPress={onClose} animationIn="slideInUp" animationOut="slideOutDown" backdropOpacity={0.5} style={styles.modal}>
-      <View style={styles.modalContent}>
-        <View style={styles.modalHeader}>
-          <Text style={styles.modalTitle}>{t("editItem")}</Text>
-          <TouchableOpacity onPress={onClose} disabled={loading}>
-            <Ionicons name="close" size={28} color="#8E8E93" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Read-only fields */}
-        <View style={styles.readOnlySection}>
-          <View style={styles.readOnlyField}>
-            <Text style={styles.readOnlyLabel}>{t("productCode")}</Text>
-            <Text style={styles.readOnlyValue}>{item.product_code}</Text>
-          </View>
-          <View style={styles.readOnlyField}>
-            <Text style={styles.readOnlyLabel}>{t("ean")}</Text>
-            <Text style={styles.readOnlyValue}>{item.ean}</Text>
-          </View>
-          <View style={styles.readOnlyField}>
-            <Text style={styles.readOnlyLabel}>{t("description")}</Text>
-            <Text style={styles.readOnlyValue}>{item.description}</Text>
-          </View>
-        </View>
-
-        <View style={styles.divider} />
-
-        {/* Editable fields */}
-        <View style={styles.form}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>{t("quantity")} *</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.quantity}
-              onChangeText={(text) => {
-                // Apenas números
-                const numbers = text.replace(/[^0-9]/g, "")
-                setFormData({ ...formData, quantity: numbers })
-              }}
-              placeholder={t("quantity")}
-              placeholderTextColor="#999"
-              keyboardType="numeric"
-              editable={!loading}
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>{t("lot")} (opcional)</Text>
-            <TextInput style={styles.input} value={formData.lot} onChangeText={(text) => setFormData({ ...formData, lot: text })} placeholder={t("lot")} placeholderTextColor="#999" editable={!loading} />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>{t("expiryDate")} (opcional)</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.expiry_date}
-              onChangeText={(text) => {
-                // Formatar automaticamente DD/MM/AAAA
-                let formatted = text.replace(/\D/g, "")
-                if (formatted.length >= 2) {
-                  formatted = formatted.slice(0, 2) + "/" + formatted.slice(2)
-                }
-                if (formatted.length >= 5) {
-                  formatted = formatted.slice(0, 5) + "/" + formatted.slice(5, 9)
-                }
-                setFormData({ ...formData, expiry_date: formatted })
-              }}
-              placeholder="DD/MM/AAAA"
-              placeholderTextColor="#999"
-              keyboardType="numeric"
-              maxLength={10}
-              editable={!loading}
-            />
-          </View>
-
-          <View style={styles.buttons}>
-            <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={onClose} disabled={loading}>
-              <Text style={styles.cancelButtonText}>{t("cancel")}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={[styles.button, styles.saveButton, loading && styles.buttonDisabled]} onPress={handleSave} disabled={loading}>
-              {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.saveButtonText}>{t("save")}</Text>}
+    <Modal isVisible={visible} onBackdropPress={onClose} onBackButtonPress={onClose} avoidKeyboard={true} animationIn="slideInUp" animationOut="slideOutDown" backdropOpacity={0.5} style={styles.modal}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1, justifyContent: "flex-end" }}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>{t("editItem")}</Text>
+            <TouchableOpacity onPress={onClose} disabled={loading}>
+              <Ionicons name="close" size={28} color="#8E8E93" />
             </TouchableOpacity>
           </View>
+
+          {/* Read-only fields */}
+          <View style={styles.readOnlySection}>
+            <View style={styles.readOnlyField}>
+              <Text style={styles.readOnlyLabel}>{t("productCode")}</Text>
+              <Text style={styles.readOnlyValue}>{item.product_code}</Text>
+            </View>
+            <View style={styles.readOnlyField}>
+              <Text style={styles.readOnlyLabel}>{t("ean")}</Text>
+              <Text style={styles.readOnlyValue}>{item.ean}</Text>
+            </View>
+            <View style={styles.readOnlyField}>
+              <Text style={styles.readOnlyLabel}>{t("description")}</Text>
+              <Text style={styles.readOnlyValue}>{item.description}</Text>
+            </View>
+          </View>
+
+          <View style={styles.divider} />
+
+          {/* Editable fields */}
+          <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
+            <View style={styles.form}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>{t("quantity")} *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={formData.quantity}
+                  onChangeText={(text) => {
+                    // Apenas números
+                    const numbers = text.replace(/[^0-9]/g, "")
+                    setFormData({ ...formData, quantity: numbers })
+                  }}
+                  placeholder={t("quantity")}
+                  placeholderTextColor="#999"
+                  keyboardType="numeric"
+                  editable={!loading}
+                />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>{t("lot")} (opcional)</Text>
+                <TextInput style={styles.input} value={formData.lot} onChangeText={(text) => setFormData({ ...formData, lot: text })} placeholder={t("lot")} placeholderTextColor="#999" editable={!loading} />
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>{t("expiryDate")} (opcional)</Text>
+                <TextInput
+                  style={styles.input}
+                  value={formData.expiry_date}
+                  onChangeText={(text) => {
+                    // Formatar automaticamente DD/MM/AAAA
+                    let formatted = text.replace(/\D/g, "")
+                    if (formatted.length >= 2) {
+                      formatted = formatted.slice(0, 2) + "/" + formatted.slice(2)
+                    }
+                    if (formatted.length >= 5) {
+                      formatted = formatted.slice(0, 5) + "/" + formatted.slice(5, 9)
+                    }
+                    setFormData({ ...formData, expiry_date: formatted })
+                  }}
+                  placeholder="DD/MM/AAAA"
+                  placeholderTextColor="#999"
+                  keyboardType="numeric"
+                  maxLength={10}
+                  editable={!loading}
+                />
+              </View>
+
+              <View style={styles.buttons}>
+                <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={onClose} disabled={loading}>
+                  <Text style={styles.cancelButtonText}>{t("cancel")}</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={[styles.button, styles.saveButton, loading && styles.buttonDisabled]} onPress={handleSave} disabled={loading}>
+                  {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.saveButtonText}>{t("save")}</Text>}
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   )
 }
@@ -283,6 +287,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#000",
+    textAlign: "center",
   },
   saveButton: {
     backgroundColor: "#007AFF",
@@ -291,6 +296,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     color: "#FFFFFF",
+    textAlign: "center",
   },
   buttonDisabled: {
     opacity: 0.6,
