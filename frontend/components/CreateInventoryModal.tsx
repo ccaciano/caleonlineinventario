@@ -102,59 +102,51 @@ export default function CreateInventoryModal({ visible, onClose, onSuccess }: Cr
       isVisible={visible}
       onBackdropPress={handleClose}
       onBackButtonPress={handleClose}
-      // No Android (APK) com adjustResize, o sistema já cuida do deslocamento.
-      // Deixamos true apenas para o iOS.
-      avoidKeyboard={Platform.OS === "ios"}
-      animationIn="slideInUp"
-      animationOut="slideOutDown"
+      // Animação descendo do topo
+      animationIn="slideInDown"
+      animationOut="slideOutUp"
       backdropOpacity={0.5}
-      style={styles.modal}
+      // Alinha o conteúdo no topo da tela
+      style={[styles.modal, { justifyContent: "flex-start", margin: 0 }]}
+      avoidKeyboard={Platform.OS === "ios"}
+      propagateSwipe={true}
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1, justifyContent: "flex-end" }}
-        // Offset para garantir que o campo de data e os botões não fiquem colados no teclado
-        keyboardVerticalOffset={Platform.OS === "android" ? 24 : 0}
-      >
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{t("newInventory")}</Text>
-            <TouchableOpacity onPress={handleClose} disabled={loading}>
-              <Ionicons name="close" size={28} color="#8E8E93" />
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView
-            bounces={false}
-            showsVerticalScrollIndicator={false}
-            // Importante para que o formulário ocupe o espaço necessário e permita scroll
-            contentContainerStyle={{ flexGrow: 1 }}
-          >
-            <View style={styles.form}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>{t("description")}</Text>
-                <TextInput style={styles.input} value={description} onChangeText={setDescription} placeholder={t("description")} placeholderTextColor="#999" editable={!loading} />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>{t("date")}</Text>
-                <TextInput style={styles.input} value={date} onChangeText={handleDateChange} placeholder="DD/MM/AAAA" placeholderTextColor="#999" keyboardType="numeric" maxLength={10} editable={!loading} />
-                <Text style={styles.hint}>Formato: DD/MM/AAAA</Text>
-              </View>
-
-              <View style={styles.buttons}>
-                <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={handleClose} disabled={loading}>
-                  <Text style={styles.cancelButtonText}>{t("cancel")}</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={[styles.button, styles.createButton, loading && styles.buttonDisabled]} onPress={handleCreate} disabled={loading}>
-                  {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.createButtonText}>{t("create")}</Text>}
-                </TouchableOpacity>
-              </View>
-            </View>
-          </ScrollView>
+      <View style={[styles.modalContent, styles.modalTop]}>
+        <View style={styles.modalHeader}>
+          <Text style={styles.modalTitle}>{t("newInventory")}</Text>
+          <TouchableOpacity onPress={handleClose} disabled={loading}>
+            <Ionicons name="close" size={28} color="#8E8E93" />
+          </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
+
+        <ScrollView bounces={false} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }}>
+          <View style={styles.form}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>{t("description")}</Text>
+              <TextInput style={styles.input} value={description} onChangeText={setDescription} placeholder={t("description")} placeholderTextColor="#999" editable={!loading} />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>{t("date")}</Text>
+              <TextInput style={styles.input} value={date} onChangeText={handleDateChange} placeholder="DD/MM/AAAA" placeholderTextColor="#999" keyboardType="numeric" maxLength={10} editable={!loading} />
+              <Text style={styles.hint}>Formato: DD/MM/AAAA</Text>
+            </View>
+
+            <View style={styles.buttons}>
+              <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={handleClose} disabled={loading}>
+                <Text style={styles.cancelButtonText}>{t("cancel")}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={[styles.button, styles.createButton, loading && styles.buttonDisabled]} onPress={handleCreate} disabled={loading}>
+                {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.createButtonText}>{t("create")}</Text>}
+              </TouchableOpacity>
+            </View>
+
+            {/* Pequeno respiro para o Android em caso de telas muito pequenas */}
+            {Platform.OS === "android" && <View style={{ height: 60 }} />}
+          </View>
+        </ScrollView>
+      </View>
     </Modal>
   )
 }
@@ -164,12 +156,23 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     margin: 0,
   },
+  modalTop: {
+    backgroundColor: "#FFFFFF",
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    padding: 24,
+    // Altura segura para Android e iOS (StatusBar)
+    paddingTop: Platform.OS === "android" ? 45 : 60,
+    maxHeight: "85%",
+  },
   modalContent: {
     backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
-    maxHeight: "80%", // Isso permite que o modal diminua de tamanho para caber acima do teclado
+    minHeight: 350,
   },
   modalHeader: {
     flexDirection: "row",

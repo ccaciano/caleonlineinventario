@@ -105,113 +105,99 @@ export default function EditItemModal({ visible, item, inventoryId, onClose, onS
       isVisible={visible}
       onBackdropPress={onClose}
       onBackButtonPress={onClose}
-      // No Android, o 'adjustResize' do app.json cuida disso.
-      // Mantemos true apenas para o iOS para evitar conflitos no APK.
-      avoidKeyboard={Platform.OS === "ios"}
-      animationIn="slideInUp"
-      animationOut="slideOutDown"
+      // Animação vindo de cima
+      animationIn="slideInDown"
+      animationOut="slideOutUp"
       backdropOpacity={0.5}
-      style={styles.modal}
+      // Alinha o modal no topo e remove margens padrão
+      style={[styles.modal, { justifyContent: "flex-start", margin: 0 }]}
+      avoidKeyboard={Platform.OS === "ios"}
+      propagateSwipe={true}
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1, justifyContent: "flex-end" }}
-        // Ajuste fino para o APK: compensa a altura da barra de status se necessário
-        keyboardVerticalOffset={Platform.OS === "android" ? 24 : 0}
-      >
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>{t("editItem")}</Text>
-            <TouchableOpacity onPress={onClose} disabled={loading}>
-              <Ionicons name="close" size={28} color="#8E8E93" />
-            </TouchableOpacity>
+      <View style={[styles.modalContent, styles.modalTop]}>
+        {/* Header fixo no topo do modal */}
+        <View style={styles.modalHeader}>
+          <Text style={styles.modalTitle}>{t("editItem")}</Text>
+          <TouchableOpacity onPress={onClose} disabled={loading}>
+            <Ionicons name="close" size={28} color="#8E8E93" />
+          </TouchableOpacity>
+        </View>
+
+        <ScrollView bounces={false} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }}>
+          {/* Mantemos a seção de leitura aqui. No Android, se o teclado subir,
+         o ScrollView permitirá rolar para baixo para ver os inputs.
+      */}
+          <View style={styles.readOnlySection}>
+            <View style={styles.readOnlyField}>
+              <Text style={styles.readOnlyLabel}>{t("productCode")}</Text>
+              <Text style={styles.readOnlyValue}>{item.product_code}</Text>
+            </View>
+            <View style={styles.readOnlyField}>
+              <Text style={styles.readOnlyLabel}>{t("ean")}</Text>
+              <Text style={styles.readOnlyValue}>{item.ean}</Text>
+            </View>
+            <View style={styles.readOnlyField}>
+              <Text style={styles.readOnlyLabel}>{t("description")}</Text>
+              <Text style={styles.readOnlyValue}>{item.description}</Text>
+            </View>
           </View>
 
-          <ScrollView
-            bounces={false}
-            showsVerticalScrollIndicator={false}
-            // Garante que o conteúdo seja rolável mesmo com o teclado ocupando metade da tela
-            contentContainerStyle={{ flexGrow: 1 }}
-          >
-            {/* DICA: Se a tela do celular for pequena, mover a 'readOnlySection'
-          para dentro do ScrollView (como feito aqui) garante que o usuário
-          possa rolar para "esconder" os dados fixos e focar nos inputs.
-        */}
-            <View style={styles.readOnlySection}>
-              <View style={styles.readOnlyField}>
-                <Text style={styles.readOnlyLabel}>{t("productCode")}</Text>
-                <Text style={styles.readOnlyValue}>{item.product_code}</Text>
-              </View>
-              <View style={styles.readOnlyField}>
-                <Text style={styles.readOnlyLabel}>{t("ean")}</Text>
-                <Text style={styles.readOnlyValue}>{item.ean}</Text>
-              </View>
-              <View style={styles.readOnlyField}>
-                <Text style={styles.readOnlyLabel}>{t("description")}</Text>
-                <Text style={styles.readOnlyValue}>{item.description}</Text>
-              </View>
+          <View style={styles.divider} />
+
+          <View style={styles.form}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>{t("quantity")} *</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.quantity}
+                onChangeText={(text) => {
+                  const numbers = text.replace(/[^0-9]/g, "")
+                  setFormData({ ...formData, quantity: numbers })
+                }}
+                placeholder={t("quantity")}
+                keyboardType="numeric"
+                editable={!loading}
+              />
             </View>
 
-            <View style={styles.divider} />
-
-            <View style={styles.form}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>{t("quantity")} *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.quantity}
-                  onChangeText={(text) => {
-                    const numbers = text.replace(/[^0-9]/g, "")
-                    setFormData({ ...formData, quantity: numbers })
-                  }}
-                  placeholder={t("quantity")}
-                  placeholderTextColor="#999"
-                  keyboardType="numeric"
-                  editable={!loading}
-                />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>{t("lot")} (opcional)</Text>
-                <TextInput style={styles.input} value={formData.lot} onChangeText={(text) => setFormData({ ...formData, lot: text })} placeholder={t("lot")} placeholderTextColor="#999" editable={!loading} />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>{t("expiryDate")} (opcional)</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.expiry_date}
-                  onChangeText={(text) => {
-                    let formatted = text.replace(/\D/g, "")
-                    if (formatted.length >= 2) {
-                      formatted = formatted.slice(0, 2) + "/" + formatted.slice(2)
-                    }
-                    if (formatted.length >= 5) {
-                      formatted = formatted.slice(0, 5) + "/" + formatted.slice(5, 9)
-                    }
-                    setFormData({ ...formData, expiry_date: formatted })
-                  }}
-                  placeholder="DD/MM/AAAA"
-                  placeholderTextColor="#999"
-                  keyboardType="numeric"
-                  maxLength={10}
-                  editable={!loading}
-                />
-              </View>
-
-              <View style={styles.buttons}>
-                <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={onClose} disabled={loading}>
-                  <Text style={styles.cancelButtonText}>{t("cancel")}</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={[styles.button, styles.saveButton, loading && styles.buttonDisabled]} onPress={handleSave} disabled={loading}>
-                  {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.saveButtonText}>{t("save")}</Text>}
-                </TouchableOpacity>
-              </View>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>{t("lot")} (opcional)</Text>
+              <TextInput style={styles.input} value={formData.lot} onChangeText={(text) => setFormData({ ...formData, lot: text })} placeholder={t("lot")} editable={!loading} />
             </View>
-          </ScrollView>
-        </View>
-      </KeyboardAvoidingView>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>{t("expiryDate")} (opcional)</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.expiry_date}
+                onChangeText={(text) => {
+                  let formatted = text.replace(/\D/g, "")
+                  if (formatted.length >= 2) formatted = formatted.slice(0, 2) + "/" + formatted.slice(2)
+                  if (formatted.length >= 5) formatted = formatted.slice(0, 5) + "/" + formatted.slice(5, 9)
+                  setFormData({ ...formData, expiry_date: formatted })
+                }}
+                placeholder="DD/MM/AAAA"
+                keyboardType="numeric"
+                maxLength={10}
+                editable={!loading}
+              />
+            </View>
+
+            <View style={styles.buttons}>
+              <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={onClose} disabled={loading}>
+                <Text style={styles.cancelButtonText}>{t("cancel")}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={[styles.button, styles.saveButton, loading && styles.buttonDisabled]} onPress={handleSave} disabled={loading}>
+                {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.saveButtonText}>{t("save")}</Text>}
+              </TouchableOpacity>
+            </View>
+
+            {/* Espaçador extra opcional para o Android conseguir rolar além do teclado */}
+            {Platform.OS === "android" && <View style={{ height: 100 }} />}
+          </View>
+        </ScrollView>
+      </View>
     </Modal>
   )
 }
@@ -221,12 +207,21 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     margin: 0,
   },
+  modalTop: {
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    paddingTop: Platform.OS === "android" ? 40 : 60,
+    maxHeight: "90%",
+    backgroundColor: "#FFF",
+  },
   modalContent: {
     backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
-    maxHeight: "90%", // Permite que o modal use quase a tela toda se precisar
+    minHeight: 500,
   },
   modalHeader: {
     flexDirection: "row",

@@ -76,63 +76,68 @@ export default function AddProductModal({ visible, initialCode, onClose, onSucce
       isVisible={visible}
       onBackdropPress={handleClose}
       onBackButtonPress={handleClose}
-      // No Android com 'adjustResize', o avoidKeyboard as vezes precisa ser false
-      // para não "pular" demais, mas no iOS é obrigatório ser true.
-      avoidKeyboard={Platform.OS === "ios"}
-      animationIn="slideInUp"
-      animationOut="slideOutDown"
+      // Alinhado com a estratégia de descer do topo
+      animationIn="slideInDown"
+      animationOut="slideOutUp"
       backdropOpacity={0.5}
-      style={styles.modal} // Certifique-se que o estilo tem margin: 0
+      // Posicionamento no topo e remoção de margens
+      style={[styles.modal, { justifyContent: "flex-start", margin: 0 }]}
+      avoidKeyboard={Platform.OS === "ios"}
+      propagateSwipe={true}
     >
-      <KeyboardAvoidingView
-        // 'padding' costuma ser mais estável para modais que sobem do rodapé
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1, justifyContent: "flex-end" }}
-        // Esse offset é a "mágica" para o botão não ficar colado no teclado
-        keyboardVerticalOffset={Platform.OS === "android" ? 24 : 0}
-      >
-        <View style={styles.modalContent}>
-          <View style={styles.modalHeader}>
-            <Ionicons name="alert-circle" size={32} color="#FF9500" />
-            <Text style={styles.modalTitle}>{t("productNotFound")}</Text>
-            <TouchableOpacity onPress={handleClose} disabled={loading}>
-              <Ionicons name="close" size={28} color="#8E8E93" />
-            </TouchableOpacity>
-          </View>
-
-          <Text style={styles.message}>{t("productNotFoundMessage")}</Text>
-
-          {/* O ScrollView precisa de flexGrow: 1 para o teclado empurrar o conteúdo */}
-          <ScrollView bounces={false} showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
-            <View style={styles.form}>
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>{t("productCode")} *</Text>
-                <TextInput style={styles.input} value={formData.code} onChangeText={(text) => setFormData({ ...formData, code: text })} placeholder={t("productCode")} placeholderTextColor="#999" editable={!loading} />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>{t("ean")} (opcional)</Text>
-                <TextInput style={styles.input} value={formData.ean} onChangeText={(text) => setFormData({ ...formData, ean: text })} placeholder={t("ean")} placeholderTextColor="#999" editable={!loading} />
-              </View>
-
-              <View style={styles.inputGroup}>
-                <Text style={styles.label}>{t("description")} *</Text>
-                <TextInput style={[styles.input, styles.textArea]} value={formData.description} onChangeText={(text) => setFormData({ ...formData, description: text })} placeholder={t("description")} placeholderTextColor="#999" multiline numberOfLines={2} editable={!loading} />
-              </View>
-
-              <View style={styles.buttons}>
-                <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={handleClose} disabled={loading}>
-                  <Text style={styles.cancelButtonText}>{t("cancel")}</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity style={[styles.button, styles.addButton, loading && styles.buttonDisabled]} onPress={handleAdd} disabled={loading}>
-                  {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.addButtonText}>{t("registerProduct")}</Text>}
-                </TouchableOpacity>
-              </View>
-            </View>
-          </ScrollView>
+      <View style={[styles.modalContent, styles.modalTop]}>
+        <View style={styles.modalHeader}>
+          <Ionicons name="alert-circle" size={32} color="#FF9500" />
+          <Text style={styles.modalTitle}>{t("productNotFound")}</Text>
+          <TouchableOpacity onPress={handleClose} disabled={loading}>
+            <Ionicons name="close" size={28} color="#8E8E93" />
+          </TouchableOpacity>
         </View>
-      </KeyboardAvoidingView>
+
+        <Text style={styles.message}>{t("productNotFoundMessage")}</Text>
+
+        <ScrollView bounces={false} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }}>
+          <View style={styles.form}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>{t("productCode")} *</Text>
+              <TextInput style={styles.input} value={formData.code} onChangeText={(text) => setFormData({ ...formData, code: text })} placeholder={t("productCode")} placeholderTextColor="#999" editable={!loading} />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>{t("ean")} (opcional)</Text>
+              <TextInput style={styles.input} value={formData.ean} onChangeText={(text) => setFormData({ ...formData, ean: text })} placeholder={t("ean")} placeholderTextColor="#999" editable={!loading} />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>{t("description")} *</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={formData.description}
+                onChangeText={(text) => setFormData({ ...formData, description: text })}
+                placeholder={t("description")}
+                placeholderTextColor="#999"
+                multiline
+                numberOfLines={2}
+                textAlignVertical="top"
+                editable={!loading}
+              />
+            </View>
+
+            <View style={styles.buttons}>
+              <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={handleClose} disabled={loading}>
+                <Text style={styles.cancelButtonText}>{t("cancel")}</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={[styles.button, styles.addButton, loading && styles.buttonDisabled]} onPress={handleAdd} disabled={loading}>
+                {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.addButtonText}>{t("registerProduct")}</Text>}
+              </TouchableOpacity>
+            </View>
+
+            {/* Espaçador para Android */}
+            {Platform.OS === "android" && <View style={{ height: 100 }} />}
+          </View>
+        </ScrollView>
+      </View>
     </Modal>
   )
 }
@@ -142,14 +147,22 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
     margin: 0,
   },
+  modalTop: {
+    backgroundColor: "#FFFFFF",
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
+    borderTopLeftRadius: 0,
+    borderTopRightRadius: 0,
+    padding: 24,
+    paddingTop: Platform.OS === "android" ? 45 : 60, // Ajuste para o notch
+    maxHeight: "90%",
+  },
   modalContent: {
     backgroundColor: "#FFFFFF",
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
-    // CRÍTICO: Não use 'height' fixo. Use maxHeight para o modal encolher se o teclado for grande.
-    maxHeight: "85%",
-    width: "100%",
+    minHeight: 450,
   },
   modalHeader: {
     flexDirection: "row",
