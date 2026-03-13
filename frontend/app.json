@@ -1,10 +1,40 @@
 {
   "expo": {
-    "extra": {
-      "eas": {}
+    "name": "CaléOnline Inventário",
+    "slug": "caleo-online-inventario",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "frontend",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.ccaciano.inventorymanager"
     },
     "android": {
-      "package": "com.ccaciano.inventorymanager"
+      "package": "com.ccaciano.inventorymanager",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "backgroundColor": "#007AFF"
+      },
+      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE", "android.permission.CAMERA", "android.permission.RECORD_AUDIO", "android.permission.READ_EXTERNAL_STORAGE", "android.permission.WRITE_EXTERNAL_STORAGE", "android.permission.INTERNET"]
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Permitir uso da câmera para leitura de códigos de barras."
+        }
+      ],
+      "expo-file-system",
+      "expo-document-picker"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {}
     }
   }
 }
