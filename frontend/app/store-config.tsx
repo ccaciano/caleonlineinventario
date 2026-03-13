@@ -52,38 +52,6 @@ export default function StoreConfigScreen() {
     }
   }
 
-  const handleClearAllData = () => {
-    Alert.alert("Limpar Todos os Dados", "ATENÇÃO: Esta ação irá apagar permanentemente:\n\n• Configuração da Loja\n• Todos os Produtos\n• Todos os Inventários\n\nEsta ação não pode ser desfeita. Deseja continuar?", [
-      {
-        text: "Cancelar",
-        style: "cancel",
-      },
-      {
-        text: "Apagar Tudo",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            setLoading(true)
-            await clearAllData()
-            setFormData({
-              store_id: "",
-              store_name: "",
-              email: "",
-              manager_phone: "",
-              manager_name: "",
-            })
-            Alert.alert("Sucesso", "Todos os dados foram apagados com sucesso!")
-          } catch (error) {
-            console.error("Error clearing data:", error)
-            Alert.alert("Erro", "Falha ao limpar os dados")
-          } finally {
-            setLoading(false)
-          }
-        },
-      },
-    ])
-  }
-
   if (loading && !formData.store_id) {
     return (
       <View style={styles.loadingContainer}>
@@ -134,11 +102,6 @@ export default function StoreConfigScreen() {
                 <Text style={styles.saveButtonText}>{t("saveConfig")}</Text>
               </>
             )}
-          </TouchableOpacity>
-
-          <TouchableOpacity style={[styles.clearButton, loading && styles.clearButtonDisabled]} onPress={handleClearAllData} disabled={loading}>
-            <Ionicons name="trash-outline" size={24} color="#FFFFFF" />
-            <Text style={styles.clearButtonText}>Limpar Todos os Dados</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

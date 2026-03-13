@@ -174,7 +174,7 @@ export default function DrawerLayout() {
           options={{
             drawerLabel: t("inventories"),
             title: t("inventories"),
-            drawerIcon: ({ color, size }) => <Ionicons name="list-outline" size={size} color={color} />,
+            drawerIcon: ({ color, size }) => <Ionicons name="clipboard-outline" size={size} color={color} />,
           }}
         />
         <Drawer.Screen
@@ -182,7 +182,7 @@ export default function DrawerLayout() {
           options={{
             drawerLabel: t("products"),
             title: t("products"),
-            drawerIcon: ({ color, size }) => <Ionicons name="cube-outline" size={size} color={color} />,
+            drawerIcon: ({ color, size }) => <Ionicons name="cart-outline" size={size} color={color} />,
           }}
         />
         <Drawer.Screen
@@ -190,7 +190,7 @@ export default function DrawerLayout() {
           options={{
             drawerLabel: t("storeConfig"),
             title: t("storeConfig"),
-            drawerIcon: ({ color, size }) => <Ionicons name="settings-outline" size={size} color={color} />,
+            drawerIcon: ({ color, size }) => <Ionicons name="storefront-outline" size={size} color={color} />,
           }}
         />
         <Drawer.Screen
@@ -200,6 +200,14 @@ export default function DrawerLayout() {
             title: t("counting"),
             drawerItemStyle: { display: "none" }, // Ocultar do menu drawer
             drawerIcon: ({ color, size }) => <Ionicons name="barcode-outline" size={size} color={color} />,
+          }}
+        />
+        <Drawer.Screen
+          name="settings"
+          options={{
+            drawerLabel: t("dadosConfig"),
+            title: t("dadosConfig"),
+            drawerIcon: ({ color, size }) => <Ionicons name="settings-outline" size={size} color={color} />,
           }}
         />
       </Drawer>

@@ -216,9 +216,9 @@ export default function CountingScreen() {
             await deleteCountedItem(inventoryId, item._id!)
             setItems(items.filter((i) => i._id !== item._id))
             Alert.alert("Sucesso", "Item excluído")
-          } catch (error) {
-            console.error("Error deleting item:", error)
-            Alert.alert("Erro", "Falha ao excluir item")
+          } catch (error: any) {
+            // Em vez de crashar, mostra um alerta educado
+            Alert.alert("Ação não permitida", error.message || "Não foi possível excluir o item.")
           }
         },
       },
@@ -273,10 +273,15 @@ export default function CountingScreen() {
           <Text style={styles.itemCode}>{item.product_code}</Text>
         </View>
         <View style={styles.itemActions}>
-          <TouchableOpacity onPress={() => setEditItem(item)} style={styles.actionButton}>
+          <TouchableOpacity
+            onPress={() => setEditItem(item)}
+            style={[styles.actionButton, isClosed && { opacity: 0.3 }]} // Opacidade baixa se fechado
+            disabled={isClosed} // Impede o clique
+          >
             <Ionicons name="create-outline" size={20} color="#007AFF" />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => handleDeleteItem(item)} style={styles.actionButton}>
+
+          <TouchableOpacity onPress={() => handleDeleteItem(item)} style={[styles.actionButton, isClosed && { opacity: 0.3 }]} disabled={isClosed}>
             <Ionicons name="trash-outline" size={20} color="#FF3B30" />
           </TouchableOpacity>
         </View>
@@ -329,17 +334,24 @@ export default function CountingScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="#007AFF" />
           </TouchableOpacity>
-          <View style={styles.headerInfo}>
-            <Text style={styles.title} numberOfLines={1}>
-              {inventory.description}
-            </Text>
-            <Text style={styles.subtitle}>{convertFromISO(inventory.date)}</Text>
-          </View>
-          {isClosed && (
-            <View style={styles.closedBadge}>
-              <Text style={styles.closedBadgeText}>{t("closed")}</Text>
+
+          <View style={styles.headerContent}>
+            {/* 1º O Aviso (Status) */}
+            {isClosed && (
+              <View style={styles.alertBanner}>
+                <Ionicons name="lock-closed" size={16} color="#D32F2F" />
+                <Text style={styles.alertText}>Contagem encerrada</Text>
+              </View>
+            )}
+
+            {/* 2º Informações do Inventário */}
+            <View style={styles.headerInfo}>
+              <Text style={styles.title} numberOfLines={1}>
+                {inventory.description}
+              </Text>
+              <Text style={styles.subtitle}>{convertFromISO(inventory.date)}</Text>
             </View>
-          )}
+          </View>
         </View>
 
         {!isClosed && (
@@ -491,6 +503,37 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F2F2F7",
   },
+  alertBanner: {
+    backgroundColor: "#FFEBEE",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    borderWidth: 1,
+    borderColor: "#FFCDD2",
+    width: "100%", // Ocupa a largura total acima do título
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "flex-start", // Mantém a seta alinhada ao topo do card
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 16,
+    gap: 12,
+  },
+  headerContent: {
+    flex: 1,
+    flexDirection: "column", // Empilha os elementos
+    gap: 8, // Espaço entre o banner e o título
+  },
+  alertText: {
+    color: "#D32F2F",
+    fontWeight: "bold",
+    fontSize: 13,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: "center",
@@ -504,19 +547,12 @@ const styles = StyleSheet.create({
     padding: 16,
     gap: 16,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    padding: 16,
-  },
   backButton: {
     padding: 4,
+    textAlign: "center",
   },
   headerInfo: {
-    flex: 1,
+    width: "100%",
   },
   title: {
     fontSize: 20,
@@ -526,7 +562,6 @@ const styles = StyleSheet.create({
   subtitle: {
     fontSize: 14,
     color: "#8E8E93",
-    marginTop: 2,
   },
   closedBadge: {
     backgroundColor: "#F5F5F5",

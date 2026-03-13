@@ -6,13 +6,14 @@ const resources = {
     translation: {
       // App Info
       appTitle: "CaléOnline Inventário",
-      appSubtitle: "Gestão de Estoque",
+      appSubtitle: "Contagem de Estoque",
 
       // Menu / Navigation
-      storeConfig: "  Config. Loja",
+      storeConfig: "  Dados da Loja",
       inventories: "  Inventários",
       products: "  Base de Produtos",
       counting: "Contagem",
+      dadosConfig: "  Configurações",
 
       // Store Config Screen
       storeConfigTitle: "Configuração da Loja",
