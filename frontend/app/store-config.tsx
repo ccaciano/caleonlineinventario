@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react"
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator } from "react-native"
 import { useTranslation } from "react-i18next"
 import { Ionicons } from "@expo/vector-icons"
-import { saveStoreConfig, getStoreConfig, StoreConfig, clearAllData } from "../services/api"
+import { saveStoreConfig, getStoreConfig, StoreConfig } from "../services/api"
 
 export default function StoreConfigScreen() {
   const { t } = useTranslation()

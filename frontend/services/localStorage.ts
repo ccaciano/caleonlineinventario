@@ -1,5 +1,4 @@
 import * as FileSystem from "expo-file-system/legacy"
-import initialProducts from "../assets/data/products.json"
 
 // Diretório base para armazenamento de dados
 const DATA_DIR = `${FileSystem.documentDirectory}data/`
