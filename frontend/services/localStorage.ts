@@ -1,4 +1,5 @@
 import * as FileSystem from "expo-file-system/legacy"
+import initialProducts from "../assets/data/products.json"
 
 // Diretório base para armazenamento de dados
 const DATA_DIR = `${FileSystem.documentDirectory}data/`
@@ -16,6 +17,11 @@ const ensureDataDir = async (): Promise<void> => {
   if (!dirInfo.exists) {
     await FileSystem.makeDirectoryAsync(DATA_DIR, { intermediates: true })
   }
+}
+
+// Função para salvar a lista completa (usada no Seed)
+export const saveRawProducts = async (products: Product[]): Promise<void> => {
+  await writeJsonFile(FILES.products, products)
 }
 
 // Ler arquivo JSON

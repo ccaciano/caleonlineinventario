@@ -1,13 +1,14 @@
+import { useEffect, useRef, useCallback } from "react"
+import { AppState, AppStateStatus, Platform, StyleSheet, View, Text } from "react-native"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { Drawer } from "expo-router/drawer"
 import { Ionicons } from "@expo/vector-icons"
 import { useTranslation } from "react-i18next"
-import { StyleSheet, View, Text, Platform, AppState, AppStateStatus } from "react-native"
 import { DrawerContentScrollView, DrawerItemList, DrawerContentComponentProps } from "@react-navigation/drawer"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { useEffect, useRef, useCallback } from "react"
 import * as NavigationBar from "expo-navigation-bar"
 import "../utils/i18n"
+import { seedDatabaseIfNeeded } from "../services/api" // Importante!
 
 // Componente customizado para o conteúdo do Drawer
 function CustomDrawerContent(props: DrawerContentComponentProps) {
@@ -65,6 +66,19 @@ export default function DrawerLayout() {
       hideNavigationBar()
     }, 3000)
   }, [hideNavigationBar])
+
+  // --- EFEITO DE CARGA INICIAL (SEED) ---
+  useEffect(() => {
+    const runSeed = async () => {
+      try {
+        await seedDatabaseIfNeeded()
+        console.log("✅ Base de produtos verificada.")
+      } catch (error) {
+        console.error("❌ Erro no seed:", error)
+      }
+    }
+    runSeed()
+  }, [])
 
   // Configurar Navigation Bar no Android para modo imersivo
   useEffect(() => {
