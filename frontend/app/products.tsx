@@ -502,6 +502,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#000",
     marginTop: 16,
+    textAlign: "center",
   },
   emptySubtitle: {
     fontSize: 16,

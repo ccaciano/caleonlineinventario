@@ -209,8 +209,19 @@ export const getExportData = async (inventoryId: string): Promise<ExportData> =>
 
 // ==================== UTILITÁRIOS ====================
 
-export const clearAllData = async (): Promise<void> => {
-  await LocalStorage.clearAllData()
+// services/api.ts
+export const clearAllData = async (onComplete?: () => void): Promise<void> => {
+  try {
+    // Limpa o armazenamento local (LocalStorage ou SQLite)
+    await LocalStorage.clearAllData()
+    // Se houver outras limpezas de cache ou tokens, faça aqui
+    if (onComplete) {
+      onComplete()
+    }
+  } catch (error) {
+    console.error("Erro ao limpar banco de dados:", error)
+    throw error
+  }
 }
 
 // ==================== CARGA INICIAL (SEED) ====================

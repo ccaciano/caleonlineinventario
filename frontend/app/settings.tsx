@@ -10,14 +10,25 @@ export default function SettingsScreen() {
     Alert.alert("Limpar Todos os Dados", "ATENÇÃO: Esta ação irá apagar permanentemente:\n\n• Configuração da Loja\n• Todos os Produtos\n• Todos os Inventários\n\nEsta ação não pode ser desfeita. Deseja continuar?", [
       { text: "Cancelar", style: "cancel" },
       {
-        text: "Sim, APAGAR TUDO",
+        text: "Apagar Tudo",
         style: "destructive",
         onPress: async () => {
           try {
             setLoading(true)
-            await clearAllData()
-            Alert.alert("Sucesso", "Banco de dados limpo com sucesso!")
+
+            // Chamamos a API passando o que deve ser feito com o formulário após apagar o banco
+            await clearAllData(() => {
+              // Se esta tela tiver um estado de formulário, limpamos aqui
+              // Caso contrário, o reload do app cuidará de iniciar tudo vazio
+              console.log("Dados de interface resetados.")
+            })
+
+            Alert.alert("Sucesso", "Todos os dados foram apagados com sucesso!")
+
+            // Dica: Como os dados da L'Occitane/Amazon foram apagados,
+            // talvez seja bom redirecionar o usuário para a tela inicial.
           } catch (error) {
+            console.error("Error clearing data:", error)
             Alert.alert("Erro", "Falha ao limpar os dados")
           } finally {
             setLoading(false)
