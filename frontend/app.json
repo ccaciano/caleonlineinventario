@@ -15,12 +15,20 @@
     "android": {
       "package": "com.ccaciano.inventorymanager",
       "versionCode": 1,
-      "softwareKeyboardLayoutMode": "adjustResize",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#007AFF"
       },
-      "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE", "android.permission.CAMERA", "android.permission.RECORD_AUDIO", "android.permission.READ_EXTERNAL_STORAGE", "android.permission.WRITE_EXTERNAL_STORAGE", "android.permission.INTERNET"]
+      "permissions": [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.INTERNET"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -36,7 +44,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "6cc19b81-ea45-480d-bd55-c1bfb66816c2"
+        "projectId": "280054ae-f791-468a-a457-2899f4b7adaa"
       }
     }
   }
