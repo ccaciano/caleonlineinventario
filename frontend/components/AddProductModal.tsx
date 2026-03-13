@@ -72,8 +72,25 @@ export default function AddProductModal({ visible, initialCode, onClose, onSucce
   }
 
   return (
-    <Modal isVisible={visible} onBackdropPress={handleClose} onBackButtonPress={handleClose} avoidKeyboard={true} animationIn="slideInUp" animationOut="slideOutDown" backdropOpacity={0.5} style={styles.modal}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1, justifyContent: "flex-end" }}>
+    <Modal
+      isVisible={visible}
+      onBackdropPress={handleClose}
+      onBackButtonPress={handleClose}
+      // No Android com 'adjustResize', o avoidKeyboard as vezes precisa ser false
+      // para não "pular" demais, mas no iOS é obrigatório ser true.
+      avoidKeyboard={Platform.OS === "ios"}
+      animationIn="slideInUp"
+      animationOut="slideOutDown"
+      backdropOpacity={0.5}
+      style={styles.modal} // Certifique-se que o estilo tem margin: 0
+    >
+      <KeyboardAvoidingView
+        // 'padding' costuma ser mais estável para modais que sobem do rodapé
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1, justifyContent: "flex-end" }}
+        // Esse offset é a "mágica" para o botão não ficar colado no teclado
+        keyboardVerticalOffset={Platform.OS === "android" ? 24 : 0}
+      >
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
             <Ionicons name="alert-circle" size={32} color="#FF9500" />
@@ -84,7 +101,9 @@ export default function AddProductModal({ visible, initialCode, onClose, onSucce
           </View>
 
           <Text style={styles.message}>{t("productNotFoundMessage")}</Text>
-          <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
+
+          {/* O ScrollView precisa de flexGrow: 1 para o teclado empurrar o conteúdo */}
+          <ScrollView bounces={false} showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1 }}>
             <View style={styles.form}>
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>{t("productCode")} *</Text>
@@ -128,7 +147,9 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
-    minHeight: 450,
+    // CRÍTICO: Não use 'height' fixo. Use maxHeight para o modal encolher se o teclado for grande.
+    maxHeight: "85%",
+    width: "100%",
   },
   modalHeader: {
     flexDirection: "row",

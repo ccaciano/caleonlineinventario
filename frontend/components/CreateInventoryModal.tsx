@@ -98,8 +98,24 @@ export default function CreateInventoryModal({ visible, onClose, onSuccess }: Cr
   }
 
   return (
-    <Modal isVisible={visible} onBackdropPress={handleClose} onBackButtonPress={handleClose} avoidKeyboard={true} animationIn="slideInUp" animationOut="slideOutDown" backdropOpacity={0.5} style={styles.modal}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1, justifyContent: "flex-end" }}>
+    <Modal
+      isVisible={visible}
+      onBackdropPress={handleClose}
+      onBackButtonPress={handleClose}
+      // No Android (APK) com adjustResize, o sistema já cuida do deslocamento.
+      // Deixamos true apenas para o iOS.
+      avoidKeyboard={Platform.OS === "ios"}
+      animationIn="slideInUp"
+      animationOut="slideOutDown"
+      backdropOpacity={0.5}
+      style={styles.modal}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1, justifyContent: "flex-end" }}
+        // Offset para garantir que o campo de data e os botões não fiquem colados no teclado
+        keyboardVerticalOffset={Platform.OS === "android" ? 24 : 0}
+      >
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{t("newInventory")}</Text>
@@ -108,7 +124,12 @@ export default function CreateInventoryModal({ visible, onClose, onSuccess }: Cr
             </TouchableOpacity>
           </View>
 
-          <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            bounces={false}
+            showsVerticalScrollIndicator={false}
+            // Importante para que o formulário ocupe o espaço necessário e permita scroll
+            contentContainerStyle={{ flexGrow: 1 }}
+          >
             <View style={styles.form}>
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>{t("description")}</Text>
@@ -148,7 +169,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
-    minHeight: 350,
+    maxHeight: "80%", // Isso permite que o modal diminua de tamanho para caber acima do teclado
   },
   modalHeader: {
     flexDirection: "row",

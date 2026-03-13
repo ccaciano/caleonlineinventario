@@ -101,8 +101,24 @@ export default function EditItemModal({ visible, item, inventoryId, onClose, onS
   }
 
   return (
-    <Modal isVisible={visible} onBackdropPress={onClose} onBackButtonPress={onClose} avoidKeyboard={true} animationIn="slideInUp" animationOut="slideOutDown" backdropOpacity={0.5} style={styles.modal}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1, justifyContent: "flex-end" }}>
+    <Modal
+      isVisible={visible}
+      onBackdropPress={onClose}
+      onBackButtonPress={onClose}
+      // No Android, o 'adjustResize' do app.json cuida disso.
+      // Mantemos true apenas para o iOS para evitar conflitos no APK.
+      avoidKeyboard={Platform.OS === "ios"}
+      animationIn="slideInUp"
+      animationOut="slideOutDown"
+      backdropOpacity={0.5}
+      style={styles.modal}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1, justifyContent: "flex-end" }}
+        // Ajuste fino para o APK: compensa a altura da barra de status se necessário
+        keyboardVerticalOffset={Platform.OS === "android" ? 24 : 0}
+      >
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{t("editItem")}</Text>
@@ -111,26 +127,33 @@ export default function EditItemModal({ visible, item, inventoryId, onClose, onS
             </TouchableOpacity>
           </View>
 
-          {/* Read-only fields */}
-          <View style={styles.readOnlySection}>
-            <View style={styles.readOnlyField}>
-              <Text style={styles.readOnlyLabel}>{t("productCode")}</Text>
-              <Text style={styles.readOnlyValue}>{item.product_code}</Text>
+          <ScrollView
+            bounces={false}
+            showsVerticalScrollIndicator={false}
+            // Garante que o conteúdo seja rolável mesmo com o teclado ocupando metade da tela
+            contentContainerStyle={{ flexGrow: 1 }}
+          >
+            {/* DICA: Se a tela do celular for pequena, mover a 'readOnlySection'
+          para dentro do ScrollView (como feito aqui) garante que o usuário
+          possa rolar para "esconder" os dados fixos e focar nos inputs.
+        */}
+            <View style={styles.readOnlySection}>
+              <View style={styles.readOnlyField}>
+                <Text style={styles.readOnlyLabel}>{t("productCode")}</Text>
+                <Text style={styles.readOnlyValue}>{item.product_code}</Text>
+              </View>
+              <View style={styles.readOnlyField}>
+                <Text style={styles.readOnlyLabel}>{t("ean")}</Text>
+                <Text style={styles.readOnlyValue}>{item.ean}</Text>
+              </View>
+              <View style={styles.readOnlyField}>
+                <Text style={styles.readOnlyLabel}>{t("description")}</Text>
+                <Text style={styles.readOnlyValue}>{item.description}</Text>
+              </View>
             </View>
-            <View style={styles.readOnlyField}>
-              <Text style={styles.readOnlyLabel}>{t("ean")}</Text>
-              <Text style={styles.readOnlyValue}>{item.ean}</Text>
-            </View>
-            <View style={styles.readOnlyField}>
-              <Text style={styles.readOnlyLabel}>{t("description")}</Text>
-              <Text style={styles.readOnlyValue}>{item.description}</Text>
-            </View>
-          </View>
 
-          <View style={styles.divider} />
+            <View style={styles.divider} />
 
-          {/* Editable fields */}
-          <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
             <View style={styles.form}>
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>{t("quantity")} *</Text>
@@ -138,7 +161,6 @@ export default function EditItemModal({ visible, item, inventoryId, onClose, onS
                   style={styles.input}
                   value={formData.quantity}
                   onChangeText={(text) => {
-                    // Apenas números
                     const numbers = text.replace(/[^0-9]/g, "")
                     setFormData({ ...formData, quantity: numbers })
                   }}
@@ -160,7 +182,6 @@ export default function EditItemModal({ visible, item, inventoryId, onClose, onS
                   style={styles.input}
                   value={formData.expiry_date}
                   onChangeText={(text) => {
-                    // Formatar automaticamente DD/MM/AAAA
                     let formatted = text.replace(/\D/g, "")
                     if (formatted.length >= 2) {
                       formatted = formatted.slice(0, 2) + "/" + formatted.slice(2)
@@ -205,7 +226,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
-    minHeight: 500,
+    maxHeight: "90%", // Permite que o modal use quase a tela toda se precisar
   },
   modalHeader: {
     flexDirection: "row",

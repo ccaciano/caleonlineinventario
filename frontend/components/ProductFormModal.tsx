@@ -96,8 +96,24 @@ export default function ProductFormModal({ visible, product, onClose, onSuccess 
   }
 
   return (
-    <Modal isVisible={visible} onBackdropPress={handleClose} onBackButtonPress={handleClose} avoidKeyboard={true} animationIn="slideInUp" animationOut="slideOutDown" backdropOpacity={0.5} style={styles.modal}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1, justifyContent: "flex-end" }}>
+    <Modal
+      isVisible={visible}
+      onBackdropPress={handleClose}
+      onBackButtonPress={handleClose}
+      // No Android (APK), o ajuste nativo via app.json é superior.
+      // Mantemos true apenas no iOS.
+      avoidKeyboard={Platform.OS === "ios"}
+      animationIn="slideInUp"
+      animationOut="slideOutDown"
+      backdropOpacity={0.5}
+      style={styles.modal}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1, justifyContent: "flex-end" }}
+        // Offset para dar um respiro entre o teclado e o campo de input focado
+        keyboardVerticalOffset={Platform.OS === "android" ? 24 : 0}
+      >
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>{product ? t("editProduct") : t("addProduct")}</Text>
@@ -106,7 +122,12 @@ export default function ProductFormModal({ visible, product, onClose, onSuccess 
             </TouchableOpacity>
           </View>
 
-          <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            bounces={false}
+            showsVerticalScrollIndicator={false}
+            // Permite que o container cresça para ser rolável quando o teclado sobe
+            contentContainerStyle={{ flexGrow: 1 }}
+          >
             <View style={styles.form}>
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>{t("productCode")} *</Text>
@@ -120,7 +141,18 @@ export default function ProductFormModal({ visible, product, onClose, onSuccess 
 
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>{t("description")} *</Text>
-                <TextInput style={[styles.input, styles.textArea]} value={formData.description} onChangeText={(text) => setFormData({ ...formData, description: text })} placeholder={t("description")} placeholderTextColor="#999" multiline numberOfLines={3} editable={!loading} />
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  value={formData.description}
+                  onChangeText={(text) => setFormData({ ...formData, description: text })}
+                  placeholder={t("description")}
+                  placeholderTextColor="#999"
+                  multiline
+                  numberOfLines={3}
+                  editable={!loading}
+                  // Garante que o texto comece do topo no Android
+                  textAlignVertical="top"
+                />
               </View>
 
               <View style={styles.buttons}>
@@ -150,7 +182,8 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
-    minHeight: 400,
+    // Use uma porcentagem alta para garantir que tudo caiba acima do teclado
+    maxHeight: "90%",
   },
   modalHeader: {
     flexDirection: "row",
