@@ -19,11 +19,12 @@ module.exports = {
         foregroundImage: "./assets/images/adaptive-icon.png",
         backgroundColor: "#007AFF",
       },
+      // Adicionamos as permissões necessárias para o scanner e arquivos
       permissions: ["CAMERA", "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE"],
     },
-    plugins: ["expo-router", ["expo-camera", { cameraPermission: "Permitir uso da câmera." }], ["expo-file-system", { copyToCacheDirectory: true }], "expo-sharing", "expo-document-picker"],
+    plugins: ["expo-router", ["expo-camera", { cameraPermission: "Permitir uso da câmera para leitura de códigos de barras." }], "expo-file-system", "expo-sharing", "expo-document-picker"],
     extra: {
-      eas: { projectId: "d24dde2b-807f-44ee-a62a-c0e2525f6daf" },
+      eas: {},
     },
   },
 }

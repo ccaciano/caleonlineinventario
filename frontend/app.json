@@ -1,9 +1,7 @@
 {
   "expo": {
     "extra": {
-      "eas": {
-        "projectId": "d24dde2b-807f-44ee-a62a-c0e2525f6daf"
-      }
+      "eas": {}
     },
     "android": {
       "package": "com.ccaciano.inventorymanager"
