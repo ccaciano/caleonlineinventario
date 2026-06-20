@@ -6,7 +6,7 @@ const resources = {
     translation: {
       // App Info
       appTitle: "CaléOnline Inventário",
-      appSubtitle: "Contagem de Estoque - WMS & LOJA",
+      appSubtitle: "Contagem de Estoque - WMS",
 
       // Menu / Navigation
       storeConfig: "  Dados da Loja",

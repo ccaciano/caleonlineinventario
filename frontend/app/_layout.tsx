@@ -23,7 +23,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
           <Ionicons name="cube" size={48} color="#FFFFFF" />
         </View>
         <Text style={styles.appTitle}>{t("appTitle") || "CaléOnline Inventário"}</Text>
-        <Text style={styles.appSubtitle}>{t("appSubtitle") || "Gestão de Estoque WMS & LOJA"}</Text>
+        <Text style={styles.appSubtitle}>{t("appSubtitle") || "Gestão de Estoque WMS"}</Text>
       </View>
 
       {/* Lista de itens do menu */}
