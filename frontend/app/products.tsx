@@ -356,8 +356,9 @@ export default function ProductsScreen() {
         <View style={styles.csvHintBox}>
           <Ionicons name="information-circle-outline" size={15} color="#007AFF" />
           <Text style={styles.csvHintText}>
-            <Text style={styles.csvHintBold}>Formato do CSV: </Text>CÓDIGO;EAN;DESCRIÇÃO{"\n"}
-            Separador: ponto e vírgula (;) ou vírgula (,) — Ex: 12345;7891234567890;Produto Exemplo
+            <Text style={styles.csvHintBold}>Formato do CSV: </Text>Separado por vírgula (,){"\n"}
+            Ex: CÓDIGO,EAN,DESCRIÇÃO{"\n"}
+            BROBVS100542,3253581971000,CR CAPIM LIMÃO
           </Text>
         </View>
       </View>
