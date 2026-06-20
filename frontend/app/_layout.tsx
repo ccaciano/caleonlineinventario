@@ -198,8 +198,26 @@ export default function DrawerLayout() {
           options={{
             drawerLabel: t("counting"),
             title: t("counting"),
-            drawerItemStyle: { display: "none" }, // Ocultar do menu drawer
+            drawerItemStyle: { display: "none" },
             drawerIcon: ({ color, size }) => <Ionicons name="barcode-outline" size={size} color={color} />,
+          }}
+        />
+        <Drawer.Screen
+          name="wms/[id]"
+          options={{
+            drawerLabel: "WMS",
+            title: "Inventário WMS",
+            drawerItemStyle: { display: "none" },
+            drawerIcon: ({ color, size }) => <Ionicons name="cube-outline" size={size} color={color} />,
+          }}
+        />
+        <Drawer.Screen
+          name="wms-counting/[id]"
+          options={{
+            drawerLabel: "Contagem WMS",
+            title: "Contagem por Endereço",
+            drawerItemStyle: { display: "none" },
+            drawerIcon: ({ color, size }) => <Ionicons name="location-outline" size={size} color={color} />,
           }}
         />
         <Drawer.Screen

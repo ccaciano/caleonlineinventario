@@ -11,42 +11,33 @@ interface CreateInventoryModalProps {
   onSuccess: () => void
 }
 
-// Função para validar data no formato DD/MM/AAAA
 const isValidDate = (dateStr: string): boolean => {
   const regex = /^(\d{2})\/(\d{2})\/(\d{4})$/
   const match = dateStr.match(regex)
   if (!match) return false
-
   const day = parseInt(match[1])
   const month = parseInt(match[2])
   const year = parseInt(match[3])
-
-  if (month < 1 || month > 12) return false
-  if (day < 1 || day > 31) return false
-  if (year < 1900 || year > 2100) return false
-
-  return true
+  return month >= 1 && month <= 12 && day >= 1 && day <= 31 && year >= 1900 && year <= 2100
 }
 
-// Função para converter DD/MM/AAAA para AAAA-MM-DD
 const convertToISO = (dateStr: string): string => {
   const [day, month, year] = dateStr.split("/")
   return `${year}-${month}-${day}`
 }
 
-// Função para obter data atual no formato DD/MM/AAAA
 const getCurrentDateFormatted = (): string => {
   const today = new Date()
   const day = String(today.getDate()).padStart(2, "0")
   const month = String(today.getMonth() + 1).padStart(2, "0")
-  const year = today.getFullYear()
-  return `${day}/${month}/${year}`
+  return `${day}/${month}/${today.getFullYear()}`
 }
 
 export default function CreateInventoryModal({ visible, onClose, onSuccess }: CreateInventoryModalProps) {
   const { t } = useTranslation()
   const [description, setDescription] = useState("")
   const [date, setDate] = useState(getCurrentDateFormatted())
+  const [type, setType] = useState<"loja" | "wms">("loja")
   const [loading, setLoading] = useState(false)
 
   const handleCreate = async () => {
@@ -54,24 +45,20 @@ export default function CreateInventoryModal({ visible, onClose, onSuccess }: Cr
       Alert.alert(t("fillAllFields"))
       return
     }
-
-    // Validar data no formato DD/MM/AAAA
     if (!isValidDate(date)) {
       Alert.alert(t("invalidDate"), "Use o formato DD/MM/AAAA")
       return
     }
-
     try {
       setLoading(true)
-      // Converter para formato ISO antes de enviar
-      const isoDate = convertToISO(date)
-      await createInventory(description, isoDate)
+      await createInventory(description, convertToISO(date), type)
       setDescription("")
       setDate(getCurrentDateFormatted())
+      setType("loja")
       onSuccess()
     } catch (error) {
       console.error("Error creating inventory:", error)
-      Alert.alert("Error", "Failed to create inventory")
+      Alert.alert("Erro", "Falha ao criar inventário")
     } finally {
       setLoading(false)
     }
@@ -81,19 +68,15 @@ export default function CreateInventoryModal({ visible, onClose, onSuccess }: Cr
     if (!loading) {
       setDescription("")
       setDate(getCurrentDateFormatted())
+      setType("loja")
       onClose()
     }
   }
 
   const handleDateChange = (text: string) => {
-    // Formatar automaticamente DD/MM/AAAA
     let formatted = text.replace(/\D/g, "")
-    if (formatted.length >= 2) {
-      formatted = formatted.slice(0, 2) + "/" + formatted.slice(2)
-    }
-    if (formatted.length >= 5) {
-      formatted = formatted.slice(0, 5) + "/" + formatted.slice(5, 9)
-    }
+    if (formatted.length >= 2) formatted = formatted.slice(0, 2) + "/" + formatted.slice(2)
+    if (formatted.length >= 5) formatted = formatted.slice(0, 5) + "/" + formatted.slice(5, 9)
     setDate(formatted)
   }
 
@@ -102,11 +85,9 @@ export default function CreateInventoryModal({ visible, onClose, onSuccess }: Cr
       isVisible={visible}
       onBackdropPress={handleClose}
       onBackButtonPress={handleClose}
-      // Animação descendo do topo
       animationIn="slideInDown"
       animationOut="slideOutUp"
       backdropOpacity={0.5}
-      // Alinha o conteúdo no topo da tela
       style={[styles.modal, { justifyContent: "flex-start", margin: 0 }]}
       avoidKeyboard={Platform.OS === "ios"}
       propagateSwipe={true}
@@ -121,14 +102,57 @@ export default function CreateInventoryModal({ visible, onClose, onSuccess }: Cr
 
         <ScrollView bounces={false} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }}>
           <View style={styles.form}>
+
+            {/* Seleção de tipo */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Tipo de Inventário</Text>
+              <View style={styles.typeSelector}>
+                <TouchableOpacity
+                  style={[styles.typeButton, type === "loja" && styles.typeButtonActive]}
+                  onPress={() => setType("loja")}
+                  disabled={loading}
+                >
+                  <Ionicons name="storefront-outline" size={20} color={type === "loja" ? "#FFFFFF" : "#007AFF"} />
+                  <Text style={[styles.typeButtonText, type === "loja" && styles.typeButtonTextActive]}>Inv. Loja</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.typeButton, type === "wms" && styles.typeButtonActiveWms]}
+                  onPress={() => setType("wms")}
+                  disabled={loading}
+                >
+                  <Ionicons name="cube-outline" size={20} color={type === "wms" ? "#FFFFFF" : "#FF9500"} />
+                  <Text style={[styles.typeButtonText, type === "wms" && styles.typeButtonTextActive]}>Inv. WMS</Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.hint}>
+                {type === "loja" ? "Contagem simples por código, lote e validade" : "Contagem por endereço de armazenamento (Rua/Posição/Altura/Prof.)"}
+              </Text>
+            </View>
+
             <View style={styles.inputGroup}>
               <Text style={styles.label}>{t("description")}</Text>
-              <TextInput style={styles.input} value={description} onChangeText={setDescription} placeholder={t("description")} placeholderTextColor="#999" editable={!loading} />
+              <TextInput
+                style={styles.input}
+                value={description}
+                onChangeText={setDescription}
+                placeholder={t("description")}
+                placeholderTextColor="#999"
+                editable={!loading}
+              />
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>{t("date")}</Text>
-              <TextInput style={styles.input} value={date} onChangeText={handleDateChange} placeholder="DD/MM/AAAA" placeholderTextColor="#999" keyboardType="numeric" maxLength={10} editable={!loading} />
+              <TextInput
+                style={styles.input}
+                value={date}
+                onChangeText={handleDateChange}
+                placeholder="DD/MM/AAAA"
+                placeholderTextColor="#999"
+                keyboardType="numeric"
+                maxLength={10}
+                editable={!loading}
+              />
               <Text style={styles.hint}>Formato: DD/MM/AAAA</Text>
             </View>
 
@@ -136,13 +160,15 @@ export default function CreateInventoryModal({ visible, onClose, onSuccess }: Cr
               <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={handleClose} disabled={loading}>
                 <Text style={styles.cancelButtonText}>{t("cancel")}</Text>
               </TouchableOpacity>
-
-              <TouchableOpacity style={[styles.button, styles.createButton, loading && styles.buttonDisabled]} onPress={handleCreate} disabled={loading}>
+              <TouchableOpacity
+                style={[styles.button, type === "wms" ? styles.createButtonWms : styles.createButton, loading && styles.buttonDisabled]}
+                onPress={handleCreate}
+                disabled={loading}
+              >
                 {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.createButtonText}>{t("create")}</Text>}
               </TouchableOpacity>
             </View>
 
-            {/* Pequeno respiro para o Android em caso de telas muito pequenas */}
             {Platform.OS === "android" && <View style={{ height: 60 }} />}
           </View>
         </ScrollView>
@@ -152,10 +178,7 @@ export default function CreateInventoryModal({ visible, onClose, onSuccess }: Cr
 }
 
 const styles = StyleSheet.create({
-  modal: {
-    justifyContent: "flex-end",
-    margin: 0,
-  },
+  modal: { justifyContent: "flex-end", margin: 0 },
   modalTop: {
     backgroundColor: "#FFFFFF",
     borderBottomLeftRadius: 24,
@@ -163,9 +186,8 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 0,
     borderTopRightRadius: 0,
     padding: 24,
-    // Altura segura para Android e iOS (StatusBar)
     paddingTop: Platform.OS === "android" ? 45 : 60,
-    maxHeight: "85%",
+    maxHeight: "90%",
   },
   modalContent: {
     backgroundColor: "#FFFFFF",
@@ -180,22 +202,28 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 24,
   },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#000",
-  },
-  form: {
-    gap: 16,
-  },
-  inputGroup: {
+  modalTitle: { fontSize: 24, fontWeight: "bold", color: "#000" },
+  form: { gap: 16 },
+  inputGroup: { gap: 8 },
+  label: { fontSize: 16, fontWeight: "600", color: "#000" },
+  typeSelector: { flexDirection: "row", gap: 12 },
+  typeButton: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: "#007AFF",
+    backgroundColor: "#F0F8FF",
   },
-  label: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#000",
-  },
+  typeButtonActive: { backgroundColor: "#007AFF", borderColor: "#007AFF" },
+  typeButtonActiveWms: { backgroundColor: "#FF9500", borderColor: "#FF9500" },
+  typeButtonText: { fontSize: 15, fontWeight: "700", color: "#007AFF" },
+  typeButtonTextActive: { color: "#FFFFFF" },
   input: {
     backgroundColor: "#F2F2F7",
     borderWidth: 1,
@@ -206,45 +234,13 @@ const styles = StyleSheet.create({
     color: "#000",
     minHeight: 52,
   },
-  hint: {
-    fontSize: 12,
-    color: "#8E8E93",
-    marginTop: 4,
-  },
-  buttons: {
-    flexDirection: "row",
-    gap: 12,
-    marginTop: 8,
-  },
-  button: {
-    flex: 1,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 52,
-  },
-  cancelButton: {
-    backgroundColor: "#F2F2F7",
-    borderWidth: 1,
-    borderColor: "#E5E5EA",
-  },
-  cancelButtonText: {
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#000",
-    textAlign: "center",
-  },
-  createButton: {
-    backgroundColor: "#007AFF",
-  },
-  createButtonText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#FFFFFF",
-    textAlign: "center",
-  },
-  buttonDisabled: {
-    opacity: 0.6,
-  },
+  hint: { fontSize: 12, color: "#8E8E93", marginTop: 2 },
+  buttons: { flexDirection: "row", gap: 12, marginTop: 8 },
+  button: { flex: 1, borderRadius: 12, padding: 16, alignItems: "center", justifyContent: "center", minHeight: 52 },
+  cancelButton: { backgroundColor: "#F2F2F7", borderWidth: 1, borderColor: "#E5E5EA" },
+  cancelButtonText: { fontSize: 16, fontWeight: "600", color: "#000", textAlign: "center" },
+  createButton: { backgroundColor: "#007AFF" },
+  createButtonWms: { backgroundColor: "#FF9500" },
+  createButtonText: { fontSize: 16, fontWeight: "bold", color: "#FFFFFF", textAlign: "center" },
+  buttonDisabled: { opacity: 0.6 },
 })

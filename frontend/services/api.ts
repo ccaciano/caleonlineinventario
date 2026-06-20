@@ -1,18 +1,14 @@
-// ==================== SERVIÇO DE API LOCAL ====================
-// Este arquivo foi refatorado para funcionar 100% offline
-// usando armazenamento local em vez de chamadas HTTP
-
 import * as LocalStorage from "./localStorage"
 import initialProductsData from "../assets/data/products.json"
 const initialProducts = initialProductsData as Product[]
 
-// Re-exportar tipos do localStorage
 export type Product = LocalStorage.Product
 export type Inventory = LocalStorage.Inventory
 export type CountedItem = LocalStorage.CountedItem
+export type WmsCountedItem = LocalStorage.WmsCountedItem
+export type WmsAddress = LocalStorage.WmsAddress
 export type StoreConfig = LocalStorage.StoreConfig
 
-// Tipo para dados de exportação
 export interface ExportData {
   inventory: Inventory
   items: CountedItem[]
@@ -20,240 +16,213 @@ export interface ExportData {
 }
 
 // ==================== CONFIGURAÇÃO DA LOJA ====================
-export const getStoreConfig = async (): Promise<StoreConfig | null> => {
-  return LocalStorage.getStoreConfig()
-}
 
-export const saveStoreConfig = async (config: StoreConfig): Promise<StoreConfig> => {
-  return LocalStorage.saveStoreConfig(config)
-}
+export const getStoreConfig = async (): Promise<StoreConfig | null> => LocalStorage.getStoreConfig()
+
+export const saveStoreConfig = async (config: StoreConfig): Promise<StoreConfig> => LocalStorage.saveStoreConfig(config)
 
 // ==================== PRODUTOS ====================
 
-export const getProducts = async (page: number = 1, limit: number = 50, search?: string): Promise<{ products: Product[]; total: number; page: number; totalPages: number }> => {
+export const getProducts = async (page: number = 1, limit: number = 50, search?: string) => {
   return LocalStorage.getProductsPaginated(page, limit, search)
 }
 
 export const createProduct = async (product: Omit<Product, "_id">): Promise<Product> => {
-  // 1. Criar um objeto "limpo" aplicando trim nos campos chave
   const cleanProduct = {
     ...product,
     code: product.code.trim(),
     ean: product.ean ? product.ean.trim() : "",
     description: product.description.trim(),
   }
-
-  // 2. Verificar duplicidade usando o código limpo
   const existing = await LocalStorage.searchProductByCodeOrEan(cleanProduct.code)
-  if (existing) {
-    throw new Error(`Produto com código "${cleanProduct.code}" já existe`)
-  }
-
-  // 3. Verificar EAN (usando o valor limpo)
+  if (existing) throw new Error(`Produto com código "${cleanProduct.code}" já existe`)
   if (cleanProduct.ean) {
     const existingByEan = await LocalStorage.searchProductByCodeOrEan(cleanProduct.ean)
-    if (existingByEan) {
-      throw new Error(`Produto com EAN "${cleanProduct.ean}" já existe`)
-    }
+    if (existingByEan) throw new Error(`Produto com EAN "${cleanProduct.ean}" já existe`)
   }
-
-  // 4. Salva o objeto já higienizado
   return LocalStorage.addProduct(cleanProduct)
 }
 
 export const updateProduct = async (id: string, product: Partial<Product>): Promise<Product> => {
   const updated = await LocalStorage.updateProduct(id, product)
-  if (!updated) {
-    throw new Error("Produto não encontrado")
-  }
+  if (!updated) throw new Error("Produto não encontrado")
   return updated
 }
 
 export const deleteProduct = async (id: string): Promise<void> => {
   const success = await LocalStorage.deleteProduct(id)
-  if (!success) {
-    throw new Error("Produto não encontrado")
-  }
+  if (!success) throw new Error("Produto não encontrado")
 }
 
 export const searchProduct = async (query: string): Promise<Product | null> => {
-  const cleanQuery = query ? query.trim() : ""
-  return LocalStorage.searchProductByCodeOrEan(cleanQuery)
+  return LocalStorage.searchProductByCodeOrEan(query ? query.trim() : "")
 }
 
-export const uploadProducts = async (file: { uri: string; name: string; type: string }, clearExisting: boolean = true): Promise<{ count: number; message: string }> => {
-  // Esta função é chamada do componente de upload
-  // O conteúdo do CSV já é processado diretamente
-  throw new Error("Use uploadProductsFromContent instead")
-}
-
-export const uploadProductsFromContent = async (csvContent: string, clearExisting: boolean = true): Promise<{ count: number; message: string }> => {
+export const uploadProductsFromContent = async (csvContent: string): Promise<{ count: number; message: string }> => {
   const count = await LocalStorage.importProductsFromCSV(csvContent)
-  return {
-    count,
-    message: `${count} produtos importados com sucesso`,
-  }
+  return { count, message: `${count} produtos importados com sucesso` }
 }
 
 // ==================== INVENTÁRIOS ====================
 
 export const getInventories = async (): Promise<Inventory[]> => {
-  // 1. Pega a lista, mas garante que se vier null/undefined, vire um array vazio []
   const inventories = (await LocalStorage.getInventories()) || []
+  if (!Array.isArray(inventories)) return []
 
-  // 2. Verifica se inventories é realmente um array antes de usar o map
-  if (!Array.isArray(inventories)) {
-    return []
-  }
-
-  const updatedInventories = inventories.map((inv) => {
-    // Garante que inv.items exista para não quebrar o .length
-    const actualCount = inv && inv.items ? inv.items.length : 0
-
-    return {
-      ...inv,
-      item_count: actualCount,
+  return inventories.map((inv) => {
+    let actualCount: number
+    if (inv.type === "wms") {
+      actualCount = (inv.enderecos || []).reduce((sum, addr) => sum + (addr.itens?.length || 0), 0)
+    } else {
+      actualCount = inv.items ? inv.items.length : 0
     }
+    return { ...inv, item_count: actualCount }
   })
-
-  return updatedInventories
 }
 
-export const createInventory = async (description: string, date: string): Promise<Inventory> => {
-  return LocalStorage.createInventory(description, date)
+export const createInventory = async (description: string, date: string, type: "loja" | "wms" = "loja"): Promise<Inventory> => {
+  return LocalStorage.createInventory(description, date, type)
 }
 
-// No arquivo api.ts
 export const getInventory = async (id: string): Promise<Inventory> => {
   const inventory = await LocalStorage.getInventoryById(id)
-  if (!inventory) {
-    throw new Error("Inventário não encontrado")
-  }
-  return inventory // O localStorage agora já garante a nova referência
+  if (!inventory) throw new Error("Inventário não encontrado")
+  return inventory
 }
 
 export const updateInventory = async (id: string, updates: Partial<Inventory>): Promise<Inventory> => {
   const updated = await LocalStorage.updateInventory(id, updates)
-  if (!updated) {
-    throw new Error("Inventário não encontrado")
-  }
+  if (!updated) throw new Error("Inventário não encontrado")
   return updated
 }
 
 export const deleteInventory = async (id: string): Promise<void> => {
   const success = await LocalStorage.deleteInventory(id)
-  if (!success) {
-    throw new Error("Inventário não encontrado")
-  }
+  if (!success) throw new Error("Inventário não encontrado")
 }
 
 export const closeInventory = async (id: string): Promise<Inventory | null> => {
-  // O await aqui é fundamental para garantir que o arquivo foi escrito
-  const updated = await updateInventory(id, { status: "closed" })
-  console.log("Arquivo atualizado com status closed para o ID:", id)
-  return updated
+  return updateInventory(id, { status: "closed" })
 }
 
-// ==================== ITENS CONTADOS ====================
+// ==================== ITENS CONTADOS (InvLoja) ====================
 
 export const getCountedItems = async (inventoryId: string): Promise<CountedItem[]> => {
   return LocalStorage.getCountedItems(inventoryId)
 }
 
 export const addCountedItem = async (inventoryId: string, item: Omit<CountedItem, "_id" | "inventory_id">): Promise<CountedItem> => {
-  // Validação de Status
   const inventory = await LocalStorage.getInventoryById(inventoryId)
-  if (inventory?.status !== "open") {
-    throw new Error("Não é possível adicionar itens: esta contagem não está aberta.")
-  }
-
+  if (inventory?.status !== "open") throw new Error("Não é possível adicionar itens: esta contagem não está aberta.")
   const added = await LocalStorage.addCountedItem(inventoryId, item)
-  if (!added) {
-    throw new Error("Inventário não encontrado")
-  }
+  if (!added) throw new Error("Inventário não encontrado")
   return added
 }
 
 export const updateCountedItem = async (inventoryId: string, itemId: string, updates: Partial<CountedItem>): Promise<CountedItem> => {
-  // Validação de Status
   const inventory = await LocalStorage.getInventoryById(inventoryId)
-  if (inventory?.status !== "open") {
-    throw new Error("Não é possível alterar itens: esta contagem já foi encerrada.")
-  }
-
+  if (inventory?.status !== "open") throw new Error("Não é possível alterar itens: esta contagem já foi encerrada.")
   const updated = await LocalStorage.updateCountedItem(inventoryId, itemId, updates)
-  if (!updated) {
-    throw new Error("Item não encontrado")
-  }
+  if (!updated) throw new Error("Item não encontrado")
   return updated
 }
 
 export const deleteCountedItem = async (inventoryId: string, itemId: string): Promise<void> => {
-  // Validação de Status
   const inventory = await LocalStorage.getInventoryById(inventoryId)
-  if (inventory?.status !== "open") {
-    throw new Error("Não é possível excluir itens: esta contagem já foi encerrada.")
-  }
-
+  if (inventory?.status !== "open") throw new Error("Não é possível excluir itens: esta contagem já foi encerrada.")
   const success = await LocalStorage.deleteCountedItem(inventoryId, itemId)
-  if (!success) {
-    throw new Error("Item não encontrado")
-  }
+  if (!success) throw new Error("Item não encontrado")
+}
+
+// ==================== ENDEREÇOS WMS ====================
+
+export const getWmsAddresses = async (inventoryId: string): Promise<WmsAddress[]> => {
+  return LocalStorage.getWmsAddresses(inventoryId)
+}
+
+export const addWmsAddress = async (inventoryId: string, endereco: string): Promise<WmsAddress> => {
+  const inventory = await LocalStorage.getInventoryById(inventoryId)
+  if (!inventory) throw new Error("Inventário não encontrado")
+  if (inventory.status !== "open") throw new Error("Inventário fechado")
+  const existing = (inventory.enderecos || []).find((a) => a.endereco.toUpperCase() === endereco.trim().toUpperCase())
+  if (existing) throw new Error(`Endereço "${endereco}" já existe neste inventário`)
+  const added = await LocalStorage.addWmsAddress(inventoryId, endereco.trim().toUpperCase())
+  if (!added) throw new Error("Erro ao adicionar endereço")
+  return added
+}
+
+export const deleteWmsAddress = async (inventoryId: string, addressId: string): Promise<void> => {
+  const inventory = await LocalStorage.getInventoryById(inventoryId)
+  if (inventory?.status !== "open") throw new Error("Inventário fechado")
+  const success = await LocalStorage.deleteWmsAddress(inventoryId, addressId)
+  if (!success) throw new Error("Endereço não encontrado")
+}
+
+export const importWmsAddresses = async (inventoryId: string, enderecos: string[]): Promise<WmsAddress[]> => {
+  const inventory = await LocalStorage.getInventoryById(inventoryId)
+  if (!inventory) throw new Error("Inventário não encontrado")
+  if (inventory.status !== "open") throw new Error("Inventário fechado")
+  return LocalStorage.importWmsAddresses(inventoryId, enderecos)
+}
+
+// ==================== ITENS WMS ====================
+
+export const addWmsItem = async (inventoryId: string, addressId: string, item: Omit<WmsCountedItem, "_id">): Promise<WmsCountedItem> => {
+  const inventory = await LocalStorage.getInventoryById(inventoryId)
+  if (inventory?.status !== "open") throw new Error("Inventário fechado")
+  const added = await LocalStorage.addWmsItem(inventoryId, addressId, item)
+  if (!added) throw new Error("Endereço não encontrado")
+  return added
+}
+
+export const updateWmsItem = async (inventoryId: string, addressId: string, itemId: string, updates: Partial<WmsCountedItem>): Promise<WmsCountedItem> => {
+  const inventory = await LocalStorage.getInventoryById(inventoryId)
+  if (inventory?.status !== "open") throw new Error("Inventário fechado")
+  const updated = await LocalStorage.updateWmsItem(inventoryId, addressId, itemId, updates)
+  if (!updated) throw new Error("Item não encontrado")
+  return updated
+}
+
+export const deleteWmsItem = async (inventoryId: string, addressId: string, itemId: string): Promise<void> => {
+  const inventory = await LocalStorage.getInventoryById(inventoryId)
+  if (inventory?.status !== "open") throw new Error("Inventário fechado")
+  const success = await LocalStorage.deleteWmsItem(inventoryId, addressId, itemId)
+  if (!success) throw new Error("Item não encontrado")
 }
 
 // ==================== EXPORTAÇÃO ====================
 
 export const getExportData = async (inventoryId: string): Promise<ExportData> => {
   const inventory = await LocalStorage.getInventoryById(inventoryId)
-  if (!inventory) {
-    throw new Error("Inventário não encontrado")
-  }
-
+  if (!inventory) throw new Error("Inventário não encontrado")
   const store = await LocalStorage.getStoreConfig()
-
-  return {
-    inventory,
-    items: inventory.items,
-    store,
-  }
+  return { inventory, items: inventory.items, store }
 }
 
 // ==================== UTILITÁRIOS ====================
 
-// services/api.ts
 export const clearAllData = async (onComplete?: () => void): Promise<void> => {
   try {
-    // Limpa o armazenamento local (LocalStorage ou SQLite)
     await LocalStorage.clearAllData()
-    // Se houver outras limpezas de cache ou tokens, faça aqui
-    if (onComplete) {
-      onComplete()
-    }
+    if (onComplete) onComplete()
   } catch (error) {
     console.error("Erro ao limpar banco de dados:", error)
     throw error
   }
 }
 
-// ==================== CARGA INICIAL (SEED) ====================
 export const seedDatabaseIfNeeded = async (): Promise<void> => {
   try {
     const result = await getProducts(1, 1)
-
-    // Forçamos o TypeScript a entender que initialProducts é uma lista de Product
     const productsSource = initialProducts as Product[]
-
     if (result.total === 0) {
-      console.log("🚚 Base vazia. Injetando base L'Occitane...")
-
-      // Agora o TS sabe que 'productsSource' tem o método .map()
+      console.log("🚚 Base vazia. Injetando produtos iniciais...")
       const productsWithIds: Product[] = productsSource.map((prod: Product) => ({
         _id: prod._id || Math.random().toString(36).substring(2, 9),
         code: prod.code,
         ean: prod.ean || "",
         description: prod.description,
       }))
-
       await LocalStorage.saveRawProducts(productsWithIds)
       console.log(`✅ ${productsWithIds.length} produtos carregados.`)
     }

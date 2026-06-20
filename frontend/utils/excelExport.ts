@@ -4,88 +4,81 @@ import { Platform } from 'react-native';
 import XLSX from 'xlsx';
 import { ExportData } from '../services/api';
 
-// Função para converter AAAA-MM-DD para DD/MM/AAAA
 const formatDate = (isoStr: string | undefined): string => {
   if (!isoStr) return '';
-  const [year, month, day] = isoStr.split('-');
-  return `${day}/${month}/${year}`;
+  try {
+    const datePart = isoStr.split('T')[0];
+    const [year, month, day] = datePart.split('-');
+    return `${day}/${month}/${year}`;
+  } catch {
+    return '';
+  }
+};
+
+const buildLojaWorkbook = (data: ExportData): XLSX.WorkBook => {
+  const items = data.items || [];
+
+  // ---- Aba "Produtos": somatória por código (ignora lote e validade) ----
+  const productMap = new Map<string, number>();
+  for (const item of items) {
+    const code = item.product_code || '';
+    productMap.set(code, (productMap.get(code) || 0) + (item.quantity || 0));
+  }
+
+  const prodRows: any[][] = [['CÓDIGO', 'QUANTIDADE']];
+  productMap.forEach((qty, code) => prodRows.push([code, qty]));
+
+  const prodSheet = XLSX.utils.aoa_to_sheet(prodRows);
+  prodSheet['!cols'] = [{ wch: 25 }, { wch: 15 }];
+
+  // ---- Aba "Lotes": somatória por código + lote + validade ----
+  type LoteKey = string;
+  const loteMap = new Map<LoteKey, { code: string; lot: string; expiry: string; qty: number }>();
+
+  for (const item of items) {
+    const code = item.product_code || '';
+    const lot = item.lot || '';
+    const expiry = item.expiry_date || '';
+    const key: LoteKey = `${code}||${lot}||${expiry}`;
+    const existing = loteMap.get(key);
+    if (existing) {
+      existing.qty += item.quantity || 0;
+    } else {
+      loteMap.set(key, { code, lot, expiry, qty: item.quantity || 0 });
+    }
+  }
+
+  const loteRows: any[][] = [['CÓDIGO PRODUTO', 'LOTE', 'QUANTIDADE', 'DATA FABRICAÇÃO', 'DATA VALIDADE']];
+  loteMap.forEach(({ code, lot, expiry, qty }) => {
+    loteRows.push([code, lot, qty, '', formatDate(expiry)]);
+  });
+
+  const loteSheet = XLSX.utils.aoa_to_sheet(loteRows);
+  loteSheet['!cols'] = [{ wch: 25 }, { wch: 18 }, { wch: 12 }, { wch: 18 }, { wch: 15 }];
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, prodSheet, 'Produtos');
+  XLSX.utils.book_append_sheet(workbook, loteSheet, 'Lotes');
+  return workbook;
 };
 
 export const shareExcelReport = async (data: ExportData): Promise<void> => {
-  // 1. Criar array com todas as linhas do relatório
-  const rows: any[][] = [];
+  const workbook = buildLojaWorkbook(data);
 
-  // Seção: Configuração da Loja
-  rows.push(['CONFIGURAÇÃO DA LOJA']);
-  rows.push(['Código da Loja', data.store?.store_id || '']);
-  rows.push(['Nome da Loja', data.store?.store_name || '']);
-  rows.push(['E-mail', data.store?.email || '']);
-  rows.push(['Celular do Gerente', data.store?.manager_phone || '']);
-  rows.push(['Nome do Gerente', data.store?.manager_name || '']);
-  rows.push([]); // Linha em branco
-
-  // Seção: Informações do Inventário
-  rows.push(['INFORMAÇÕES DO INVENTÁRIO']);
-  rows.push(['Descrição', data.inventory.description]);
-  rows.push(['Data', formatDate(data.inventory.date)]);
-  rows.push(['Status', data.inventory.status === 'open' ? 'Aberto' : 'Fechado']);
-  rows.push(['Total de Itens', data.items.length]);
-  rows.push([]); // Linha em branco
-
-  // Seção: Cabeçalho dos Itens
-  rows.push(['Código do Produto', 'EAN', 'Descrição', 'Quantidade', 'Lote', 'Validade']);
-
-  // Seção: Dados dos Itens
-  data.items.forEach(item => {
-    rows.push([
-      item.product_code || '',
-      item.ean || '',
-      item.description || '',
-      item.quantity,
-      item.lot || '',
-      formatDate(item.expiry_date)
-    ]);
-  });
-
-  // 2. Criar a planilha a partir do array
-  const worksheet = XLSX.utils.aoa_to_sheet(rows);
-
-  // Definir largura das colunas
-  worksheet['!cols'] = [
-    { wch: 25 }, // Coluna A
-    { wch: 20 }, // Coluna B
-    { wch: 40 }, // Coluna C
-    { wch: 12 }, // Coluna D
-    { wch: 15 }, // Coluna E
-    { wch: 12 }, // Coluna F
-  ];
-
-  // 3. Criar o livro e adicionar a planilha
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Inventário');
-
-  // 4. Gerar o arquivo em base64
-  const excelBase64 = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
-
-  // Nome do arquivo
   const sanitizedName = data.inventory.description.replace(/[^a-zA-Z0-9]/g, '_');
   const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
   const fileName = `inventario_${sanitizedName}_${dateStr}.xlsx`;
 
   if (Platform.OS === 'web') {
-    // Web: Download automático
     XLSX.writeFile(workbook, fileName);
     return;
   }
 
-  // 5. Mobile: Salvar e compartilhar
+  const excelBase64 = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
   const fileUri = `${FileSystem.cacheDirectory}${fileName}`;
 
   try {
-    await FileSystem.writeAsStringAsync(fileUri, excelBase64, {
-      encoding: 'base64',
-    });
-
+    await FileSystem.writeAsStringAsync(fileUri, excelBase64, { encoding: 'base64' });
     await Sharing.shareAsync(fileUri, {
       mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
       dialogTitle: 'Compartilhar Relatório de Inventário',
