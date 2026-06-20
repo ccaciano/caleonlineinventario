@@ -86,7 +86,7 @@ export default function ProductFormModal({ visible, product, onClose, onSuccess 
       }
       onSuccess()
     } catch (error) {
-      console.error("Error saving product:", error)
+      console.warn("Error saving product:", error)
       const errorMessage = error instanceof Error ? error.message : "Falha ao salvar produto"
       if (Platform.OS === "web" && typeof window !== "undefined") {
         window.alert(errorMessage)
