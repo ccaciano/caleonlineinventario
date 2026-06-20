@@ -386,7 +386,7 @@ export const clearAllData = async (): Promise<void> => {
 }
 
 export const importProductsFromCSV = async (csvContent: string): Promise<number> => {
-  // Strip BOM and normalize line endings (\r\n and \r → \n)
+  // Strip BOM and normalize line endings
   const normalized = csvContent.replace(/^﻿/, "").replace(/\r\n/g, "\n").replace(/\r/g, "\n")
   const lines = normalized.split("\n").filter((line) => line.trim())
   if (lines.length === 0) return 0
@@ -398,12 +398,17 @@ export const importProductsFromCSV = async (csvContent: string): Promise<number>
   const commaCount = (firstLine.match(/,/g) || []).length
   const delimiter = semicolonCount >= commaCount && semicolonCount > 0 ? ";" : ","
 
-  // Split first line into fields and check each field for header keywords (avoids false positives from substrings in data)
+  // Strip accents for accent-insensitive header matching (handles UTF-8 and Latin-1 encodings)
+  const stripAccents = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "")
+
+  // Split first line into fields and check each field for header keywords
   const firstFields = firstLine.split(delimiter).map((f) => f.trim().toLowerCase().replace(/['"]/g, ""))
-  const isHeaderField = (f: string) =>
-    f === "codigo" || f === "código" || f === "code" || f === "cod" ||
-    f === "ean" || f === "ean/gtin" || f === "gtin" ||
-    f === "descricao" || f === "descrição" || f === "description" || f === "desc" || f === "nome"
+  const isHeaderField = (f: string) => {
+    const n = stripAccents(f)
+    return n === "codigo" || n === "code" || n === "cod" ||
+      n === "ean" || n === "ean/gtin" || n === "gtin" ||
+      n === "descricao" || n === "description" || n === "desc" || n === "nome"
+  }
   const hasHeader = firstFields.some(isHeaderField)
 
   const startIndex = hasHeader ? 1 : 0
@@ -413,9 +418,10 @@ export const importProductsFromCSV = async (csvContent: string): Promise<number>
 
   if (hasHeader) {
     firstFields.forEach((header, index) => {
-      if (header.includes("codigo") || header.includes("código") || header === "code" || header === "cod") codeIndex = index
-      else if (header === "ean" || header.includes("ean") || header === "gtin") eanIndex = index
-      else if (header.includes("descri") || header === "desc" || header === "nome" || header === "description") descIndex = index
+      const n = stripAccents(header)
+      if (n.includes("codigo") || n === "code" || n === "cod") codeIndex = index
+      else if (n === "ean" || n === "ean/gtin" || n === "gtin") eanIndex = index
+      else if (n.includes("descri") || n === "desc" || n === "nome" || n === "description") descIndex = index
     })
   }
 
