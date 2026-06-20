@@ -1,8 +1,8 @@
 import React, { useState, useCallback } from "react"
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, FlatList } from "react-native"
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, FlatList, Modal } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router"
-import { getInventory, searchProduct, addWmsItem, deleteWmsItem, WmsCountedItem, Inventory, Product } from "../../services/api"
+import { getInventory, searchProduct, addWmsItem, updateWmsItem, deleteWmsItem, WmsCountedItem, Inventory, Product } from "../../services/api"
 import BarcodeScanner from "../../components/BarcodeScanner"
 import ProductFormModal from "../../components/ProductFormModal"
 
@@ -55,13 +55,15 @@ export default function WmsCountingScreen() {
   const [searchQuery, setSearchQuery] = useState("")
   const [addProductModalVisible, setAddProductModalVisible] = useState(false)
   const [pendingSearchCode, setPendingSearchCode] = useState("")
+  const [showUnitPicker, setShowUnitPicker] = useState(false)
+  const [editingItem, setEditingItem] = useState<WmsCountedItem | null>(null)
 
   const [formData, setFormData] = useState({
     quantity: "",
     lot: "",
     expiry_date: "",
-    unit: "UN" as "UN" | "CX",
-    fator: "1",
+    unit: "" as "UN" | "CX" | "",
+    fator: "",
   })
 
   const totalPecas = (() => {
@@ -70,6 +72,14 @@ export default function WmsCountingScreen() {
     if (isNaN(qty) || isNaN(fat)) return 0
     return qty * fat
   })()
+
+  const resetForm = useCallback(() => {
+    setFormData({ quantity: "", lot: "", expiry_date: "", unit: "", fator: "" })
+    setSearchQuery("")
+    setProductFound(null)
+    setEditingItem(null)
+    setPendingSearchCode("")
+  }, [])
 
   const loadData = useCallback(async () => {
     if (!invId || !addrId) return
@@ -89,7 +99,8 @@ export default function WmsCountingScreen() {
   useFocusEffect(
     useCallback(() => {
       loadData()
-    }, [loadData]),
+      resetForm()
+    }, [loadData, resetForm]),
   )
 
   const handleSearch = async (query: string) => {
@@ -136,7 +147,12 @@ export default function WmsCountingScreen() {
       setSearchQuery(code)
       handleSearch(code)
     } else {
-      setFormData((prev) => ({ ...prev, lot: code }))
+      if (code.length > 7) {
+        Alert.alert("Lote Inválido", "O lote não pode ter mais de 7 caracteres. O campo foi limpo.")
+        setFormData((prev) => ({ ...prev, lot: "" }))
+      } else {
+        setFormData((prev) => ({ ...prev, lot: code }))
+      }
     }
   }
 
@@ -151,54 +167,102 @@ export default function WmsCountingScreen() {
       unit: newUnit,
       fator: newUnit === "UN" ? "1" : "",
     }))
+    setShowUnitPicker(false)
   }
 
-  const handleAddItem = async () => {
+  const validateForm = (): { valid: boolean; qty?: number; fat?: number } => {
     if (!productFound) {
       Alert.alert("Erro", "Busque um produto primeiro")
-      return
+      return { valid: false }
     }
     if (!formData.quantity) {
       Alert.alert("Erro", "Informe a quantidade")
-      return
+      return { valid: false }
     }
     const qty = parseInt(formData.quantity)
     if (isNaN(qty) || qty <= 0) {
       Alert.alert("Quantidade inválida", "A quantidade deve ser maior que zero")
-      return
+      return { valid: false }
+    }
+    if (!formData.unit) {
+      Alert.alert("Erro", "Selecione a Unidade de Medida")
+      return { valid: false }
     }
     if (!formData.fator) {
       Alert.alert("Erro", "Informe o Fator de Conversão")
-      return
+      return { valid: false }
     }
     const fat = parseInt(formData.fator)
     if (isNaN(fat) || fat <= 0) {
       Alert.alert("Fator inválido", "O fator de conversão deve ser maior que zero")
-      return
+      return { valid: false }
     }
     if (formData.expiry_date && !isValidDate(formData.expiry_date)) {
       Alert.alert("Data inválida", "Use o formato DD/MM/AAAA")
-      return
+      return { valid: false }
     }
+    return { valid: true, qty, fat }
+  }
+
+  const handleAddItem = async () => {
+    const { valid, qty, fat } = validateForm()
+    if (!valid || qty === undefined || fat === undefined) return
 
     try {
       setLoading(true)
       const newItem = await addWmsItem(invId, addrId, {
-        codigo: productFound.code,
-        EAN: productFound.ean || undefined,
-        descricao: productFound.description,
-        unit: formData.unit,
+        codigo: productFound!.code,
+        EAN: productFound!.ean || undefined,
+        descricao: productFound!.description,
+        unit: formData.unit as "UN" | "CX",
         fator: fat,
         lote: formData.lot.trim() || "",
         validade: formData.expiry_date ? convertToISO(formData.expiry_date) : "",
         qtd: qty,
       })
       setItems((prev) => [...prev, newItem])
-      setFormData({ quantity: "", lot: "", expiry_date: "", unit: "UN", fator: "1" })
-      setSearchQuery("")
-      setProductFound(null)
+      resetForm()
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Falha ao adicionar item")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const startEditItem = (item: WmsCountedItem) => {
+    setEditingItem(item)
+    setSearchQuery(item.codigo)
+    setProductFound({ code: item.codigo, ean: item.EAN || "", description: item.descricao || "" })
+    setFormData({
+      quantity: item.qtd != null ? String(item.qtd) : "",
+      lot: item.lote || "",
+      expiry_date: item.validade ? convertFromISO(item.validade) : "",
+      unit: (item.unit as "UN" | "CX") || "",
+      fator: item.fator != null ? String(item.fator) : "",
+    })
+  }
+
+  const handleUpdateItem = async () => {
+    if (!editingItem) return
+    const { valid, qty, fat } = validateForm()
+    if (!valid || qty === undefined || fat === undefined) return
+
+    try {
+      setLoading(true)
+      const updated = await updateWmsItem(invId, addrId, editingItem._id, {
+        codigo: productFound!.code,
+        EAN: productFound!.ean || undefined,
+        descricao: productFound!.description,
+        unit: formData.unit as "UN" | "CX",
+        fator: fat,
+        lote: formData.lot.trim() || "",
+        validade: formData.expiry_date ? convertToISO(formData.expiry_date) : "",
+        qtd: qty,
+      })
+      setItems((prev) => prev.map((i) => (i._id === updated._id ? updated : i)))
+      resetForm()
+    } catch (error: any) {
+      Alert.alert("Erro", error.message || "Falha ao atualizar item")
     } finally {
       setLoading(false)
     }
@@ -214,6 +278,7 @@ export default function WmsCountingScreen() {
           try {
             await deleteWmsItem(invId, addrId, item._id)
             setItems((prev) => prev.filter((i) => i._id !== item._id))
+            if (editingItem?._id === item._id) resetForm()
           } catch (error: any) {
             Alert.alert("Erro", error.message || "Falha ao excluir item")
           }
@@ -227,9 +292,10 @@ export default function WmsCountingScreen() {
   const renderItem = ({ item }: { item: WmsCountedItem }) => {
     const isNullItem = item.qtd === null || item.qtd === undefined
     const itemTotalPecas = !isNullItem && item.qtd != null && item.fator != null ? item.qtd * item.fator : null
+    const isBeingEdited = editingItem?._id === item._id
 
     return (
-      <View style={[styles.itemCard, isNullItem && styles.nullItemCard]}>
+      <View style={[styles.itemCard, isNullItem && styles.nullItemCard, isBeingEdited && styles.editingItemCard]}>
         {isNullItem ? (
           <Text style={styles.nullItemText}>— Endereço sem itens contados —</Text>
         ) : (
@@ -240,9 +306,14 @@ export default function WmsCountingScreen() {
                 <Text style={styles.itemCode}>{item.codigo}</Text>
               </View>
               {!isClosed && (
-                <TouchableOpacity onPress={() => handleDeleteItem(item)} style={styles.actionBtn}>
-                  <Ionicons name="trash-outline" size={18} color="#FF3B30" />
-                </TouchableOpacity>
+                <View style={styles.itemActions}>
+                  <TouchableOpacity onPress={() => startEditItem(item)} style={styles.actionBtn}>
+                    <Ionicons name="create-outline" size={18} color="#007AFF" />
+                  </TouchableOpacity>
+                  <TouchableOpacity onPress={() => handleDeleteItem(item)} style={styles.actionBtn}>
+                    <Ionicons name="trash-outline" size={18} color="#FF3B30" />
+                  </TouchableOpacity>
+                </View>
               )}
             </View>
             {item.descricao ? <Text style={styles.itemDesc} numberOfLines={1}>{item.descricao}</Text> : null}
@@ -291,27 +362,40 @@ export default function WmsCountingScreen() {
           {/* Formulário */}
           {!isClosed && (
             <View style={styles.formSection}>
-              <Text style={styles.sectionTitle}>Adicionar Item</Text>
+              <View style={styles.formTitleRow}>
+                <Text style={styles.sectionTitle}>{editingItem ? "Editar Item" : "Adicionar Item"}</Text>
+                {editingItem && (
+                  <TouchableOpacity onPress={resetForm} style={styles.cancelEditBtn}>
+                    <Ionicons name="close-circle" size={20} color="#8E8E93" />
+                    <Text style={styles.cancelEditText}>Cancelar</Text>
+                  </TouchableOpacity>
+                )}
+              </View>
 
               {/* Busca de produto */}
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Código do Produto *</Text>
                 <View style={styles.inputRow}>
                   <TextInput
-                    style={styles.inputFlex}
+                    style={[styles.inputFlex, !!editingItem && styles.inputDisabled]}
                     value={searchQuery}
                     onChangeText={setSearchQuery}
                     onSubmitEditing={() => handleSearch(searchQuery)}
                     placeholder="Digite ou escaneie o código"
                     placeholderTextColor="#999"
                     autoCapitalize="characters"
+                    editable={!editingItem}
                   />
-                  <TouchableOpacity style={styles.scanIconBtn} onPress={() => openScanner("code")}>
-                    <Ionicons name="scan-outline" size={22} color="#FF9500" />
-                  </TouchableOpacity>
-                  <TouchableOpacity style={[styles.searchBtn, searchingProduct && { opacity: 0.6 }]} onPress={() => handleSearch(searchQuery)} disabled={searchingProduct}>
-                    {searchingProduct ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Ionicons name="search" size={20} color="#FFFFFF" />}
-                  </TouchableOpacity>
+                  {!editingItem && (
+                    <>
+                      <TouchableOpacity style={styles.scanIconBtn} onPress={() => openScanner("code")}>
+                        <Ionicons name="scan-outline" size={22} color="#FF9500" />
+                      </TouchableOpacity>
+                      <TouchableOpacity style={[styles.searchBtn, searchingProduct && { opacity: 0.6 }]} onPress={() => handleSearch(searchQuery)} disabled={searchingProduct}>
+                        {searchingProduct ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Ionicons name="search" size={20} color="#FFFFFF" />}
+                      </TouchableOpacity>
+                    </>
+                  )}
                 </View>
               </View>
 
@@ -341,30 +425,22 @@ export default function WmsCountingScreen() {
                 />
               </View>
 
-              {/* Unidade de Medida */}
+              {/* Unidade de Medida - Custom Picker */}
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Unid. Medida *</Text>
-                <View style={styles.unitRow}>
-                  <TouchableOpacity
-                    style={[styles.unitBtn, formData.unit === "UN" && styles.unitBtnActive]}
-                    onPress={() => handleUnitChange("UN")}
-                  >
-                    <Text style={[styles.unitBtnText, formData.unit === "UN" && styles.unitBtnTextActive]}>UN</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[styles.unitBtn, formData.unit === "CX" && styles.unitBtnActive]}
-                    onPress={() => handleUnitChange("CX")}
-                  >
-                    <Text style={[styles.unitBtnText, formData.unit === "CX" && styles.unitBtnTextActive]}>CX</Text>
-                  </TouchableOpacity>
-                </View>
+                <TouchableOpacity style={[styles.input, styles.pickerButton]} onPress={() => setShowUnitPicker(true)}>
+                  <Text style={[styles.pickerButtonText, !formData.unit && styles.pickerPlaceholder]}>
+                    {formData.unit || "Selecione..."}
+                  </Text>
+                  <Ionicons name="chevron-down" size={18} color="#8E8E93" />
+                </TouchableOpacity>
               </View>
 
               {/* Fator de Conversão */}
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Fator de Conversão *</Text>
                 <TextInput
-                  style={[styles.input, formData.unit === "UN" && styles.inputDisabled]}
+                  style={[styles.input, (formData.unit !== "CX") && styles.inputDisabled]}
                   value={formData.fator}
                   onChangeText={(t) => {
                     if (formData.unit === "CX") {
@@ -390,15 +466,16 @@ export default function WmsCountingScreen() {
 
               {/* Lote */}
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>Lote (opcional)</Text>
+                <Text style={styles.label}>Lote (opcional, máx. 7 caracteres)</Text>
                 <View style={styles.inputRow}>
                   <TextInput
                     style={styles.inputFlex}
                     value={formData.lot}
-                    onChangeText={(t) => setFormData({ ...formData, lot: t })}
+                    onChangeText={(t) => setFormData({ ...formData, lot: t.slice(0, 7) })}
                     placeholder="Ex: KG10001"
                     placeholderTextColor="#999"
                     autoCapitalize="characters"
+                    maxLength={7}
                   />
                   <TouchableOpacity style={styles.scanIconBtn} onPress={() => openScanner("lot")}>
                     <Ionicons name="scan-outline" size={22} color="#FF9500" />
@@ -425,18 +502,33 @@ export default function WmsCountingScreen() {
                 />
               </View>
 
-              <TouchableOpacity
-                style={[styles.addButton, (!productFound || loading) && styles.addButtonDisabled]}
-                onPress={handleAddItem}
-                disabled={!productFound || loading}
-              >
-                {loading ? <ActivityIndicator color="#FFFFFF" /> : (
-                  <>
-                    <Ionicons name="add-circle" size={22} color="#FFFFFF" />
-                    <Text style={styles.addButtonText}>Adicionar Item</Text>
-                  </>
-                )}
-              </TouchableOpacity>
+              {editingItem ? (
+                <TouchableOpacity
+                  style={[styles.addButton, styles.saveButton, loading && styles.addButtonDisabled]}
+                  onPress={handleUpdateItem}
+                  disabled={loading}
+                >
+                  {loading ? <ActivityIndicator color="#FFFFFF" /> : (
+                    <>
+                      <Ionicons name="checkmark-circle" size={22} color="#FFFFFF" />
+                      <Text style={styles.addButtonText}>Salvar Alterações</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={[styles.addButton, (!productFound || loading) && styles.addButtonDisabled]}
+                  onPress={handleAddItem}
+                  disabled={!productFound || loading}
+                >
+                  {loading ? <ActivityIndicator color="#FFFFFF" /> : (
+                    <>
+                      <Ionicons name="add-circle" size={22} color="#FFFFFF" />
+                      <Text style={styles.addButtonText}>Adicionar Item</Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+              )}
             </View>
           )}
 
@@ -457,6 +549,23 @@ export default function WmsCountingScreen() {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Unit Picker Modal */}
+      <Modal visible={showUnitPicker} transparent animationType="fade" onRequestClose={() => setShowUnitPicker(false)}>
+        <TouchableOpacity style={styles.pickerOverlay} activeOpacity={1} onPress={() => setShowUnitPicker(false)}>
+          <View style={styles.pickerDropdown}>
+            <Text style={styles.pickerTitle}>Unidade de Medida</Text>
+            <TouchableOpacity style={[styles.pickerOption, formData.unit === "UN" && styles.pickerOptionSelected]} onPress={() => handleUnitChange("UN")}>
+              <Text style={[styles.pickerOptionText, formData.unit === "UN" && styles.pickerOptionTextSelected]}>UN</Text>
+              {formData.unit === "UN" && <Ionicons name="checkmark" size={18} color="#FF9500" />}
+            </TouchableOpacity>
+            <TouchableOpacity style={[styles.pickerOption, formData.unit === "CX" && styles.pickerOptionSelected]} onPress={() => handleUnitChange("CX")}>
+              <Text style={[styles.pickerOptionText, formData.unit === "CX" && styles.pickerOptionTextSelected]}>CX</Text>
+              {formData.unit === "CX" && <Ionicons name="checkmark" size={18} color="#FF9500" />}
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
 
       <BarcodeScanner visible={scannerVisible} onClose={() => setScannerVisible(false)} onScan={handleScan} />
 
@@ -483,7 +592,10 @@ const styles = StyleSheet.create({
   addressTitle: { fontSize: 22, fontWeight: "bold", color: "#FF9500" },
   inventoryName: { fontSize: 13, color: "#8E8E93" },
   formSection: { backgroundColor: "#FFFFFF", borderRadius: 16, padding: 16, gap: 12, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
+  formTitleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   sectionTitle: { fontSize: 17, fontWeight: "bold", color: "#000" },
+  cancelEditBtn: { flexDirection: "row", alignItems: "center", gap: 4 },
+  cancelEditText: { fontSize: 13, color: "#8E8E93" },
   inputGroup: { gap: 6 },
   label: { fontSize: 14, fontWeight: "600", color: "#000" },
   inputRow: { flexDirection: "row", gap: 8, alignItems: "center" },
@@ -498,16 +610,13 @@ const styles = StyleSheet.create({
   inputDisabled: {
     backgroundColor: "#EBEBEB", color: "#8E8E93",
   },
+  pickerButton: {
+    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+  },
+  pickerButtonText: { fontSize: 15, color: "#000" },
+  pickerPlaceholder: { color: "#999" },
   scanIconBtn: { width: 44, height: 44, justifyContent: "center", alignItems: "center", borderRadius: 10, backgroundColor: "#FFF3E0", borderWidth: 1, borderColor: "#FF9500" },
   searchBtn: { width: 44, height: 44, justifyContent: "center", alignItems: "center", borderRadius: 10, backgroundColor: "#FF9500" },
-  unitRow: { flexDirection: "row", gap: 10 },
-  unitBtn: {
-    flex: 1, paddingVertical: 12, borderRadius: 12, borderWidth: 1.5,
-    borderColor: "#E5E5EA", backgroundColor: "#F2F2F7", alignItems: "center",
-  },
-  unitBtnActive: { backgroundColor: "#FF9500", borderColor: "#FF9500" },
-  unitBtnText: { fontSize: 16, fontWeight: "bold", color: "#8E8E93" },
-  unitBtnTextActive: { color: "#FFFFFF" },
   totalPecasBox: {
     flexDirection: "row", alignItems: "center", gap: 10,
     backgroundColor: "#F9F9FB", borderWidth: 1, borderColor: "#E5E5EA",
@@ -521,6 +630,7 @@ const styles = StyleSheet.create({
   productCode: { fontSize: 16, fontWeight: "bold", color: "#000" },
   productMeta: { fontSize: 13, color: "#555" },
   addButton: { backgroundColor: "#FF9500", borderRadius: 12, padding: 14, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 4, minHeight: 52 },
+  saveButton: { backgroundColor: "#007AFF" },
   addButtonDisabled: { backgroundColor: "#C7C7CC" },
   addButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "bold" },
   itemsSection: { backgroundColor: "#FFFFFF", borderRadius: 16, padding: 16, gap: 12, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
@@ -528,6 +638,7 @@ const styles = StyleSheet.create({
   itemCount: { fontSize: 13, fontWeight: "600", color: "#8E8E93" },
   itemCard: { backgroundColor: "#F2F2F7", borderRadius: 12, padding: 12, gap: 4 },
   nullItemCard: { backgroundColor: "#FFF3E0", borderWidth: 1, borderColor: "#FFCC80" },
+  editingItemCard: { borderWidth: 2, borderColor: "#007AFF", backgroundColor: "#EBF4FF" },
   nullItemText: { fontSize: 13, color: "#FF9500", fontStyle: "italic", textAlign: "center", paddingVertical: 4 },
   itemHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   itemCodeRow: { flexDirection: "row", alignItems: "center", gap: 6, flex: 1 },
@@ -537,7 +648,25 @@ const styles = StyleSheet.create({
   detailChip: { fontSize: 12, backgroundColor: "#E3F2FD", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, color: "#555" },
   totalChip: { backgroundColor: "#FFF3E0" },
   detailValue: { fontWeight: "bold", color: "#000" },
+  itemActions: { flexDirection: "row", gap: 4 },
   actionBtn: { padding: 4 },
   emptyState: { alignItems: "center", padding: 24 },
   emptyText: { fontSize: 15, color: "#8E8E93", marginTop: 8 },
+  pickerOverlay: {
+    flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center",
+  },
+  pickerDropdown: {
+    backgroundColor: "#FFFFFF", borderRadius: 16, padding: 8, width: 240,
+    shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 8,
+  },
+  pickerTitle: {
+    fontSize: 13, fontWeight: "600", color: "#8E8E93", paddingHorizontal: 16, paddingVertical: 10, textTransform: "uppercase",
+  },
+  pickerOption: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 16, paddingVertical: 14, borderRadius: 10,
+  },
+  pickerOptionSelected: { backgroundColor: "#FFF3E0" },
+  pickerOptionText: { fontSize: 16, fontWeight: "600", color: "#000" },
+  pickerOptionTextSelected: { color: "#FF9500" },
 })

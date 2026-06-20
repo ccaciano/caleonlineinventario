@@ -222,9 +222,8 @@ export default function DrawerLayout() {
         <Drawer.Screen
           name="settings"
           options={{
-            drawerLabel: t("dadosConfig"),
-            title: t("dadosConfig"),
-            drawerIcon: ({ color, size }) => <Ionicons name="settings-outline" size={size} color={color} />,
+            drawerItemStyle: { display: "none" },
+            title: "Configurações",
           }}
         />
       </Drawer>
