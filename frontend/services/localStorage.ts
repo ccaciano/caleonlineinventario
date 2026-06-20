@@ -386,13 +386,25 @@ export const clearAllData = async (): Promise<void> => {
 }
 
 export const importProductsFromCSV = async (csvContent: string): Promise<number> => {
-  const lines = csvContent.split("\n").filter((line) => line.trim())
+  // Strip BOM and normalize line endings (\r\n and \r → \n)
+  const normalized = csvContent.replace(/^﻿/, "").replace(/\r\n/g, "\n").replace(/\r/g, "\n")
+  const lines = normalized.split("\n").filter((line) => line.trim())
   if (lines.length === 0) return 0
 
-  const firstLine = lines[0]
-  const delimiter = firstLine.includes(";") ? ";" : ","
-  const firstLineLower = firstLine.toLowerCase()
-  const hasHeader = firstLineLower.includes("codigo") || firstLineLower.includes("código") || firstLineLower.includes("code") || firstLineLower.includes("ean") || firstLineLower.includes("descri")
+  const firstLine = lines[0].trim()
+
+  // Detect delimiter by counting occurrences in first line
+  const semicolonCount = (firstLine.match(/;/g) || []).length
+  const commaCount = (firstLine.match(/,/g) || []).length
+  const delimiter = semicolonCount >= commaCount && semicolonCount > 0 ? ";" : ","
+
+  // Split first line into fields and check each field for header keywords (avoids false positives from substrings in data)
+  const firstFields = firstLine.split(delimiter).map((f) => f.trim().toLowerCase().replace(/['"]/g, ""))
+  const isHeaderField = (f: string) =>
+    f === "codigo" || f === "código" || f === "code" || f === "cod" ||
+    f === "ean" || f === "ean/gtin" || f === "gtin" ||
+    f === "descricao" || f === "descrição" || f === "description" || f === "desc" || f === "nome"
+  const hasHeader = firstFields.some(isHeaderField)
 
   const startIndex = hasHeader ? 1 : 0
   let codeIndex = 0
@@ -400,11 +412,10 @@ export const importProductsFromCSV = async (csvContent: string): Promise<number>
   let descIndex = 2
 
   if (hasHeader) {
-    const headers = firstLine.split(delimiter).map((h) => h.trim().toLowerCase().replace(/['"]/g, ""))
-    headers.forEach((header, index) => {
-      if (header.includes("codigo") || header.includes("código") || header === "code") codeIndex = index
-      else if (header.includes("ean")) eanIndex = index
-      else if (header.includes("descri")) descIndex = index
+    firstFields.forEach((header, index) => {
+      if (header.includes("codigo") || header.includes("código") || header === "code" || header === "cod") codeIndex = index
+      else if (header === "ean" || header.includes("ean") || header === "gtin") eanIndex = index
+      else if (header.includes("descri") || header === "desc" || header === "nome" || header === "description") descIndex = index
     })
   }
 
