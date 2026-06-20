@@ -23,7 +23,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
           <Ionicons name="cube" size={48} color="#FFFFFF" />
         </View>
         <Text style={styles.appTitle}>{t("appTitle") || "CaléOnline Inventário"}</Text>
-        <Text style={styles.appSubtitle}>{t("appSubtitle") || "Gestão de Estoque WMS & LOJA"}</Text>
+        <Text style={styles.appSubtitle}>{t("appSubtitle") || "Gestão de Estoque LOJA"}</Text>
       </View>
 
       {/* Lista de itens do menu */}
@@ -181,6 +181,7 @@ export default function DrawerLayout() {
           name="products"
           options={{
             drawerLabel: t("products"),
+            drawerItemStyle: { display: "none" },
             title: t("products"),
             drawerIcon: ({ color, size }) => <Ionicons name="cart-outline" size={size} color={color} />,
           }}
