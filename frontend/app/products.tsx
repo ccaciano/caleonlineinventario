@@ -186,7 +186,7 @@ export default function ProductsScreen() {
       let csvContent = buffer.toString("utf8")
 
       // Se houver sinal de erro de encoding (caractere diamante com interrogação)
-      if (csvContent.includes("\ufffd") || csvContent.includes("")) {
+      if (csvContent.includes("\ufffd")) {
         console.log("🔄 Detectado erro de encoding. Convertendo para Latin1...")
         csvContent = buffer.toString("latin1")
       }
