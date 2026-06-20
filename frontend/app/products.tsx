@@ -352,6 +352,14 @@ export default function ProductsScreen() {
             <Ionicons name="add" size={24} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
+
+        <View style={styles.csvHintBox}>
+          <Ionicons name="information-circle-outline" size={15} color="#007AFF" />
+          <Text style={styles.csvHintText}>
+            <Text style={styles.csvHintBold}>Formato do CSV: </Text>CÓDIGO;EAN;DESCRIÇÃO{"\n"}
+            Separador: ponto e vírgula (;) ou vírgula (,) — Ex: 12345;7891234567890;Produto Exemplo
+          </Text>
+        </View>
       </View>
 
       <FlatList
@@ -516,6 +524,23 @@ const styles = StyleSheet.create({
     marginTop: 16,
     textAlign: "center",
     fontStyle: "italic",
+  },
+  csvHintBox: {
+    flexDirection: "row",
+    gap: 8,
+    backgroundColor: "#E3F2FD",
+    borderRadius: 10,
+    padding: 10,
+    alignItems: "flex-start",
+  },
+  csvHintText: {
+    flex: 1,
+    fontSize: 12,
+    color: "#333",
+    lineHeight: 18,
+  },
+  csvHintBold: {
+    fontWeight: "bold",
   },
   footer: {
     paddingVertical: 16,

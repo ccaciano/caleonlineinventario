@@ -165,6 +165,37 @@ export const importWmsAddresses = async (inventoryId: string, enderecos: string[
   return LocalStorage.importWmsAddresses(inventoryId, enderecos)
 }
 
+export const updateWmsAddress = async (inventoryId: string, addressId: string, newEndereco: string): Promise<WmsAddress> => {
+  const inventory = await LocalStorage.getInventoryById(inventoryId)
+  if (!inventory) throw new Error("Inventário não encontrado")
+  if (inventory.status !== "open") throw new Error("Inventário fechado")
+  const dup = (inventory.enderecos || []).find((a) => a._id !== addressId && a.endereco.toUpperCase() === newEndereco.toUpperCase())
+  if (dup) throw new Error(`Endereço "${newEndereco}" já existe neste inventário`)
+  const updated = await LocalStorage.updateWmsAddress(inventoryId, addressId, newEndereco)
+  if (!updated) throw new Error("Endereço não encontrado")
+  return updated
+}
+
+export const closeWmsInventory = async (inventoryId: string): Promise<Inventory | null> => {
+  const inventory = await LocalStorage.getInventoryById(inventoryId)
+  if (!inventory) throw new Error("Inventário não encontrado")
+  for (const addr of inventory.enderecos || []) {
+    if (!addr.itens || addr.itens.length === 0) {
+      await LocalStorage.addWmsItem(inventoryId, addr._id, {
+        codigo: null as any,
+        EAN: null as any,
+        descricao: null as any,
+        unit: null as any,
+        fator: null as any,
+        lote: null as any,
+        validade: null as any,
+        qtd: null as any,
+      })
+    }
+  }
+  return LocalStorage.closeInventory(inventoryId)
+}
+
 // ==================== ITENS WMS ====================
 
 export const addWmsItem = async (inventoryId: string, addressId: string, item: Omit<WmsCountedItem, "_id">): Promise<WmsCountedItem> => {

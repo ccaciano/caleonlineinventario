@@ -6,6 +6,9 @@ import * as DocumentPicker from "expo-document-picker"
 import * as FileSystem from "expo-file-system/legacy"
 import BarcodeScanner from "./BarcodeScanner"
 
+const ADDRESS_REGEX = /^[A-Z]{2}\d{7}$/
+const isValidAddress = (addr: string): boolean => ADDRESS_REGEX.test(addr)
+
 interface AddressModalProps {
   visible: boolean
   onClose: () => void
@@ -33,6 +36,10 @@ export default function AddressModal({ visible, onClose, onAddSingle, onImportLi
       Alert.alert("Erro", "Digite o endereço")
       return
     }
+    if (!isValidAddress(clean)) {
+      Alert.alert("Endereço inválido", "O endereço deve seguir o padrão XX0000000\n(2 letras + 7 dígitos, total 9 caracteres)\nEx: AA0010101")
+      return
+    }
     try {
       setLoading(true)
       await onAddSingle(clean)
@@ -48,6 +55,15 @@ export default function AddressModal({ visible, onClose, onAddSingle, onImportLi
     setScannerVisible(false)
     const clean = code.trim().toUpperCase()
     if (!clean) return
+    if (!isValidAddress(clean)) {
+      setManualText(clean)
+      setTab("manual")
+      Alert.alert(
+        "Endereço inválido",
+        `"${clean}" não segue o padrão XX0000000 (2 letras + 7 dígitos).\n\nO valor foi inserido no campo manual para você corrigir.`,
+      )
+      return
+    }
     try {
       setLoading(true)
       await onAddSingle(clean)
@@ -89,6 +105,16 @@ export default function AddressModal({ visible, onClose, onAddSingle, onImportLi
         return
       }
 
+      const invalid = lines.filter((l) => !isValidAddress(l))
+      if (invalid.length > 0) {
+        const sample = invalid.slice(0, 5).join("\n")
+        Alert.alert(
+          "Endereços inválidos",
+          `${invalid.length} endereço(s) não respeitam o padrão XX0000000 (2 letras + 7 dígitos):\n\n${sample}${invalid.length > 5 ? "\n..." : ""}\n\nNenhum endereço foi importado.`,
+        )
+        return
+      }
+
       await onImportList(lines)
       Alert.alert("Sucesso", `${lines.length} endereço(s) importado(s)!`)
       handleClose()
@@ -114,7 +140,6 @@ export default function AddressModal({ visible, onClose, onAddSingle, onImportLi
         propagateSwipe={true}
       >
         <View style={styles.container}>
-          {/* Header */}
           <View style={styles.header}>
             <Text style={styles.title}>Adicionar Endereço</Text>
             <TouchableOpacity onPress={handleClose} disabled={loading}>
@@ -122,7 +147,6 @@ export default function AddressModal({ visible, onClose, onAddSingle, onImportLi
             </TouchableOpacity>
           </View>
 
-          {/* Tabs */}
           <View style={styles.tabs}>
             <TouchableOpacity style={[styles.tab, tab === "manual" && styles.tabActive]} onPress={() => setTab("manual")}>
               <Ionicons name="create-outline" size={18} color={tab === "manual" ? "#FFFFFF" : "#007AFF"} />
@@ -137,9 +161,11 @@ export default function AddressModal({ visible, onClose, onAddSingle, onImportLi
           <ScrollView bounces={false} keyboardShouldPersistTaps="handled">
             {tab === "manual" ? (
               <View style={styles.content}>
-                <Text style={styles.hint}>Formato: AA0010101 (Rua + Posição + Altura + Prof.)</Text>
+                <View style={styles.patternBox}>
+                  <Ionicons name="information-circle-outline" size={16} color="#007AFF" />
+                  <Text style={styles.patternText}>Padrão: <Text style={styles.patternCode}>XX0000000</Text> — 2 letras + 7 dígitos (9 caracteres)</Text>
+                </View>
 
-                {/* Scanner */}
                 <TouchableOpacity style={styles.scanButton} onPress={() => setScannerVisible(true)} disabled={loading}>
                   <Ionicons name="scan" size={24} color="#FFFFFF" />
                   <Text style={styles.scanButtonText}>Escanear Endereço</Text>
@@ -156,6 +182,7 @@ export default function AddressModal({ visible, onClose, onAddSingle, onImportLi
                     placeholderTextColor="#999"
                     autoCapitalize="characters"
                     editable={!loading}
+                    maxLength={9}
                   />
                   <TouchableOpacity style={[styles.addBtn, (!manualText.trim() || loading) && styles.addBtnDisabled]} onPress={handleAddManual} disabled={!manualText.trim() || loading}>
                     {loading ? <ActivityIndicator color="#FFFFFF" size="small" /> : <Ionicons name="add" size={24} color="#FFFFFF" />}
@@ -167,10 +194,12 @@ export default function AddressModal({ visible, onClose, onAddSingle, onImportLi
                 <View style={styles.infoBox}>
                   <Ionicons name="information-circle-outline" size={20} color="#007AFF" />
                   <Text style={styles.infoText}>
-                    Selecione um arquivo .txt com um endereço por linha:{"\n"}
+                    Arquivo .txt com um endereço por linha (padrão XX0000000):{"\n"}
                     AA0010101{"\n"}
                     AA0010201{"\n"}
-                    AA0010301
+                    AA0010301{"\n"}
+                    {"\n"}
+                    Todos os endereços serão validados antes da importação.
                   </Text>
                 </View>
                 <TouchableOpacity style={[styles.importButton, loading && { opacity: 0.6 }]} onPress={handleImportTxt} disabled={loading}>
@@ -201,51 +230,32 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
     paddingTop: Platform.OS === "android" ? 45 : 60,
-    maxHeight: "80%",
+    maxHeight: "85%",
   },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 24, paddingBottom: 16 },
   title: { fontSize: 22, fontWeight: "bold", color: "#000" },
   tabs: { flexDirection: "row", gap: 8, marginHorizontal: 24, marginBottom: 16 },
   tab: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: "#007AFF",
-    backgroundColor: "#F0F8FF",
+    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 6, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, borderColor: "#007AFF", backgroundColor: "#F0F8FF",
   },
   tabActive: { backgroundColor: "#007AFF", borderColor: "#007AFF" },
   tabText: { fontSize: 13, fontWeight: "600", color: "#007AFF" },
   tabTextActive: { color: "#FFFFFF" },
   content: { paddingHorizontal: 24, paddingBottom: 16, gap: 16 },
-  hint: { fontSize: 13, color: "#8E8E93" },
+  patternBox: { flexDirection: "row", gap: 8, alignItems: "center", backgroundColor: "#E3F2FD", borderRadius: 10, padding: 10 },
+  patternText: { flex: 1, fontSize: 13, color: "#333" },
+  patternCode: { fontWeight: "bold", fontFamily: Platform.OS === "ios" ? "Courier" : "monospace" },
   scanButton: {
-    backgroundColor: "#34C759",
-    borderRadius: 12,
-    padding: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    minHeight: 52,
+    backgroundColor: "#34C759", borderRadius: 12, padding: 16,
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, minHeight: 52,
   },
   scanButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "bold" },
   separator: { textAlign: "center", color: "#8E8E93", fontSize: 13 },
   inputRow: { flexDirection: "row", gap: 8, alignItems: "center" },
   inputFlex: {
-    flex: 1,
-    backgroundColor: "#F2F2F7",
-    borderWidth: 1,
-    borderColor: "#E5E5EA",
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 16,
-    color: "#000",
-    minHeight: 50,
+    flex: 1, backgroundColor: "#F2F2F7", borderWidth: 1, borderColor: "#E5E5EA",
+    borderRadius: 12, padding: 14, fontSize: 16, color: "#000", minHeight: 50,
   },
   addBtn: { backgroundColor: "#007AFF", borderRadius: 12, padding: 13, minHeight: 50, justifyContent: "center", alignItems: "center" },
   addBtnDisabled: { backgroundColor: "#C7C7CC" },

@@ -188,9 +188,8 @@ export default function DrawerLayout() {
         <Drawer.Screen
           name="store-config"
           options={{
-            drawerLabel: t("storeConfig"),
-            title: t("storeConfig"),
-            drawerIcon: ({ color, size }) => <Ionicons name="storefront-outline" size={size} color={color} />,
+            drawerItemStyle: { display: "none" },
+            title: "Dados da Loja",
           }}
         />
         <Drawer.Screen

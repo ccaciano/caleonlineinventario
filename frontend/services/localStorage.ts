@@ -271,6 +271,19 @@ export const getWmsAddresses = async (inventoryId: string): Promise<WmsAddress[]
   return inv?.enderecos || []
 }
 
+export const updateWmsAddress = async (inventoryId: string, addressId: string, newEndereco: string): Promise<WmsAddress | null> => {
+  const inventories = await getInventories()
+  const invIndex = inventories.findIndex((inv) => inv._id === inventoryId)
+  if (invIndex === -1) return null
+  const enderecos = inventories[invIndex].enderecos || []
+  const addrIndex = enderecos.findIndex((a) => a._id === addressId)
+  if (addrIndex === -1) return null
+  enderecos[addrIndex] = { ...enderecos[addrIndex], endereco: newEndereco }
+  inventories[invIndex].enderecos = enderecos
+  await saveInventories(inventories)
+  return enderecos[addrIndex]
+}
+
 export const importWmsAddresses = async (inventoryId: string, enderecosList: string[]): Promise<WmsAddress[]> => {
   const inventories = await getInventories()
   const invIndex = inventories.findIndex((inv) => inv._id === inventoryId)

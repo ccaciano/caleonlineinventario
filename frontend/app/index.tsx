@@ -65,10 +65,6 @@ export default function InventoriesScreen() {
 
   const handleDownload = async (inventory: Inventory) => {
     if (!inventory._id) return
-    if (inventory.type === "wms") {
-      Alert.alert("WMS", "Exportação de inventário WMS em breve.")
-      return
-    }
     try {
       setExportingId(inventory._id)
       const exportData = await getExportData(inventory._id)
