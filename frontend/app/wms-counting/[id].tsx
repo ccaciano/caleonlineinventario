@@ -118,14 +118,10 @@ export default function WmsCountingScreen() {
       } else {
         setProductFound(null)
         setPendingSearchCode(query.trim())
-        Alert.alert(
-          "Produto não encontrado",
-          `O código "${query.trim()}" não está cadastrado na base de produtos.\n\nDeseja cadastrar um novo produto?`,
-          [
-            { text: "Não", style: "cancel" },
-            { text: "Sim", onPress: () => setAddProductModalVisible(true) },
-          ],
-        )
+        Alert.alert("Produto não encontrado", `O código "${query.trim()}" não está cadastrado na base de produtos.\n\nDeseja cadastrar um novo produto?`, [
+          { text: "Não", style: "cancel" },
+          { text: "Sim", onPress: () => setAddProductModalVisible(true) },
+        ])
       }
     } catch {
       Alert.alert("Erro", "Falha ao buscar produto")
@@ -316,14 +312,40 @@ export default function WmsCountingScreen() {
                 </View>
               )}
             </View>
-            {item.descricao ? <Text style={styles.itemDesc} numberOfLines={1}>{item.descricao}</Text> : null}
+            {item.descricao ? (
+              <Text style={styles.itemDesc} numberOfLines={1}>
+                {item.descricao}
+              </Text>
+            ) : null}
             <View style={styles.itemDetails}>
-              <Text style={styles.detailChip}>Qtd: <Text style={styles.detailValue}>{item.qtd}</Text></Text>
-              {item.unit ? <Text style={styles.detailChip}>UM: <Text style={styles.detailValue}>{item.unit}</Text></Text> : null}
-              {item.fator != null ? <Text style={styles.detailChip}>Fator: <Text style={styles.detailValue}>{item.fator}</Text></Text> : null}
-              {itemTotalPecas != null ? <Text style={[styles.detailChip, styles.totalChip]}>Total: <Text style={styles.detailValue}>{itemTotalPecas}</Text></Text> : null}
-              {item.lote ? <Text style={styles.detailChip}>Lote: <Text style={styles.detailValue}>{item.lote}</Text></Text> : null}
-              {item.validade ? <Text style={styles.detailChip}>Val: <Text style={styles.detailValue}>{convertFromISO(item.validade)}</Text></Text> : null}
+              <Text style={styles.detailChip}>
+                Qtd: <Text style={styles.detailValue}>{item.qtd}</Text>
+              </Text>
+              {item.unit ? (
+                <Text style={styles.detailChip}>
+                  UM: <Text style={styles.detailValue}>{item.unit}</Text>
+                </Text>
+              ) : null}
+              {item.fator != null ? (
+                <Text style={styles.detailChip}>
+                  Fator: <Text style={styles.detailValue}>{item.fator}</Text>
+                </Text>
+              ) : null}
+              {itemTotalPecas != null ? (
+                <Text style={[styles.detailChip, styles.totalChip]}>
+                  Total: <Text style={styles.detailValue}>{itemTotalPecas}</Text>
+                </Text>
+              ) : null}
+              {item.lote ? (
+                <Text style={styles.detailChip}>
+                  Lote: <Text style={styles.detailValue}>{item.lote}</Text>
+                </Text>
+              ) : null}
+              {item.validade ? (
+                <Text style={styles.detailChip}>
+                  Val: <Text style={styles.detailValue}>{convertFromISO(item.validade)}</Text>
+                </Text>
+              ) : null}
             </View>
           </>
         )}
@@ -332,7 +354,11 @@ export default function WmsCountingScreen() {
   }
 
   if (loading && !inventory) {
-    return <View style={styles.loadingContainer}><ActivityIndicator size="large" color="#FF9500" /></View>
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#FF9500" />
+      </View>
+    )
   }
 
   if (!inventory) return null
@@ -341,7 +367,6 @@ export default function WmsCountingScreen() {
     <>
       <KeyboardAvoidingView style={styles.container} behavior={Platform.OS === "ios" ? "padding" : "height"}>
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-
           {/* Header */}
           <View style={styles.header}>
             <TouchableOpacity onPress={() => router.navigate({ pathname: "/wms/[id]", params: { id: invId } })} style={styles.backButton}>
@@ -355,7 +380,9 @@ export default function WmsCountingScreen() {
                 </View>
               )}
               <Text style={styles.addressTitle}>{addrName || addrId}</Text>
-              <Text style={styles.inventoryName} numberOfLines={1}>{inventory.description}</Text>
+              <Text style={styles.inventoryName} numberOfLines={1}>
+                {inventory.description}
+              </Text>
             </View>
           </View>
 
@@ -408,30 +435,23 @@ export default function WmsCountingScreen() {
                   </View>
                   <Text style={styles.productCode}>{productFound.code}</Text>
                   {productFound.ean ? <Text style={styles.productMeta}>EAN: {productFound.ean}</Text> : null}
-                  <Text style={styles.productMeta} numberOfLines={2}>{productFound.description}</Text>
+                  <Text style={styles.productMeta} numberOfLines={2}>
+                    {productFound.description}
+                  </Text>
                 </View>
               )}
 
               {/* Quantidade */}
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Quantidade *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.quantity}
-                  onChangeText={(t) => setFormData({ ...formData, quantity: t.replace(/[^0-9]/g, "") })}
-                  placeholder="0"
-                  placeholderTextColor="#999"
-                  keyboardType="numeric"
-                />
+                <TextInput style={styles.input} value={formData.quantity} onChangeText={(t) => setFormData({ ...formData, quantity: t.replace(/[^0-9]/g, "") })} placeholder="0" placeholderTextColor="#999" keyboardType="numeric" />
               </View>
 
               {/* Unidade de Medida - Custom Picker */}
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Unid. Medida *</Text>
                 <TouchableOpacity style={[styles.input, styles.pickerButton]} onPress={() => setShowUnitPicker(true)}>
-                  <Text style={[styles.pickerButtonText, !formData.unit && styles.pickerPlaceholder]}>
-                    {formData.unit || "Selecione..."}
-                  </Text>
+                  <Text style={[styles.pickerButtonText, !formData.unit && styles.pickerPlaceholder]}>{formData.unit || "Selecione..."}</Text>
                   <Ionicons name="chevron-down" size={18} color="#8E8E93" />
                 </TouchableOpacity>
               </View>
@@ -440,17 +460,18 @@ export default function WmsCountingScreen() {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Fator de Conversão *</Text>
                 <TextInput
-                  style={[styles.input, (formData.unit !== "CX") && styles.inputDisabled]}
+                  style={[styles.input, formData.unit !== "CX" && styles.inputDisabled]}
                   value={formData.fator}
                   onChangeText={(t) => {
                     if (formData.unit === "CX") {
-                      setFormData({ ...formData, fator: t.replace(/[^0-9]/g, "") })
+                      setFormData({ ...formData, fator: t.replace(/[^0-9]/g, "").slice(0, 4) })
                     }
                   }}
                   placeholder={formData.unit === "UN" ? "1 (fixo)" : "Digite o fator"}
                   placeholderTextColor="#999"
                   keyboardType="numeric"
                   editable={formData.unit === "CX"}
+                  maxLength={4}
                 />
               </View>
 
@@ -468,15 +489,7 @@ export default function WmsCountingScreen() {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Lote (opcional, máx. 7 caracteres)</Text>
                 <View style={styles.inputRow}>
-                  <TextInput
-                    style={styles.inputFlex}
-                    value={formData.lot}
-                    onChangeText={(t) => setFormData({ ...formData, lot: t.slice(0, 7) })}
-                    placeholder="Ex: KG10001"
-                    placeholderTextColor="#999"
-                    autoCapitalize="characters"
-                    maxLength={7}
-                  />
+                  <TextInput style={styles.inputFlex} value={formData.lot} onChangeText={(t) => setFormData({ ...formData, lot: t.slice(0, 7) })} placeholder="Ex: KG10001" placeholderTextColor="#999" autoCapitalize="characters" maxLength={7} />
                   <TouchableOpacity style={styles.scanIconBtn} onPress={() => openScanner("lot")}>
                     <Ionicons name="scan-outline" size={22} color="#FF9500" />
                   </TouchableOpacity>
@@ -503,12 +516,10 @@ export default function WmsCountingScreen() {
               </View>
 
               {editingItem ? (
-                <TouchableOpacity
-                  style={[styles.addButton, styles.saveButton, loading && styles.addButtonDisabled]}
-                  onPress={handleUpdateItem}
-                  disabled={loading}
-                >
-                  {loading ? <ActivityIndicator color="#FFFFFF" /> : (
+                <TouchableOpacity style={[styles.addButton, styles.saveButton, loading && styles.addButtonDisabled]} onPress={handleUpdateItem} disabled={loading}>
+                  {loading ? (
+                    <ActivityIndicator color="#FFFFFF" />
+                  ) : (
                     <>
                       <Ionicons name="checkmark-circle" size={22} color="#FFFFFF" />
                       <Text style={styles.addButtonText}>Salvar Alterações</Text>
@@ -516,12 +527,10 @@ export default function WmsCountingScreen() {
                   )}
                 </TouchableOpacity>
               ) : (
-                <TouchableOpacity
-                  style={[styles.addButton, (!productFound || loading) && styles.addButtonDisabled]}
-                  onPress={handleAddItem}
-                  disabled={!productFound || loading}
-                >
-                  {loading ? <ActivityIndicator color="#FFFFFF" /> : (
+                <TouchableOpacity style={[styles.addButton, (!productFound || loading) && styles.addButtonDisabled]} onPress={handleAddItem} disabled={!productFound || loading}>
+                  {loading ? (
+                    <ActivityIndicator color="#FFFFFF" />
+                  ) : (
                     <>
                       <Ionicons name="add-circle" size={22} color="#FFFFFF" />
                       <Text style={styles.addButtonText}>Adicionar Item</Text>
@@ -536,7 +545,9 @@ export default function WmsCountingScreen() {
           <View style={styles.itemsSection}>
             <View style={styles.itemsHeader}>
               <Text style={styles.sectionTitle}>Itens neste Endereço</Text>
-              <Text style={styles.itemCount}>{items.filter(i => i.qtd !== null).length} item{items.filter(i => i.qtd !== null).length !== 1 ? "s" : ""}</Text>
+              <Text style={styles.itemCount}>
+                {items.filter((i) => i.qtd !== null).length} item{items.filter((i) => i.qtd !== null).length !== 1 ? "s" : ""}
+              </Text>
             </View>
             {items.length === 0 ? (
               <View style={styles.emptyState}>
@@ -569,12 +580,7 @@ export default function WmsCountingScreen() {
 
       <BarcodeScanner visible={scannerVisible} onClose={() => setScannerVisible(false)} onScan={handleScan} />
 
-      <ProductFormModal
-        visible={addProductModalVisible}
-        product={pendingSearchCode ? ({ code: pendingSearchCode, ean: "", description: "" } as Product) : null}
-        onClose={() => setAddProductModalVisible(false)}
-        onSuccess={handleProductAdded}
-      />
+      <ProductFormModal visible={addProductModalVisible} product={pendingSearchCode ? ({ code: pendingSearchCode, ean: "", description: "" } as Product) : null} onClose={() => setAddProductModalVisible(false)} onSuccess={handleProductAdded} />
     </>
   )
 }
@@ -600,27 +606,49 @@ const styles = StyleSheet.create({
   label: { fontSize: 14, fontWeight: "600", color: "#000" },
   inputRow: { flexDirection: "row", gap: 8, alignItems: "center" },
   inputFlex: {
-    flex: 1, backgroundColor: "#F2F2F7", borderWidth: 1, borderColor: "#E5E5EA",
-    borderRadius: 12, padding: 13, fontSize: 15, color: "#000", minHeight: 48,
+    flex: 1,
+    backgroundColor: "#F2F2F7",
+    borderWidth: 1,
+    borderColor: "#E5E5EA",
+    borderRadius: 12,
+    padding: 13,
+    fontSize: 15,
+    color: "#000",
+    minHeight: 48,
   },
   input: {
-    backgroundColor: "#F2F2F7", borderWidth: 1, borderColor: "#E5E5EA",
-    borderRadius: 12, padding: 13, fontSize: 15, color: "#000", minHeight: 48,
+    backgroundColor: "#F2F2F7",
+    borderWidth: 1,
+    borderColor: "#E5E5EA",
+    borderRadius: 12,
+    padding: 13,
+    fontSize: 15,
+    color: "#000",
+    minHeight: 48,
   },
   inputDisabled: {
-    backgroundColor: "#EBEBEB", color: "#8E8E93",
+    backgroundColor: "#EBEBEB",
+    color: "#8E8E93",
   },
   pickerButton: {
-    flexDirection: "row", justifyContent: "space-between", alignItems: "center",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   pickerButtonText: { fontSize: 15, color: "#000" },
   pickerPlaceholder: { color: "#999" },
   scanIconBtn: { width: 44, height: 44, justifyContent: "center", alignItems: "center", borderRadius: 10, backgroundColor: "#FFF3E0", borderWidth: 1, borderColor: "#FF9500" },
   searchBtn: { width: 44, height: 44, justifyContent: "center", alignItems: "center", borderRadius: 10, backgroundColor: "#FF9500" },
   totalPecasBox: {
-    flexDirection: "row", alignItems: "center", gap: 10,
-    backgroundColor: "#F9F9FB", borderWidth: 1, borderColor: "#E5E5EA",
-    borderRadius: 12, padding: 13, minHeight: 48,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "#F9F9FB",
+    borderWidth: 1,
+    borderColor: "#E5E5EA",
+    borderRadius: 12,
+    padding: 13,
+    minHeight: 48,
   },
   totalPecasValue: { fontSize: 18, fontWeight: "bold", color: "#FF9500" },
   totalPecasHint: { fontSize: 12, color: "#8E8E93", marginLeft: "auto" },
@@ -653,18 +681,37 @@ const styles = StyleSheet.create({
   emptyState: { alignItems: "center", padding: 24 },
   emptyText: { fontSize: 15, color: "#8E8E93", marginTop: 8 },
   pickerOverlay: {
-    flex: 1, backgroundColor: "rgba(0,0,0,0.4)", justifyContent: "center", alignItems: "center",
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   pickerDropdown: {
-    backgroundColor: "#FFFFFF", borderRadius: 16, padding: 8, width: 240,
-    shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.15, shadowRadius: 8, elevation: 8,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
+    padding: 8,
+    width: 240,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
   },
   pickerTitle: {
-    fontSize: 13, fontWeight: "600", color: "#8E8E93", paddingHorizontal: 16, paddingVertical: 10, textTransform: "uppercase",
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#8E8E93",
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    textTransform: "uppercase",
   },
   pickerOption: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 16, paddingVertical: 14, borderRadius: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderRadius: 10,
   },
   pickerOptionSelected: { backgroundColor: "#FFF3E0" },
   pickerOptionText: { fontSize: 16, fontWeight: "600", color: "#000" },
