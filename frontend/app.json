@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "CaléOnline Inventário",
+    "name": "CaléOnline WMS",
     "slug": "caleo-online-inventario",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -10,10 +10,10 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.ccaciano.inventorymanager"
+      "bundleIdentifier": "com.ccaciano.inventorymanager.wms"
     },
     "android": {
-      "package": "com.ccaciano.inventorymanager",
+      "package": "com.ccaciano.inventorymanager.wms",
       "versionCode": 1,
       "allowBackup": false,
       "adaptiveIcon": {
