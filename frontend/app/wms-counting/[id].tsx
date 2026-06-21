@@ -464,14 +464,14 @@ export default function WmsCountingScreen() {
                   value={formData.fator}
                   onChangeText={(t) => {
                     if (formData.unit === "CX") {
-                      setFormData({ ...formData, fator: t.replace(/[^0-9]/g, "").slice(0, 5) })
+                      setFormData({ ...formData, fator: t.replace(/[^0-9]/g, "").slice(0, 6) })
                     }
                   }}
                   placeholder={formData.unit === "UN" ? "1 (fixo)" : "Digite o fator"}
                   placeholderTextColor="#999"
                   keyboardType="numeric"
                   editable={formData.unit === "CX"}
-                  maxLength={5}
+                  maxLength={6}
                 />
               </View>
 
