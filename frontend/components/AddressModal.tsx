@@ -6,7 +6,7 @@ import * as DocumentPicker from "expo-document-picker"
 import * as FileSystem from "expo-file-system/legacy"
 import BarcodeScanner from "./BarcodeScanner"
 
-const ADDRESS_REGEX = /^[A-Z]{2}\d{7}$/
+const ADDRESS_REGEX = /^[A-Z]{2}\d{6,7}$/
 const isValidAddress = (addr: string): boolean => ADDRESS_REGEX.test(addr)
 
 interface AddressModalProps {
@@ -37,7 +37,7 @@ export default function AddressModal({ visible, onClose, onAddSingle, onImportLi
       return
     }
     if (!isValidAddress(clean)) {
-      Alert.alert("Endereço inválido", "O endereço deve seguir o padrão XX0000000\n(2 letras + 7 dígitos, total 9 caracteres)\nEx: AA0010101")
+      Alert.alert("Endereço inválido", "O endereço deve seguir um dos padrões:\nXX0000000 (2 letras + 7 dígitos, 9 caracteres) — Ex: AA0010101\nXX000000 (2 letras + 6 dígitos, 8 caracteres) — Ex: BB010403")
       return
     }
     try {
@@ -60,7 +60,7 @@ export default function AddressModal({ visible, onClose, onAddSingle, onImportLi
       setTab("manual")
       Alert.alert(
         "Endereço inválido",
-        `"${clean}" não segue o padrão XX0000000 (2 letras + 7 dígitos).\n\nO valor foi inserido no campo manual para você corrigir.`,
+        `"${clean}" não segue os padrões aceitos (XX0000000 com 9 chars ou XX000000 com 8 chars).\n\nO valor foi inserido no campo manual para você corrigir.`,
       )
       return
     }
@@ -110,7 +110,7 @@ export default function AddressModal({ visible, onClose, onAddSingle, onImportLi
         const sample = invalid.slice(0, 5).join("\n")
         Alert.alert(
           "Endereços inválidos",
-          `${invalid.length} endereço(s) não respeitam o padrão XX0000000 (2 letras + 7 dígitos):\n\n${sample}${invalid.length > 5 ? "\n..." : ""}\n\nNenhum endereço foi importado.`,
+          `${invalid.length} endereço(s) não respeitam os padrões aceitos (XX0000000 com 9 chars ou XX000000 com 8 chars):\n\n${sample}${invalid.length > 5 ? "\n..." : ""}\n\nNenhum endereço foi importado.`,
         )
         return
       }
@@ -163,7 +163,7 @@ export default function AddressModal({ visible, onClose, onAddSingle, onImportLi
               <View style={styles.content}>
                 <View style={styles.patternBox}>
                   <Ionicons name="information-circle-outline" size={16} color="#007AFF" />
-                  <Text style={styles.patternText}>Padrão: <Text style={styles.patternCode}>XX0000000</Text> — 2 letras + 7 dígitos (9 caracteres)</Text>
+                  <Text style={styles.patternText}>Padrões aceitos:{"\n"}<Text style={styles.patternCode}>XX0000000</Text> — 2 letras + 7 dígitos (9 chars){"\n"}<Text style={styles.patternCode}>XX000000</Text> — 2 letras + 6 dígitos (8 chars)</Text>
                 </View>
 
                 <TouchableOpacity style={styles.scanButton} onPress={() => setScannerVisible(true)} disabled={loading}>
@@ -194,10 +194,9 @@ export default function AddressModal({ visible, onClose, onAddSingle, onImportLi
                 <View style={styles.infoBox}>
                   <Ionicons name="information-circle-outline" size={20} color="#007AFF" />
                   <Text style={styles.infoText}>
-                    Arquivo .txt com um endereço por linha (padrão XX0000000):{"\n"}
-                    AA0010101{"\n"}
-                    AA0010201{"\n"}
-                    AA0010301{"\n"}
+                    Arquivo .txt com um endereço por linha:{"\n"}
+                    Formato 9 chars: AA0010101{"\n"}
+                    Formato 8 chars: BB010403{"\n"}
                     {"\n"}
                     Todos os endereços serão validados antes da importação.
                   </Text>

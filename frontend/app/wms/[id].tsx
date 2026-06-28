@@ -5,15 +5,25 @@ import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router"
 import { getInventory, getWmsAddresses, addWmsAddress, deleteWmsAddress, importWmsAddresses, updateWmsAddress, closeWmsInventory, Inventory, WmsAddress } from "../../services/api"
 import AddressModal from "../../components/AddressModal"
 
-const ADDRESS_REGEX = /^[A-Z]{2}\d{7}$/
+const ADDRESS_REGEX = /^[A-Z]{2}\d{6,7}$/
 const isValidAddress = (addr: string): boolean => ADDRESS_REGEX.test(addr)
 
-const parseAddress = (addr: string) => ({
-  rua: addr.substring(0, 2),
-  posicao: addr.substring(2, 5),
-  altura: addr.substring(5, 7),
-  profundidade: addr.substring(7, 9),
-})
+const parseAddress = (addr: string) => {
+  if (addr.length === 9) {
+    return {
+      rua: addr.substring(0, 2),
+      posicao: addr.substring(2, 5),
+      altura: addr.substring(5, 7),
+      profundidade: addr.substring(7, 9),
+    }
+  }
+  return {
+    rua: addr.substring(0, 2),
+    posicao: addr.substring(2, 4),
+    altura: addr.substring(4, 6),
+    profundidade: addr.substring(6, 8),
+  }
+}
 
 const sortAddresses = (addresses: WmsAddress[]): WmsAddress[] =>
   [...addresses].sort((a, b) => {
@@ -116,7 +126,7 @@ export default function WmsInventoryScreen() {
     if (!editingAddressId) return
     const clean = editingText.trim().toUpperCase()
     if (!isValidAddress(clean)) {
-      Alert.alert("Endereço inválido", "O endereço deve seguir o padrão XX0000000\n(2 letras + 7 dígitos, total 9 caracteres)")
+      Alert.alert("Endereço inválido", "O endereço deve seguir um dos padrões:\nXX0000000 (2 letras + 7 dígitos, 9 caracteres)\nXX000000 (2 letras + 6 dígitos, 8 caracteres)")
       return
     }
     try {
@@ -194,7 +204,7 @@ export default function WmsInventoryScreen() {
     const canEdit = !isClosed && itemCount === 0
 
     let parsed = { rua: "--", posicao: "---", altura: "--", profundidade: "--" }
-    if (item.endereco && item.endereco.length >= 9) {
+    if (item.endereco && item.endereco.length >= 8) {
       parsed = parseAddress(item.endereco)
     }
 
