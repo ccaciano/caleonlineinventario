@@ -269,10 +269,11 @@ export default function CountingScreen() {
                 <TextInput
                   style={styles.input}
                   value={formData.quantity}
-                  onChangeText={(text) => setFormData({ ...formData, quantity: text.replace(/[^0-9]/g, "") })}
+                  onChangeText={(text) => setFormData({ ...formData, quantity: text.replace(/[^0-9]/g, "").slice(0, 7) })}
                   placeholder="0"
                   placeholderTextColor="#999"
                   keyboardType="numeric"
+                  maxLength={7}
                 />
               </View>
 
@@ -282,10 +283,11 @@ export default function CountingScreen() {
                 <TextInput
                   style={styles.input}
                   value={formData.lot}
-                  onChangeText={(text) => setFormData({ ...formData, lot: text })}
+                  onChangeText={(text) => setFormData({ ...formData, lot: text.slice(0, 7) })}
                   placeholder="Ex: KG10001"
                   placeholderTextColor="#999"
                   autoCapitalize="characters"
+                  maxLength={7}
                 />
               </View>
 
@@ -295,11 +297,19 @@ export default function CountingScreen() {
                 <TextInput
                   style={styles.input}
                   value={formData.expiry_date}
-                  onChangeText={(text) => {
-                    let formatted = text.replace(/\D/g, "")
-                    if (formatted.length >= 2) formatted = formatted.slice(0, 2) + "/" + formatted.slice(2)
-                    if (formatted.length >= 5) formatted = formatted.slice(0, 5) + "/" + formatted.slice(5, 9)
-                    setFormData({ ...formData, expiry_date: formatted })
+                  onChangeText={(text: string) => {
+                    const rawPrev = formData.expiry_date.replace(/\D/g, "")
+                    const rawNew = text.replace(/\D/g, "")
+                    let raw = rawNew
+                    // User deleted a slash: same digit count but shorter text → remove last digit too
+                    if (rawNew.length >= rawPrev.length && text.length < formData.expiry_date.length) {
+                      raw = rawNew.slice(0, -1)
+                    }
+                    raw = raw.slice(0, 8)
+                    let f = raw
+                    if (f.length > 2) f = f.slice(0, 2) + "/" + f.slice(2)
+                    if (f.length > 5) f = f.slice(0, 5) + "/" + f.slice(5)
+                    setFormData({ ...formData, expiry_date: f })
                   }}
                   placeholder="DD/MM/AAAA"
                   placeholderTextColor="#999"
