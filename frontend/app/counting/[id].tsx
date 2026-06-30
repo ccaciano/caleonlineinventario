@@ -230,7 +230,9 @@ export default function CountingScreen() {
               </View>
             )}
             <View style={styles.headerInfo}>
-              <Text style={styles.title} numberOfLines={1}>{inventory.description}</Text>
+              <Text style={styles.title} numberOfLines={1}>
+                {inventory.description}
+              </Text>
               <Text style={styles.subtitle}>{convertFromISO(inventory.date)}</Text>
             </View>
           </View>
@@ -252,41 +254,20 @@ export default function CountingScreen() {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Código do Produto</Text>
                 <View style={styles.inputWithButton}>
-                  <TextInput
-                    style={styles.inputFlex}
-                    value={formData.product_code}
-                    onChangeText={(text) => setFormData({ ...formData, product_code: text })}
-                    placeholder="Digite ou escaneie o código"
-                    placeholderTextColor="#999"
-                    autoCapitalize="characters"
-                  />
+                  <TextInput style={styles.inputFlex} value={formData.product_code} onChangeText={(text) => setFormData({ ...formData, product_code: text })} placeholder="Digite ou escaneie o código" placeholderTextColor="#999" autoCapitalize="characters" />
                 </View>
               </View>
 
               {/* Quantidade */}
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Quantidade *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.quantity}
-                  onChangeText={(text) => setFormData({ ...formData, quantity: text.replace(/[^0-9]/g, "") })}
-                  placeholder="0"
-                  placeholderTextColor="#999"
-                  keyboardType="numeric"
-                />
+                <TextInput style={styles.input} value={formData.quantity} onChangeText={(text) => setFormData({ ...formData, quantity: text.replace(/[^0-9]/g, "").slice(0, 7) })} placeholder="0" placeholderTextColor="#999" keyboardType="numeric" maxLength={7} />
               </View>
 
               {/* Lote */}
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Lote (opcional)</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.lot}
-                  onChangeText={(text) => setFormData({ ...formData, lot: text })}
-                  placeholder="Ex: KG10001"
-                  placeholderTextColor="#999"
-                  autoCapitalize="characters"
-                />
+                <TextInput style={styles.input} value={formData.lot} onChangeText={(text) => setFormData({ ...formData, lot: text.slice(0, 7) })} placeholder="Ex: KG10001" placeholderTextColor="#999" autoCapitalize="characters" maxLength={7} />
               </View>
 
               {/* Validade */}
@@ -295,11 +276,19 @@ export default function CountingScreen() {
                 <TextInput
                   style={styles.input}
                   value={formData.expiry_date}
-                  onChangeText={(text) => {
-                    let formatted = text.replace(/\D/g, "")
-                    if (formatted.length >= 2) formatted = formatted.slice(0, 2) + "/" + formatted.slice(2)
-                    if (formatted.length >= 5) formatted = formatted.slice(0, 5) + "/" + formatted.slice(5, 9)
-                    setFormData({ ...formData, expiry_date: formatted })
+                  onChangeText={(text: string) => {
+                    const rawPrev = formData.expiry_date.replace(/\D/g, "")
+                    const rawNew = text.replace(/\D/g, "")
+                    let raw = rawNew
+                    // User deleted a slash: same digit count but shorter text → remove last digit too
+                    if (rawNew.length >= rawPrev.length && text.length < formData.expiry_date.length) {
+                      raw = rawNew.slice(0, -1)
+                    }
+                    raw = raw.slice(0, 8)
+                    let f = raw
+                    if (f.length > 2) f = f.slice(0, 2) + "/" + f.slice(2)
+                    if (f.length > 5) f = f.slice(0, 5) + "/" + f.slice(5)
+                    setFormData({ ...formData, expiry_date: f })
                   }}
                   placeholder="DD/MM/AAAA"
                   placeholderTextColor="#999"
@@ -308,12 +297,10 @@ export default function CountingScreen() {
                 />
               </View>
 
-              <TouchableOpacity
-                style={[styles.addButton, (!formData.product_code.trim() || loading) && styles.addButtonDisabled]}
-                onPress={handleAddItem}
-                disabled={!formData.product_code.trim() || loading}
-              >
-                {loading ? <ActivityIndicator color="#FFFFFF" /> : (
+              <TouchableOpacity style={[styles.addButton, (!formData.product_code.trim() || loading) && styles.addButtonDisabled]} onPress={handleAddItem} disabled={!formData.product_code.trim() || loading}>
+                {loading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
                   <>
                     <Ionicons name="add-circle" size={24} color="#FFFFFF" />
                     <Text style={styles.addButtonText}>Adicionar Item</Text>
@@ -344,7 +331,9 @@ export default function CountingScreen() {
 
         {!isClosed && items.length > 0 && (
           <TouchableOpacity style={styles.closeButton} onPress={handleCloseInventory} disabled={loading}>
-            {loading ? <ActivityIndicator color="#FFFFFF" /> : (
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
               <>
                 <Ionicons name="lock-closed" size={24} color="#FFFFFF" />
                 <Text style={styles.closeButtonText}>Fechar Inventário</Text>
@@ -356,9 +345,7 @@ export default function CountingScreen() {
 
       <BarcodeScanner visible={scannerVisible} onClose={() => setScannerVisible(false)} onScan={handleScan} />
 
-      {editItem && (
-        <EditItemModal visible={!!editItem} item={editItem} inventoryId={inventoryId} onClose={() => setEditItem(null)} onSuccess={handleEditSuccess} />
-      )}
+      {editItem && <EditItemModal visible={!!editItem} item={editItem} inventoryId={inventoryId} onClose={() => setEditItem(null)} onSuccess={handleEditSuccess} />}
     </KeyboardAvoidingView>
   )
 }
