@@ -444,7 +444,7 @@ export default function WmsCountingScreen() {
               {/* Quantidade */}
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Quantidade *</Text>
-                <TextInput style={styles.input} value={formData.quantity} onChangeText={(t) => setFormData({ ...formData, quantity: t.replace(/[^0-9]/g, "") })} placeholder="0" placeholderTextColor="#999" keyboardType="numeric" />
+                <TextInput style={styles.input} value={formData.quantity} onChangeText={(t) => setFormData({ ...formData, quantity: t.replace(/[^0-9]/g, "").slice(0, 7) })} placeholder="0" placeholderTextColor="#999" keyboardType="numeric" maxLength={7} />
               </View>
 
               {/* Unidade de Medida - Custom Picker */}
@@ -502,10 +502,18 @@ export default function WmsCountingScreen() {
                 <TextInput
                   style={styles.input}
                   value={formData.expiry_date}
-                  onChangeText={(t) => {
-                    let f = t.replace(/\D/g, "")
-                    if (f.length >= 2) f = f.slice(0, 2) + "/" + f.slice(2)
-                    if (f.length >= 5) f = f.slice(0, 5) + "/" + f.slice(5, 9)
+                  onChangeText={(text: string) => {
+                    const rawPrev = formData.expiry_date.replace(/\D/g, "")
+                    const rawNew = text.replace(/\D/g, "")
+                    let raw = rawNew
+                    // User deleted a slash: same digit count but shorter text → remove last digit too
+                    if (rawNew.length >= rawPrev.length && text.length < formData.expiry_date.length) {
+                      raw = rawNew.slice(0, -1)
+                    }
+                    raw = raw.slice(0, 8)
+                    let f = raw
+                    if (f.length > 2) f = f.slice(0, 2) + "/" + f.slice(2)
+                    if (f.length > 5) f = f.slice(0, 5) + "/" + f.slice(5)
                     setFormData({ ...formData, expiry_date: f })
                   }}
                   placeholder="DD/MM/AAAA"
