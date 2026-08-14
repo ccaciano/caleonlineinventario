@@ -5,6 +5,8 @@ import { useLocalSearchParams, useRouter } from "expo-router"
 import { getInventory, getCountedItems, addCountedItem, deleteCountedItem, closeInventory, updateCountedItem, Inventory, CountedItem } from "../../services/api"
 import BarcodeScanner from "../../components/BarcodeScanner"
 import EditItemModal from "../../components/EditItemModal"
+import CalculatorModal from "../../components/CalculatorModal"
+import TorchButton from "../../components/TorchButton"
 import { useFocusEffect } from "expo-router"
 
 const isValidDate = (dateStr: string): boolean => {
@@ -48,6 +50,7 @@ export default function CountingScreen() {
   const [scannerVisible, setScannerVisible] = useState(false)
   const [editItem, setEditItem] = useState<CountedItem | null>(null)
   const [scanTarget, setScanTarget] = useState<"code">("code")
+  const [calculatorVisible, setCalculatorVisible] = useState(false)
 
   const [formData, setFormData] = useState({
     product_code: "",
@@ -80,6 +83,11 @@ export default function CountingScreen() {
   const handleScan = (code: string) => {
     setScannerVisible(false)
     setFormData((prev) => ({ ...prev, product_code: code }))
+  }
+
+  const handleCalculatorResult = (value: number) => {
+    const rounded = Math.min(Math.max(0, Math.round(value)), 9999999)
+    setFormData((prev) => ({ ...prev, quantity: String(rounded) }))
   }
 
   const handleAddItem = async () => {
@@ -266,29 +274,37 @@ export default function CountingScreen() {
               {/* Quantidade */}
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Quantidade *</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.quantity}
-                  onChangeText={(text) => setFormData({ ...formData, quantity: text.replace(/[^0-9]/g, "").slice(0, 7) })}
-                  placeholder="0"
-                  placeholderTextColor="#999"
-                  keyboardType="numeric"
-                  maxLength={7}
-                />
+                <View style={styles.inputWithButton}>
+                  <TextInput
+                    style={styles.inputFlex}
+                    value={formData.quantity}
+                    onChangeText={(text) => setFormData({ ...formData, quantity: text.replace(/[^0-9]/g, "").slice(0, 7) })}
+                    placeholder="0"
+                    placeholderTextColor="#999"
+                    keyboardType="numeric"
+                    maxLength={7}
+                  />
+                  <TouchableOpacity style={styles.iconButton} onPress={() => setCalculatorVisible(true)} accessibilityLabel="Abrir calculadora">
+                    <Ionicons name="calculator-outline" size={22} color="#007AFF" />
+                  </TouchableOpacity>
+                </View>
               </View>
 
               {/* Lote */}
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Lote (opcional)</Text>
-                <TextInput
-                  style={styles.input}
-                  value={formData.lot}
-                  onChangeText={(text) => setFormData({ ...formData, lot: text.slice(0, 7) })}
-                  placeholder="Ex: KG10001"
-                  placeholderTextColor="#999"
-                  autoCapitalize="characters"
-                  maxLength={7}
-                />
+                <View style={styles.inputWithButton}>
+                  <TextInput
+                    style={styles.inputFlex}
+                    value={formData.lot}
+                    onChangeText={(text) => setFormData({ ...formData, lot: text.slice(0, 7) })}
+                    placeholder="Ex: KG10001"
+                    placeholderTextColor="#999"
+                    autoCapitalize="characters"
+                    maxLength={7}
+                  />
+                  <TorchButton accentColor="#007AFF" />
+                </View>
               </View>
 
               {/* Validade */}
@@ -364,6 +380,8 @@ export default function CountingScreen() {
         )}
       </ScrollView>
 
+      <CalculatorModal visible={calculatorVisible} initialValue={formData.quantity} accentColor="#007AFF" integerOnly onClose={() => setCalculatorVisible(false)} onApply={handleCalculatorResult} />
+
       <BarcodeScanner visible={scannerVisible} onClose={() => setScannerVisible(false)} onScan={handleScan} />
 
       {editItem && (
@@ -424,6 +442,7 @@ const styles = StyleSheet.create({
     color: "#000",
     minHeight: 48,
   },
+  iconButton: { width: 44, height: 44, justifyContent: "center", alignItems: "center", borderRadius: 10, backgroundColor: "#E8F1FF", borderWidth: 1, borderColor: "#007AFF" },
   addButton: { backgroundColor: "#007AFF", borderRadius: 12, padding: 14, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 8, minHeight: 52 },
   addButtonDisabled: { backgroundColor: "#C7C7CC" },
   addButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "bold" },

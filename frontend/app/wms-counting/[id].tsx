@@ -5,6 +5,8 @@ import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router"
 import { getInventory, searchProduct, addWmsItem, updateWmsItem, deleteWmsItem, WmsCountedItem, Inventory, Product } from "../../services/api"
 import BarcodeScanner from "../../components/BarcodeScanner"
 import ProductFormModal from "../../components/ProductFormModal"
+import CalculatorModal from "../../components/CalculatorModal"
+import TorchButton from "../../components/TorchButton"
 
 const isValidDate = (dateStr: string): boolean => {
   if (!dateStr) return true
@@ -57,6 +59,7 @@ export default function WmsCountingScreen() {
   const [pendingSearchCode, setPendingSearchCode] = useState("")
   const [showUnitPicker, setShowUnitPicker] = useState(false)
   const [editingItem, setEditingItem] = useState<WmsCountedItem | null>(null)
+  const [calculatorVisible, setCalculatorVisible] = useState(false)
 
   const [formData, setFormData] = useState({
     quantity: "",
@@ -155,6 +158,11 @@ export default function WmsCountingScreen() {
   const openScanner = (target: ScanTarget) => {
     setScanTarget(target)
     setScannerVisible(true)
+  }
+
+  const handleCalculatorResult = (value: number) => {
+    const rounded = Math.min(Math.max(0, Math.round(value)), 9999999)
+    setFormData((prev) => ({ ...prev, quantity: String(rounded) }))
   }
 
   const handleUnitChange = (newUnit: "UN" | "CX") => {
@@ -444,7 +452,12 @@ export default function WmsCountingScreen() {
               {/* Quantidade */}
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Quantidade *</Text>
-                <TextInput style={styles.input} value={formData.quantity} onChangeText={(t) => setFormData({ ...formData, quantity: t.replace(/[^0-9]/g, "").slice(0, 7) })} placeholder="0" placeholderTextColor="#999" keyboardType="numeric" maxLength={7} />
+                <View style={styles.inputRow}>
+                  <TextInput style={styles.inputFlex} value={formData.quantity} onChangeText={(t) => setFormData({ ...formData, quantity: t.replace(/[^0-9]/g, "").slice(0, 7) })} placeholder="0" placeholderTextColor="#999" keyboardType="numeric" maxLength={7} />
+                  <TouchableOpacity style={styles.scanIconBtn} onPress={() => setCalculatorVisible(true)} accessibilityLabel="Abrir calculadora">
+                    <Ionicons name="calculator-outline" size={22} color="#FF9500" />
+                  </TouchableOpacity>
+                </View>
               </View>
 
               {/* Unidade de Medida - Custom Picker */}
@@ -493,6 +506,7 @@ export default function WmsCountingScreen() {
                   <TouchableOpacity style={styles.scanIconBtn} onPress={() => openScanner("lot")}>
                     <Ionicons name="scan-outline" size={22} color="#FF9500" />
                   </TouchableOpacity>
+                  <TorchButton accentColor="#FF9500" />
                 </View>
               </View>
 
@@ -585,6 +599,8 @@ export default function WmsCountingScreen() {
           </View>
         </TouchableOpacity>
       </Modal>
+
+      <CalculatorModal visible={calculatorVisible} initialValue={formData.quantity} accentColor="#FF9500" integerOnly onClose={() => setCalculatorVisible(false)} onApply={handleCalculatorResult} />
 
       <BarcodeScanner visible={scannerVisible} onClose={() => setScannerVisible(false)} onScan={handleScan} />
 
