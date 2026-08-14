@@ -37,7 +37,7 @@ export default function CreateInventoryModal({ visible, onClose, onSuccess }: Cr
   const { t } = useTranslation()
   const [description, setDescription] = useState("")
   const [date, setDate] = useState(getCurrentDateFormatted())
-  const [type, setType] = useState<"loja" | "wms">("loja")
+  const [type, setType] = useState<"loja" | "wms">("wms")
   const [loading, setLoading] = useState(false)
 
   const handleCreate = async () => {
@@ -54,7 +54,7 @@ export default function CreateInventoryModal({ visible, onClose, onSuccess }: Cr
       await createInventory(description, convertToISO(date), type)
       setDescription("")
       setDate(getCurrentDateFormatted())
-      setType("loja")
+      setType("wms")
       onSuccess()
     } catch (error) {
       console.error("Error creating inventory:", error)
@@ -68,7 +68,7 @@ export default function CreateInventoryModal({ visible, onClose, onSuccess }: Cr
     if (!loading) {
       setDescription("")
       setDate(getCurrentDateFormatted())
-      setType("loja")
+      setType("wms")
       onClose()
     }
   }
@@ -108,20 +108,20 @@ export default function CreateInventoryModal({ visible, onClose, onSuccess }: Cr
               <Text style={styles.label}>Tipo de Inventário</Text>
               <View style={styles.typeSelector}>
                 <TouchableOpacity
-                  style={[styles.typeButton, type === "loja" && styles.typeButtonActive]}
-                  onPress={() => setType("loja")}
-                  disabled={loading}
-                >
-                  <Ionicons name="storefront-outline" size={20} color={type === "loja" ? "#FFFFFF" : "#007AFF"} />
-                  <Text style={[styles.typeButtonText, type === "loja" && styles.typeButtonTextActive]}>Inv. Loja</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
                   style={[styles.typeButton, type === "wms" && styles.typeButtonActiveWms]}
                   onPress={() => setType("wms")}
                   disabled={loading}
                 >
                   <Ionicons name="cube-outline" size={20} color={type === "wms" ? "#FFFFFF" : "#FF9500"} />
                   <Text style={[styles.typeButtonText, type === "wms" && styles.typeButtonTextActive]}>Inv. WMS</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.typeButton, type === "loja" && styles.typeButtonActive]}
+                  onPress={() => setType("loja")}
+                  disabled={loading}
+                >
+                  <Ionicons name="storefront-outline" size={20} color={type === "loja" ? "#FFFFFF" : "#007AFF"} />
+                  <Text style={[styles.typeButtonText, type === "loja" && styles.typeButtonTextActive]}>Inv. Loja</Text>
                 </TouchableOpacity>
               </View>
               <Text style={styles.hint}>
