@@ -5,18 +5,27 @@ import Modal from "react-native-modal"
 import * as DocumentPicker from "expo-document-picker"
 import * as FileSystem from "expo-file-system/legacy"
 import BarcodeScanner from "./BarcodeScanner"
+import { WmsAddress } from "../services/api"
 
 const ADDRESS_REGEX = /^[A-Z]{2}\d{6,7}$/
 const isValidAddress = (addr: string): boolean => ADDRESS_REGEX.test(addr)
 
+export interface AddSingleResult {
+  /** true quando o endereço já estava cadastrado no inventário */
+  existed: boolean
+  address: WmsAddress
+}
+
 interface AddressModalProps {
   visible: boolean
   onClose: () => void
-  onAddSingle: (endereco: string) => Promise<void>
+  onAddSingle: (endereco: string) => Promise<AddSingleResult>
   onImportList: (enderecos: string[]) => Promise<void>
+  /** Abre a tela de contagem do endereço informado */
+  onOpenAddress: (address: WmsAddress) => void
 }
 
-export default function AddressModal({ visible, onClose, onAddSingle, onImportList }: AddressModalProps) {
+export default function AddressModal({ visible, onClose, onAddSingle, onImportList, onOpenAddress }: AddressModalProps) {
   const [tab, setTab] = useState<"manual" | "import">("manual")
   const [manualText, setManualText] = useState("")
   const [scannerVisible, setScannerVisible] = useState(false)
@@ -28,6 +37,24 @@ export default function AddressModal({ visible, onClose, onAddSingle, onImportLi
       setTab("manual")
       onClose()
     }
+  }
+
+  /** Avisa que o endereço já existe e abre a contagem dele */
+  const warnAndOpenExisting = (endereco: string, address: WmsAddress) => {
+    const title = "Endereço já existe"
+    const message = `"${endereco}" já está cadastrado neste inventário.\n\nAbrindo o endereço para iniciar a contagem.`
+    const open = () => {
+      setManualText("")
+      setTab("manual")
+      onOpenAddress(address)
+    }
+
+    if (Platform.OS === "web") {
+      if (typeof window !== "undefined") window.alert(`${title}\n\n${message}`)
+      open()
+      return
+    }
+    Alert.alert(title, message, [{ text: "Abrir Endereço", onPress: open }], { cancelable: false })
   }
 
   const handleAddManual = async () => {
@@ -42,8 +69,12 @@ export default function AddressModal({ visible, onClose, onAddSingle, onImportLi
     }
     try {
       setLoading(true)
-      await onAddSingle(clean)
+      const result = await onAddSingle(clean)
       setManualText("")
+      if (result?.existed) {
+        setLoading(false)
+        warnAndOpenExisting(clean, result.address)
+      }
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Falha ao adicionar endereço")
     } finally {
@@ -66,8 +97,13 @@ export default function AddressModal({ visible, onClose, onAddSingle, onImportLi
     }
     try {
       setLoading(true)
-      await onAddSingle(clean)
-      Alert.alert("Sucesso", `Endereço "${clean}" adicionado!`)
+      const result = await onAddSingle(clean)
+      if (result?.existed) {
+        setLoading(false)
+        warnAndOpenExisting(clean, result.address)
+      } else {
+        Alert.alert("Sucesso", `Endereço "${clean}" adicionado!`)
+      }
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Falha ao adicionar endereço")
     } finally {

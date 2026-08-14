@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Alert, A
 import { Ionicons } from "@expo/vector-icons"
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router"
 import { getInventory, getWmsAddresses, addWmsAddress, deleteWmsAddress, importWmsAddresses, updateWmsAddress, closeWmsInventory, Inventory, WmsAddress } from "../../services/api"
-import AddressModal from "../../components/AddressModal"
+import AddressModal, { AddSingleResult } from "../../components/AddressModal"
 
 const ADDRESS_REGEX = /^[A-Z]{2}\d{6,7}$/
 const isValidAddress = (addr: string): boolean => ADDRESS_REGEX.test(addr)
@@ -142,9 +142,30 @@ export default function WmsInventoryScreen() {
     }
   }
 
-  const handleAddSingle = async (endereco: string) => {
-    const added = await addWmsAddress(inventoryId, endereco)
+  const handleAddSingle = async (endereco: string): Promise<AddSingleResult> => {
+    const clean = endereco.trim().toUpperCase()
+    // Consulta a lista salva (e não o estado) para não deixar passar um endereço duplicado
+    const current = await getWmsAddresses(inventoryId)
+    const existing = current.find((a) => a.endereco.toUpperCase() === clean)
+    if (existing) {
+      setAddresses(sortAddresses(current))
+      return { existed: true, address: existing }
+    }
+
+    const added = await addWmsAddress(inventoryId, clean)
     setAddresses((prev) => sortAddresses([...prev, added]))
+    return { existed: false, address: added }
+  }
+
+  // Endereço já cadastrado: fecha o modal e abre a contagem dele
+  const handleOpenAddress = (address: WmsAddress) => {
+    setModalVisible(false)
+    setTimeout(() => {
+      router.push({
+        pathname: "/wms-counting/[id]",
+        params: { id: address._id, inventoryId, addressName: address.endereco },
+      })
+    }, 350)
   }
 
   const handleImportList = async (enderecos: string[]) => {
@@ -340,6 +361,7 @@ export default function WmsInventoryScreen() {
         onClose={() => setModalVisible(false)}
         onAddSingle={handleAddSingle}
         onImportList={handleImportList}
+        onOpenAddress={handleOpenAddress}
       />
     </View>
   )
