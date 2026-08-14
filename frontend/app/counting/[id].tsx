@@ -49,7 +49,7 @@ export default function CountingScreen() {
   const [loading, setLoading] = useState(false)
   const [scannerVisible, setScannerVisible] = useState(false)
   const [editItem, setEditItem] = useState<CountedItem | null>(null)
-  const [scanTarget, setScanTarget] = useState<"code">("code")
+  const [scanTarget, setScanTarget] = useState<"code" | "lot">("code")
   const [calculatorVisible, setCalculatorVisible] = useState(false)
 
   const [formData, setFormData] = useState({
@@ -82,7 +82,21 @@ export default function CountingScreen() {
 
   const handleScan = (code: string) => {
     setScannerVisible(false)
+    if (scanTarget === "lot") {
+      if (code.length > 7) {
+        Alert.alert("Lote Inválido", "O lote não pode ter mais de 7 caracteres. O campo foi limpo.")
+        setFormData((prev) => ({ ...prev, lot: "" }))
+      } else {
+        setFormData((prev) => ({ ...prev, lot: code }))
+      }
+      return
+    }
     setFormData((prev) => ({ ...prev, product_code: code }))
+  }
+
+  const openScanner = (target: "code" | "lot") => {
+    setScanTarget(target)
+    setScannerVisible(true)
   }
 
   const handleCalculatorResult = (value: number) => {
@@ -250,7 +264,7 @@ export default function CountingScreen() {
             <Text style={styles.sectionTitle}>Adicionar Item</Text>
 
             {/* Botão Escanear */}
-            <TouchableOpacity style={styles.scanButton} onPress={() => setScannerVisible(true)}>
+            <TouchableOpacity style={styles.scanButton} onPress={() => openScanner("code")}>
               <Ionicons name="scan" size={28} color="#FFFFFF" />
               <Text style={styles.scanButtonText}>Escanear Código</Text>
             </TouchableOpacity>
@@ -303,6 +317,9 @@ export default function CountingScreen() {
                     autoCapitalize="characters"
                     maxLength={7}
                   />
+                  <TouchableOpacity style={styles.iconButton} onPress={() => openScanner("lot")} accessibilityLabel="Escanear lote">
+                    <Ionicons name="scan-outline" size={22} color="#007AFF" />
+                  </TouchableOpacity>
                   <TorchButton accentColor="#007AFF" />
                 </View>
               </View>

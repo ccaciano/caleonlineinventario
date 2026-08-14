@@ -39,10 +39,10 @@ export default function AddressModal({ visible, onClose, onAddSingle, onImportLi
     }
   }
 
-  /** Avisa que o endereço já existe e abre a contagem dele */
+  /** Avisa que o endereço já existe e oferece abrir a contagem dele */
   const warnAndOpenExisting = (endereco: string, address: WmsAddress) => {
     const title = "Endereço já existe"
-    const message = `"${endereco}" já está cadastrado neste inventário.\n\nAbrindo o endereço para iniciar a contagem.`
+    const message = `"${endereco}" já está cadastrado neste inventário.\n\nDeseja abrir o endereço para iniciar a contagem?`
     const open = () => {
       setManualText("")
       setTab("manual")
@@ -50,11 +50,13 @@ export default function AddressModal({ visible, onClose, onAddSingle, onImportLi
     }
 
     if (Platform.OS === "web") {
-      if (typeof window !== "undefined") window.alert(`${title}\n\n${message}`)
-      open()
+      if (typeof window !== "undefined" && window.confirm(`${title}\n\n${message}`)) open()
       return
     }
-    Alert.alert(title, message, [{ text: "Abrir Endereço", onPress: open }], { cancelable: false })
+    Alert.alert(title, message, [
+      { text: "Fechar", style: "cancel" },
+      { text: "Abrir Endereço", onPress: open },
+    ])
   }
 
   const handleAddManual = async () => {
