@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useCallback } from "react"
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, Alert, ActivityIndicator, RefreshControl, Platform } from "react-native"
 import { useTranslation } from "react-i18next"
 import { Ionicons } from "@expo/vector-icons"
@@ -7,10 +7,8 @@ import { getInventories, getExportData, deleteInventory, Inventory } from "../se
 import Modal from "react-native-modal"
 import CreateInventoryModal from "../components/CreateInventoryModal"
 import { shareExcelReport } from "../utils/excelExport"
-import { useCallback } from "react"
-import { useFocusEffect } from "@react-navigation/native" // ou de 'expo-router' dependendo da versão
+import { useFocusEffect } from "@react-navigation/native"
 
-// Função para converter AAAA-MM-DD para DD/MM/AAAA
 const convertFromISO = (isoStr: string): string => {
   if (!isoStr) return ""
   const [year, month, day] = isoStr.split("-")
@@ -53,10 +51,11 @@ export default function InventoriesScreen() {
   }
 
   const handleInventoryPress = (inventory: Inventory) => {
-    router.push({
-      pathname: "/counting/[id]",
-      params: { id: inventory._id || "" },
-    })
+    if (inventory.type === "wms") {
+      router.push({ pathname: "/wms/[id]", params: { id: inventory._id || "" } })
+    } else {
+      router.push({ pathname: "/counting/[id]", params: { id: inventory._id || "" } })
+    }
   }
 
   const handleCreateSuccess = () => {
@@ -66,12 +65,9 @@ export default function InventoriesScreen() {
 
   const handleDownload = async (inventory: Inventory) => {
     if (!inventory._id) return
-
     try {
       setExportingId(inventory._id)
       const exportData = await getExportData(inventory._id)
-
-      // Abre o menu de compartilhamento diretamente (WhatsApp, Email, etc.)
       await shareExcelReport(exportData)
     } catch (error: any) {
       console.error("Error sharing report:", error)
@@ -83,23 +79,13 @@ export default function InventoriesScreen() {
 
   const handleDeleteInventory = async (inventory: Inventory) => {
     if (!inventory._id) return
-
     const confirmMessage = t("confirmDeleteInventory")
-
-    // Usar confirmação específica da plataforma
     if (Platform.OS === "web") {
-      const confirmed = window.confirm(confirmMessage)
-      if (confirmed) {
-        await performDelete(inventory._id)
-      }
+      if (window.confirm(confirmMessage)) await performDelete(inventory._id)
     } else {
       Alert.alert(t("deleteInventory"), confirmMessage, [
         { text: t("cancel"), style: "cancel" },
-        {
-          text: t("yes"),
-          style: "destructive",
-          onPress: () => performDelete(inventory._id!),
-        },
+        { text: t("yes"), style: "destructive", onPress: () => performDelete(inventory._id!) },
       ])
     }
   }
@@ -108,22 +94,13 @@ export default function InventoriesScreen() {
     try {
       setDeletingId(inventoryId)
       await deleteInventory(inventoryId)
-
-      if (Platform.OS === "web") {
-        window.alert(t("inventoryDeleted"))
-      } else {
-        Alert.alert("Sucesso", t("inventoryDeleted"))
-      }
-
+      if (Platform.OS === "web") window.alert(t("inventoryDeleted"))
+      else Alert.alert("Sucesso", t("inventoryDeleted"))
       loadInventories()
     } catch (error) {
-      console.error("Error deleting inventory:", error)
       const errorMsg = "Falha ao excluir inventário"
-      if (Platform.OS === "web") {
-        window.alert(errorMsg)
-      } else {
-        Alert.alert("Erro", errorMsg)
-      }
+      if (Platform.OS === "web") window.alert(errorMsg)
+      else Alert.alert("Erro", errorMsg)
     } finally {
       setDeletingId(null)
     }
@@ -133,19 +110,31 @@ export default function InventoriesScreen() {
     const isClosed = item.status === "closed"
     const isExporting = exportingId === item._id
     const isDeleting = deletingId === item._id
+    const isWms = item.type === "wms"
+
+    const typeColor = isWms ? "#FF9500" : "#007AFF"
+    const typeLabel = isWms ? "WMS" : "Loja"
+    const typeIcon = isWms ? "cube-outline" : "storefront-outline"
+    const addressCount = isWms ? (item.enderecos?.length || 0) : null
 
     return (
       <View style={styles.inventoryCard}>
         <TouchableOpacity onPress={() => handleInventoryPress(item)} activeOpacity={0.7} disabled={isExporting || isDeleting}>
           <View style={styles.cardHeader}>
             <View style={styles.cardTitleContainer}>
-              <Ionicons name={isClosed ? "folder" : "folder-open"} size={24} color={isClosed ? "#8E8E93" : "#34C759"} />
+              <Ionicons name={isClosed ? "folder" : "folder-open"} size={24} color={isClosed ? "#8E8E93" : typeColor} />
               <Text style={styles.cardTitle} numberOfLines={1}>
-                {typeof item.description === "string" ? item.description : (item.description && (item.description as any).description) || "Inventário sem nome"}
+                {typeof item.description === "string" ? item.description : "Inventário sem nome"}
               </Text>
             </View>
-            <View style={[styles.statusBadge, isClosed ? styles.statusClosed : styles.statusOpen]}>
-              <Text style={styles.statusText}>{isClosed ? t("closed") : t("open")}</Text>
+            <View style={styles.badgesRow}>
+              <View style={[styles.typeBadge, { backgroundColor: isWms ? "#FFF3E0" : "#E3F2FD", borderColor: typeColor }]}>
+                <Ionicons name={typeIcon} size={12} color={typeColor} />
+                <Text style={[styles.typeBadgeText, { color: typeColor }]}>{typeLabel}</Text>
+              </View>
+              <View style={[styles.statusBadge, isClosed ? styles.statusClosed : styles.statusOpen]}>
+                <Text style={styles.statusText}>{isClosed ? t("closed") : t("open")}</Text>
+              </View>
             </View>
           </View>
 
@@ -154,22 +143,30 @@ export default function InventoriesScreen() {
               <Ionicons name="calendar-outline" size={16} color="#8E8E93" />
               <Text style={styles.infoText}>{typeof item.date === "string" ? convertFromISO(item.date) : "Data não disponível"}</Text>
             </View>
-            <View style={styles.infoRow}>
-              <Ionicons name="cube-outline" size={16} color="#8E8E93" />
-              <Text style={styles.infoText}>
-                {item.item_count || 0} {t("items")}
-              </Text>
-            </View>
+            {isWms ? (
+              <View style={styles.infoRow}>
+                <Ionicons name="location-outline" size={16} color="#8E8E93" />
+                <Text style={styles.infoText}>
+                  {addressCount} endereço{addressCount !== 1 ? "s" : ""} · {item.item_count || 0} {t("items")}
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.infoRow}>
+                <Ionicons name="cube-outline" size={16} color="#8E8E93" />
+                <Text style={styles.infoText}>
+                  {item.item_count || 0} {t("items")}
+                </Text>
+              </View>
+            )}
           </View>
 
           {!isClosed && (
             <View style={styles.cardFooter}>
-              <Ionicons name="chevron-forward" size={20} color="#007AFF" />
+              <Ionicons name="chevron-forward" size={20} color={typeColor} />
             </View>
           )}
         </TouchableOpacity>
 
-        {/* Actions for closed inventories */}
         {isClosed && (
           <View style={styles.exportActions}>
             <TouchableOpacity style={[styles.exportButton, styles.downloadButton]} onPress={() => handleDownload(item)} disabled={isExporting || isDeleting}>
@@ -195,17 +192,10 @@ export default function InventoriesScreen() {
           </View>
         )}
 
-        {/* Delete button for open inventories - positioned at bottom right */}
         {!isClosed && (
           <View style={styles.openInventoryActions}>
-            <TouchableOpacity style={[styles.deleteButtonSmall]} onPress={() => handleDeleteInventory(item)} disabled={isDeleting}>
-              {isDeleting ? (
-                <ActivityIndicator size="small" color="#FF3B30" />
-              ) : (
-                <>
-                  <Ionicons name="trash-outline" size={18} color="#FF3B30" />
-                </>
-              )}
+            <TouchableOpacity style={styles.deleteButtonSmall} onPress={() => handleDeleteInventory(item)} disabled={isDeleting}>
+              {isDeleting ? <ActivityIndicator size="small" color="#FF3B30" /> : <Ionicons name="trash-outline" size={18} color="#FF3B30" />}
             </TouchableOpacity>
           </View>
         )}
@@ -250,25 +240,10 @@ export default function InventoriesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#F2F2F7",
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#F2F2F7",
-  },
-  listContent: {
-    padding: 16,
-    gap: 12,
-  },
-  listContentEmpty: {
-    flexGrow: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  container: { flex: 1, backgroundColor: "#F2F2F7" },
+  loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F2F2F7" },
+  listContent: { padding: 16, gap: 12 },
+  listContentEmpty: { flexGrow: 1, justifyContent: "center", alignItems: "center" },
   inventoryCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 16,
@@ -279,121 +254,39 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 3,
   },
-  cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  cardTitleContainer: {
+  cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
+  cardTitleContainer: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
+  cardTitle: { fontSize: 18, fontWeight: "bold", color: "#000", flex: 1 },
+  badgesRow: { flexDirection: "row", gap: 6, alignItems: "center" },
+  typeBadge: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    flex: 1,
-  },
-  cardTitle: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#000",
-    flex: 1,
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  statusOpen: {
-    backgroundColor: "#E8F5E9",
-  },
-  statusClosed: {
-    backgroundColor: "#F5F5F5",
-  },
-  statusText: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: "#000",
-  },
-  cardInfo: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  infoRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  infoText: {
-    fontSize: 14,
-    color: "#8E8E93",
-  },
-  cardFooter: {
-    alignItems: "flex-end",
-  },
-  exportActions: {
-    flexDirection: "row",
-    gap: 8,
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#E5E5EA",
-  },
-  exportButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    minHeight: 48,
-  },
-  downloadButton: {
-    backgroundColor: "#E3F2FD",
-    borderWidth: 1,
-    borderColor: "#007AFF",
-  },
-  downloadButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#007AFF",
-  },
-  deleteButton: {
-    backgroundColor: "#FFF0F0",
-    borderWidth: 1,
-    borderColor: "#FF3B30",
-  },
-  deleteButtonText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#FF3B30",
-  },
-  openInventoryActions: {
-    position: "absolute",
-    bottom: 16,
-    right: 16,
-  },
-  deleteButtonSmall: {
-    padding: 8,
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 8,
-    backgroundColor: "#FFF0F0",
+    borderWidth: 1,
   },
-  emptyState: {
-    alignItems: "center",
-    padding: 32,
-  },
-  emptyTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#000",
-    marginTop: 16,
-  },
-  emptySubtitle: {
-    fontSize: 16,
-    color: "#8E8E93",
-    marginTop: 8,
-    textAlign: "center",
-  },
+  typeBadgeText: { fontSize: 11, fontWeight: "700" },
+  statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
+  statusOpen: { backgroundColor: "#E8F5E9" },
+  statusClosed: { backgroundColor: "#F5F5F5" },
+  statusText: { fontSize: 12, fontWeight: "600", color: "#000" },
+  cardInfo: { gap: 8, marginBottom: 8 },
+  infoRow: { flexDirection: "row", alignItems: "center", gap: 8 },
+  infoText: { fontSize: 14, color: "#8E8E93" },
+  cardFooter: { alignItems: "flex-end" },
+  exportActions: { flexDirection: "row", gap: 8, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: "#E5E5EA" },
+  exportButton: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 12, minHeight: 48 },
+  downloadButton: { backgroundColor: "#E3F2FD", borderWidth: 1, borderColor: "#007AFF" },
+  downloadButtonText: { fontSize: 14, fontWeight: "600", color: "#007AFF" },
+  deleteButton: { backgroundColor: "#FFF0F0", borderWidth: 1, borderColor: "#FF3B30" },
+  deleteButtonText: { fontSize: 14, fontWeight: "600", color: "#FF3B30" },
+  openInventoryActions: { position: "absolute", bottom: 16, right: 16 },
+  deleteButtonSmall: { padding: 8, borderRadius: 8, backgroundColor: "#FFF0F0" },
+  emptyState: { alignItems: "center", padding: 32 },
+  emptyTitle: { fontSize: 24, fontWeight: "bold", color: "#000", marginTop: 16 },
+  emptySubtitle: { fontSize: 16, color: "#8E8E93", marginTop: 8, textAlign: "center" },
   fab: {
     position: "absolute",
     bottom: 24,

@@ -23,7 +23,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
           <Ionicons name="cube" size={48} color="#FFFFFF" />
         </View>
         <Text style={styles.appTitle}>{t("appTitle") || "CaléOnline Inventário"}</Text>
-        <Text style={styles.appSubtitle}>{t("appSubtitle") || "Gestão de Estoque"}</Text>
+        <Text style={styles.appSubtitle}>{t("appSubtitle") || "Gestão de Estoque WMS & LOJA"}</Text>
       </View>
 
       {/* Lista de itens do menu */}
@@ -188,9 +188,8 @@ export default function DrawerLayout() {
         <Drawer.Screen
           name="store-config"
           options={{
-            drawerLabel: t("storeConfig"),
-            title: t("storeConfig"),
-            drawerIcon: ({ color, size }) => <Ionicons name="storefront-outline" size={size} color={color} />,
+            drawerItemStyle: { display: "none" },
+            title: "Dados da Loja",
           }}
         />
         <Drawer.Screen
@@ -198,16 +197,33 @@ export default function DrawerLayout() {
           options={{
             drawerLabel: t("counting"),
             title: t("counting"),
-            drawerItemStyle: { display: "none" }, // Ocultar do menu drawer
+            drawerItemStyle: { display: "none" },
             drawerIcon: ({ color, size }) => <Ionicons name="barcode-outline" size={size} color={color} />,
+          }}
+        />
+        <Drawer.Screen
+          name="wms/[id]"
+          options={{
+            drawerLabel: "WMS",
+            title: "Inventário WMS",
+            drawerItemStyle: { display: "none" },
+            drawerIcon: ({ color, size }) => <Ionicons name="cube-outline" size={size} color={color} />,
+          }}
+        />
+        <Drawer.Screen
+          name="wms-counting/[id]"
+          options={{
+            drawerLabel: "Contagem WMS",
+            title: "Contagem por Endereço",
+            drawerItemStyle: { display: "none" },
+            drawerIcon: ({ color, size }) => <Ionicons name="location-outline" size={size} color={color} />,
           }}
         />
         <Drawer.Screen
           name="settings"
           options={{
-            drawerLabel: t("dadosConfig"),
-            title: t("dadosConfig"),
-            drawerIcon: ({ color, size }) => <Ionicons name="settings-outline" size={size} color={color} />,
+            drawerItemStyle: { display: "none" },
+            title: "Configurações",
           }}
         />
       </Drawer>

@@ -1,50 +1,86 @@
-# Welcome to your Expo app 👋
+# CaléOnline Inventário
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Aplicativo mobile para gestão de inventário de estoque. Funciona 100% offline — todos os dados ficam armazenados localmente no dispositivo.
 
-## Get started
+## Tecnologias
 
-1. Install dependencies
+- **Expo** (React Native + TypeScript)
+- **Expo Router** — navegação baseada em arquivo (Drawer)
+- **expo-file-system** — armazenamento local em JSON
+- **expo-camera / expo-document-picker** — leitura de código de barras e importação de CSV
 
-   ```bash
-   npm install
-   ```
+## Funcionalidades
 
-2. Start the app
+### Inventário Loja (`type: "loja"`)
+Contagem simples por produto. O operador escaneia ou digita o código do produto e registra a quantidade.
 
-   ```bash
-   npx expo start
-   ```
+### Inventário WMS (`type: "wms"`)
+Contagem por endereço de estoque. Fluxo:
+1. Criar inventário WMS
+2. Adicionar/importar endereços (formato `AA9999999`)
+3. Para cada endereço → registrar itens com: código, EAN, quantidade, unidade (UN/CX), fator, lote e validade
 
-In the output, you'll find options to open the app in a
+### Base de Produtos
+- Cadastro manual de produtos (código, EAN, descrição)
+- Importação em massa via CSV (suporta separador `,` ou `;`, UTF-8 e Latin-1/Windows-1252)
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Estrutura do Projeto
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+frontend/
+├── app/
+│   ├── _layout.tsx          # Drawer Navigator (layout raiz)
+│   ├── index.tsx            # Lista de inventários
+│   ├── products.tsx         # Base de produtos
+│   ├── counting/[id].tsx    # Tela de contagem (InvLoja)
+│   ├── wms/[id].tsx         # Gerenciar endereços WMS
+│   └── wms-counting/[id].tsx# Contagem por endereço (WMS)
+├── components/
+│   ├── BarcodeScanner.tsx   # Scanner de câmera (web + nativo)
+│   ├── CreateInventoryModal.tsx
+│   ├── ProductFormModal.tsx
+│   ├── AddressModal.tsx
+│   └── EditItemModal.tsx
+├── services/
+│   ├── api.ts               # Camada de API (fachada sobre localStorage)
+│   └── localStorage.ts      # Persistência em JSON (expo-file-system)
+├── utils/
+│   ├── excelExport.ts       # Exportação de inventário para Excel
+│   └── i18n.ts              # Internacionalização (pt-BR)
+└── assets/
+    └── data/products.json   # Base de produtos (inicia vazia)
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## Instalação e Execução
 
-## Learn more
+```bash
+# Instalar dependências
+npm install
 
-To learn more about developing your project with Expo, look at the following resources:
+# Iniciar em modo desenvolvimento
+npx expo start
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+# Build para Android (EAS)
+eas build --platform android --profile preview
+```
 
-## Join the community
+## Formato do CSV para Importação de Produtos
 
-Join our community of developers creating universal apps.
+O arquivo CSV deve ter três colunas na ordem: **código**, **EAN**, **descrição**.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Separadores aceitos: `;` (ponto e vírgula) ou `,` (vírgula).  
+Encodings aceitos: UTF-8 (com ou sem BOM) e Windows-1252/Latin-1.  
+Cabeçalho opcional — é detectado automaticamente.
+
+**Exemplo com ponto e vírgula:**
+```
+CÓDIGO;EAN;DESCRIÇÃO
+PROD001;7891234567890;Produto Exemplo Um
+PROD002;;Produto Sem EAN
+```
+
+**Exemplo com vírgula:**
+```
+codigo,ean,descricao
+PROD001,7891234567890,Produto Exemplo Um
+```

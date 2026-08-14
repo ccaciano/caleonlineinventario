@@ -186,7 +186,7 @@ export default function ProductsScreen() {
       let csvContent = buffer.toString("utf8")
 
       // Se houver sinal de erro de encoding (caractere diamante com interrogação)
-      if (csvContent.includes("\ufffd") || csvContent.includes("")) {
+      if (csvContent.includes("\ufffd")) {
         console.log("🔄 Detectado erro de encoding. Convertendo para Latin1...")
         csvContent = buffer.toString("latin1")
       }
@@ -352,6 +352,15 @@ export default function ProductsScreen() {
             <Ionicons name="add" size={24} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
+
+        <View style={styles.csvHintBox}>
+          <Ionicons name="information-circle-outline" size={15} color="#007AFF" />
+          <Text style={styles.csvHintText}>
+            <Text style={styles.csvHintBold}>Formato do CSV: </Text>Separado por vírgula (,){"\n"}
+            Ex: CÓDIGO,EAN,DESCRIÇÃO{"\n"}
+            BROBVS100542,3253581971000,CR CAPIM LIMÃO
+          </Text>
+        </View>
       </View>
 
       <FlatList
@@ -516,6 +525,23 @@ const styles = StyleSheet.create({
     marginTop: 16,
     textAlign: "center",
     fontStyle: "italic",
+  },
+  csvHintBox: {
+    flexDirection: "row",
+    gap: 8,
+    backgroundColor: "#E3F2FD",
+    borderRadius: 10,
+    padding: 10,
+    alignItems: "flex-start",
+  },
+  csvHintText: {
+    flex: 1,
+    fontSize: 12,
+    color: "#333",
+    lineHeight: 18,
+  },
+  csvHintBold: {
+    fontWeight: "bold",
   },
   footer: {
     paddingVertical: 16,

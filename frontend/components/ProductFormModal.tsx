@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next"
 import { Ionicons } from "@expo/vector-icons"
 import Modal from "react-native-modal"
 import { createProduct, updateProduct, Product } from "../services/api"
+import BarcodeScanner from "./BarcodeScanner"
 
 interface ProductFormModalProps {
   visible: boolean
@@ -15,6 +16,8 @@ interface ProductFormModalProps {
 export default function ProductFormModal({ visible, product, onClose, onSuccess }: ProductFormModalProps) {
   const { t } = useTranslation()
   const [loading, setLoading] = useState(false)
+  const [scannerVisible, setScannerVisible] = useState(false)
+  const [scanTarget, setScanTarget] = useState<"code" | "ean">("code")
   const [formData, setFormData] = useState({
     code: "",
     ean: "",
@@ -29,16 +32,25 @@ export default function ProductFormModal({ visible, product, onClose, onSuccess 
         description: product.description,
       })
     } else {
-      setFormData({
-        code: "",
-        ean: "",
-        description: "",
-      })
+      setFormData({ code: "", ean: "", description: "" })
     }
   }, [product, visible])
 
+  const handleScan = (scannedCode: string) => {
+    setScannerVisible(false)
+    if (scanTarget === "code") {
+      setFormData((prev) => ({ ...prev, code: scannedCode }))
+    } else {
+      setFormData((prev) => ({ ...prev, ean: scannedCode }))
+    }
+  }
+
+  const openScanner = (target: "code" | "ean") => {
+    setScanTarget(target)
+    setScannerVisible(true)
+  }
+
   const handleSave = async () => {
-    // Apenas código e descrição são obrigatórios, EAN é opcional
     if (!formData.code || !formData.description) {
       const message = "Código e Descrição são obrigatórios"
       if (Platform.OS === "web" && typeof window !== "undefined") {
@@ -53,12 +65,11 @@ export default function ProductFormModal({ visible, product, onClose, onSuccess 
       setLoading(true)
       const productData = {
         code: formData.code,
-        ean: formData.ean || "", // EAN pode ser vazio
+        ean: formData.ean || "",
         description: formData.description,
       }
 
       if (product && product._id) {
-        // Update existing product
         await updateProduct(product._id, productData)
         if (Platform.OS === "web" && typeof window !== "undefined") {
           window.alert("Produto atualizado com sucesso!")
@@ -66,7 +77,6 @@ export default function ProductFormModal({ visible, product, onClose, onSuccess 
           Alert.alert(t("productUpdated"))
         }
       } else {
-        // Create new product
         await createProduct(productData)
         if (Platform.OS === "web" && typeof window !== "undefined") {
           window.alert("Produto cadastrado com sucesso!")
@@ -76,7 +86,7 @@ export default function ProductFormModal({ visible, product, onClose, onSuccess 
       }
       onSuccess()
     } catch (error) {
-      console.error("Error saving product:", error)
+      console.warn("Error saving product:", error)
       const errorMessage = error instanceof Error ? error.message : "Falha ao salvar produto"
       if (Platform.OS === "web" && typeof window !== "undefined") {
         window.alert(errorMessage)
@@ -96,70 +106,95 @@ export default function ProductFormModal({ visible, product, onClose, onSuccess 
   }
 
   return (
-    <Modal
-      isVisible={visible}
-      onBackdropPress={handleClose}
-      onBackButtonPress={handleClose}
-      // Invertendo as animações para surgir de cima
-      animationIn="slideInDown"
-      animationOut="slideOutUp"
-      backdropOpacity={0.5}
-      // Alinhamento no topo e remoção de margens para encostar na borda
-      style={[styles.modal, { justifyContent: "flex-start", margin: 0 }]}
-      avoidKeyboard={Platform.OS === "ios"}
-      propagateSwipe={true}
-    >
-      <View style={[styles.modalContent, styles.modalTop]}>
-        <View style={styles.modalHeader}>
-          <Text style={styles.modalTitle}>{product ? t("editProduct") : t("addProduct")}</Text>
-          <TouchableOpacity onPress={handleClose} disabled={loading}>
-            <Ionicons name="close" size={28} color="#8E8E93" />
-          </TouchableOpacity>
-        </View>
-
-        <ScrollView bounces={false} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }}>
-          <View style={styles.form}>
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>{t("productCode")} *</Text>
-              <TextInput style={styles.input} value={formData.code} onChangeText={(text) => setFormData({ ...formData, code: text })} placeholder={t("productCode")} placeholderTextColor="#999" editable={!loading} />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>{t("ean")} (opcional)</Text>
-              <TextInput style={styles.input} value={formData.ean} onChangeText={(text) => setFormData({ ...formData, ean: text })} placeholder={t("ean")} placeholderTextColor="#999" editable={!loading} />
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>{t("description")} *</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={formData.description}
-                onChangeText={(text) => setFormData({ ...formData, description: text })}
-                placeholder={t("description")}
-                placeholderTextColor="#999"
-                multiline
-                numberOfLines={3}
-                textAlignVertical="top"
-                editable={!loading}
-              />
-            </View>
-
-            <View style={styles.buttons}>
-              <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={handleClose} disabled={loading}>
-                <Text style={styles.cancelButtonText}>{t("cancel")}</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity style={[styles.button, styles.saveButton, loading && styles.buttonDisabled]} onPress={handleSave} disabled={loading}>
-                {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.saveButtonText}>{product ? t("updateProduct") : t("addProduct")}</Text>}
-              </TouchableOpacity>
-            </View>
-
-            {/* Espaçador para garantir que o teclado não cubra o botão "Salvar" ao rolar */}
-            {Platform.OS === "android" && <View style={{ height: 100 }} />}
+    <>
+      <Modal
+        isVisible={visible && !scannerVisible}
+        onBackdropPress={handleClose}
+        onBackButtonPress={handleClose}
+        animationIn="slideInDown"
+        animationOut="slideOutUp"
+        backdropOpacity={0.5}
+        style={[styles.modal, { justifyContent: "flex-start", margin: 0 }]}
+        avoidKeyboard={Platform.OS === "ios"}
+        propagateSwipe={true}
+      >
+        <View style={[styles.modalContent, styles.modalTop]}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>{product ? t("editProduct") : t("addProduct")}</Text>
+            <TouchableOpacity onPress={handleClose} disabled={loading}>
+              <Ionicons name="close" size={28} color="#8E8E93" />
+            </TouchableOpacity>
           </View>
-        </ScrollView>
-      </View>
-    </Modal>
+
+          <ScrollView bounces={false} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }}>
+            <View style={styles.form}>
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>{t("productCode")} *</Text>
+                <View style={styles.inputRow}>
+                  <TextInput
+                    style={styles.inputFlex}
+                    value={formData.code}
+                    onChangeText={(text) => setFormData({ ...formData, code: text })}
+                    placeholder={t("productCode")}
+                    placeholderTextColor="#999"
+                    editable={!loading}
+                  />
+                  <TouchableOpacity style={styles.scanBtn} onPress={() => openScanner("code")} disabled={loading}>
+                    <Ionicons name="scan-outline" size={22} color="#007AFF" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>{t("ean")} (opcional)</Text>
+                <View style={styles.inputRow}>
+                  <TextInput
+                    style={styles.inputFlex}
+                    value={formData.ean}
+                    onChangeText={(text) => setFormData({ ...formData, ean: text })}
+                    placeholder={t("ean")}
+                    placeholderTextColor="#999"
+                    editable={!loading}
+                  />
+                  <TouchableOpacity style={styles.scanBtn} onPress={() => openScanner("ean")} disabled={loading}>
+                    <Ionicons name="scan-outline" size={22} color="#007AFF" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>{t("description")} *</Text>
+                <TextInput
+                  style={[styles.input, styles.textArea]}
+                  value={formData.description}
+                  onChangeText={(text) => setFormData({ ...formData, description: text })}
+                  placeholder={t("description")}
+                  placeholderTextColor="#999"
+                  multiline
+                  numberOfLines={3}
+                  textAlignVertical="top"
+                  editable={!loading}
+                />
+              </View>
+
+              <View style={styles.buttons}>
+                <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={handleClose} disabled={loading}>
+                  <Text style={styles.cancelButtonText}>{t("cancel")}</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity style={[styles.button, styles.saveButton, loading && styles.buttonDisabled]} onPress={handleSave} disabled={loading}>
+                  {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.saveButtonText}>{product ? t("updateProduct") : t("addProduct")}</Text>}
+                </TouchableOpacity>
+              </View>
+
+              {Platform.OS === "android" && <View style={{ height: 100 }} />}
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
+
+      <BarcodeScanner visible={scannerVisible} onClose={() => setScannerVisible(false)} onScan={handleScan} />
+    </>
   )
 }
 
@@ -170,13 +205,11 @@ const styles = StyleSheet.create({
   },
   modalTop: {
     backgroundColor: "#FFFFFF",
-    // Arredonda apenas os cantos de baixo
     borderBottomLeftRadius: 24,
     borderBottomRightRadius: 24,
     borderTopLeftRadius: 0,
     borderTopRightRadius: 0,
     padding: 24,
-    // Espaçamento para não ficar sob a barra de status/câmera
     paddingTop: Platform.OS === "android" ? 40 : 60,
     maxHeight: "90%",
   },
@@ -208,6 +241,32 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
     color: "#000",
+  },
+  inputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  inputFlex: {
+    flex: 1,
+    backgroundColor: "#F2F2F7",
+    borderWidth: 1,
+    borderColor: "#E5E5EA",
+    borderRadius: 12,
+    padding: 16,
+    fontSize: 16,
+    color: "#000",
+    minHeight: 52,
+  },
+  scanBtn: {
+    width: 52,
+    height: 52,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 12,
+    backgroundColor: "#E3F2FD",
+    borderWidth: 1,
+    borderColor: "#007AFF",
   },
   input: {
     backgroundColor: "#F2F2F7",
