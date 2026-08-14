@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, FlatList, Alert, A
 import { Ionicons } from "@expo/vector-icons"
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router"
 import { getInventory, getWmsAddresses, addWmsAddress, deleteWmsAddress, importWmsAddresses, updateWmsAddress, closeWmsInventory, Inventory, WmsAddress } from "../../services/api"
-import AddressModal from "../../components/AddressModal"
+import AddressModal, { AddSingleResult } from "../../components/AddressModal"
 
 const ADDRESS_REGEX = /^[A-Z]{2}\d{6,7}$/
 const isValidAddress = (addr: string): boolean => ADDRESS_REGEX.test(addr)
@@ -142,9 +142,30 @@ export default function WmsInventoryScreen() {
     }
   }
 
-  const handleAddSingle = async (endereco: string) => {
-    const added = await addWmsAddress(inventoryId, endereco)
+  const handleAddSingle = async (endereco: string): Promise<AddSingleResult> => {
+    const clean = endereco.trim().toUpperCase()
+    // Consulta a lista salva (e não o estado) para não deixar passar um endereço duplicado
+    const current = await getWmsAddresses(inventoryId)
+    const existing = current.find((a) => a.endereco.toUpperCase() === clean)
+    if (existing) {
+      setAddresses(sortAddresses(current))
+      return { existed: true, address: existing }
+    }
+
+    const added = await addWmsAddress(inventoryId, clean)
     setAddresses((prev) => sortAddresses([...prev, added]))
+    return { existed: false, address: added }
+  }
+
+  // Endereço já cadastrado: fecha o modal e abre a contagem dele
+  const handleOpenAddress = (address: WmsAddress) => {
+    setModalVisible(false)
+    setTimeout(() => {
+      router.push({
+        pathname: "/wms-counting/[id]",
+        params: { id: address._id, inventoryId, addressName: address.endereco },
+      })
+    }, 350)
   }
 
   const handleImportList = async (enderecos: string[]) => {
@@ -177,10 +198,14 @@ export default function WmsInventoryScreen() {
     const emptyAddresses = addresses.filter((a) => (a.itens?.length || 0) === 0)
 
     if (emptyAddresses.length > 0) {
-      Alert.alert("Endereços sem itens", `${emptyAddresses.length} endereço(s) não possuem itens contados.\n\nDeseja encerrar mesmo assim? Esses endereços receberão um registro nulo.`, [
-        { text: "Cancelar", style: "cancel" },
-        { text: "Encerrar", style: "destructive", onPress: doCloseInventory },
-      ])
+      Alert.alert(
+        "Endereços sem itens",
+        `${emptyAddresses.length} endereço(s) não possuem itens contados.\n\nDeseja encerrar mesmo assim? Esses endereços receberão um registro nulo.`,
+        [
+          { text: "Cancelar", style: "cancel" },
+          { text: "Encerrar", style: "destructive", onPress: doCloseInventory },
+        ],
+      )
     } else {
       Alert.alert("Fechar Inventário", "Deseja realmente fechar este inventário WMS?", [
         { text: "Cancelar", style: "cancel" },
@@ -205,7 +230,12 @@ export default function WmsInventoryScreen() {
     }
 
     return (
-      <TouchableOpacity style={styles.addressCard} onPress={() => !isEditing && handleAddressPress(item)} activeOpacity={isEditing ? 1 : 0.7} disabled={isDeleting}>
+      <TouchableOpacity
+        style={styles.addressCard}
+        onPress={() => !isEditing && handleAddressPress(item)}
+        activeOpacity={isEditing ? 1 : 0.7}
+        disabled={isDeleting}
+      >
         <View style={styles.addressLeft}>
           <View style={styles.addressIconContainer}>
             <Ionicons name="location" size={22} color="#FF9500" />
@@ -213,9 +243,22 @@ export default function WmsInventoryScreen() {
           <View style={styles.addressInfo}>
             {isEditing ? (
               <View style={styles.editRow}>
-                <TextInput style={styles.editInput} value={editingText} onChangeText={(t) => setEditingText(t.toUpperCase())} autoCapitalize="characters" autoFocus maxLength={9} placeholder="XX0000000" placeholderTextColor="#999" />
+                <TextInput
+                  style={styles.editInput}
+                  value={editingText}
+                  onChangeText={(t) => setEditingText(t.toUpperCase())}
+                  autoCapitalize="characters"
+                  autoFocus
+                  maxLength={9}
+                  placeholder="XX0000000"
+                  placeholderTextColor="#999"
+                />
                 <TouchableOpacity onPress={handleSaveEdit} disabled={isSaving} style={styles.editActionBtn}>
-                  {isSaving ? <ActivityIndicator size="small" color="#34C759" /> : <Ionicons name="checkmark" size={20} color="#34C759" />}
+                  {isSaving ? (
+                    <ActivityIndicator size="small" color="#34C759" />
+                  ) : (
+                    <Ionicons name="checkmark" size={20} color="#34C759" />
+                  )}
                 </TouchableOpacity>
                 <TouchableOpacity onPress={cancelEdit} style={styles.editActionBtn}>
                   <Ionicons name="close" size={20} color="#FF3B30" />
@@ -275,12 +318,8 @@ export default function WmsInventoryScreen() {
               <Text style={styles.closedBannerText}>Inventário encerrado</Text>
             </View>
           )}
-          <Text style={styles.headerTitle} numberOfLines={1}>
-            {inventory.description}
-          </Text>
-          <Text style={styles.headerSubtitle}>
-            {convertFromISO(inventory.date)} · {addresses.length} endereços · {totalItems} itens
-          </Text>
+          <Text style={styles.headerTitle} numberOfLines={1}>{inventory.description}</Text>
+          <Text style={styles.headerSubtitle}>{convertFromISO(inventory.date)} · {addresses.length} endereços · {totalItems} itens</Text>
         </View>
       </View>
 
@@ -299,9 +338,7 @@ export default function WmsInventoryScreen() {
         ListFooterComponent={
           !isClosed && addresses.length > 0 ? (
             <TouchableOpacity style={styles.closeInventoryButton} onPress={handleCloseInventory} disabled={loading}>
-              {loading ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
+              {loading ? <ActivityIndicator color="#FFFFFF" /> : (
                 <>
                   <Ionicons name="lock-closed" size={22} color="#FFFFFF" />
                   <Text style={styles.closeInventoryText}>Fechar Inventário WMS</Text>
@@ -319,7 +356,13 @@ export default function WmsInventoryScreen() {
         </TouchableOpacity>
       )}
 
-      <AddressModal visible={modalVisible} onClose={() => setModalVisible(false)} onAddSingle={handleAddSingle} onImportList={handleImportList} />
+      <AddressModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        onAddSingle={handleAddSingle}
+        onImportList={handleImportList}
+        onOpenAddress={handleOpenAddress}
+      />
     </View>
   )
 }
@@ -328,33 +371,16 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#F2F2F7" },
   loadingContainer: { flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: "#F2F2F7" },
   headerCard: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    backgroundColor: "#FFFFFF",
-    margin: 16,
-    marginBottom: 8,
-    borderRadius: 16,
-    padding: 16,
-    gap: 12,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 2,
+    flexDirection: "row", alignItems: "flex-start", backgroundColor: "#FFFFFF",
+    margin: 16, marginBottom: 8, borderRadius: 16, padding: 16, gap: 12,
+    shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 6, elevation: 2,
   },
   backButton: { padding: 4 },
   headerContent: { flex: 1, gap: 6 },
   closedBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "#FFEBEE",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#FFCDD2",
-    alignSelf: "flex-start",
+    flexDirection: "row", alignItems: "center", gap: 6, backgroundColor: "#FFEBEE",
+    paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, borderWidth: 1,
+    borderColor: "#FFCDD2", alignSelf: "flex-start",
   },
   closedBannerText: { fontSize: 12, fontWeight: "bold", color: "#D32F2F" },
   headerTitle: { fontSize: 20, fontWeight: "bold", color: "#000" },
@@ -362,33 +388,17 @@ const styles = StyleSheet.create({
   listContent: { padding: 16, paddingTop: 8, gap: 10, paddingBottom: 100 },
   listContentEmpty: { flex: 1 },
   addressCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 14,
-    padding: 14,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 2,
+    backgroundColor: "#FFFFFF", borderRadius: 14, padding: 14,
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2,
   },
   addressLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
   addressIconContainer: { width: 40, height: 40, borderRadius: 20, backgroundColor: "#FFF3E0", justifyContent: "center", alignItems: "center" },
   addressInfo: { flex: 1, gap: 2 },
   editRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   editInput: {
-    flex: 1,
-    backgroundColor: "#F2F2F7",
-    borderWidth: 1.5,
-    borderColor: "#007AFF",
-    borderRadius: 8,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    fontSize: 15,
-    fontWeight: "bold",
-    color: "#000",
+    flex: 1, backgroundColor: "#F2F2F7", borderWidth: 1.5, borderColor: "#007AFF",
+    borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, fontSize: 15, fontWeight: "bold", color: "#000",
   },
   editActionBtn: { padding: 4 },
   addressCode: { fontSize: 17, fontWeight: "bold", color: "#000" },
@@ -402,31 +412,14 @@ const styles = StyleSheet.create({
   emptyTitle: { fontSize: 20, fontWeight: "bold", color: "#000", marginTop: 16 },
   emptySubtitle: { fontSize: 14, color: "#8E8E93", marginTop: 8, textAlign: "center" },
   closeInventoryButton: {
-    backgroundColor: "#FF3B30",
-    borderRadius: 12,
-    padding: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    minHeight: 56,
-    marginTop: 8,
+    backgroundColor: "#FF3B30", borderRadius: 12, padding: 16,
+    flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 8, minHeight: 56, marginTop: 8,
   },
   closeInventoryText: { color: "#FFFFFF", fontSize: 17, fontWeight: "bold" },
   fab: {
-    position: "absolute",
-    bottom: 24,
-    right: 24,
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "#FF9500",
-    justifyContent: "center",
-    alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
+    position: "absolute", bottom: 24, right: 24, width: 64, height: 64, borderRadius: 32,
+    backgroundColor: "#FF9500", justifyContent: "center", alignItems: "center",
+    shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 8,
   },
 })

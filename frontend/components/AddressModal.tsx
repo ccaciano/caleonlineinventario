@@ -5,18 +5,27 @@ import Modal from "react-native-modal"
 import * as DocumentPicker from "expo-document-picker"
 import * as FileSystem from "expo-file-system/legacy"
 import BarcodeScanner from "./BarcodeScanner"
+import { WmsAddress } from "../services/api"
 
 const ADDRESS_REGEX = /^[A-Z]{2}\d{6,7}$/
 const isValidAddress = (addr: string): boolean => ADDRESS_REGEX.test(addr)
 
+export interface AddSingleResult {
+  /** true quando o endereço já estava cadastrado no inventário */
+  existed: boolean
+  address: WmsAddress
+}
+
 interface AddressModalProps {
   visible: boolean
   onClose: () => void
-  onAddSingle: (endereco: string) => Promise<void>
+  onAddSingle: (endereco: string) => Promise<AddSingleResult>
   onImportList: (enderecos: string[]) => Promise<void>
+  /** Abre a tela de contagem do endereço informado */
+  onOpenAddress: (address: WmsAddress) => void
 }
 
-export default function AddressModal({ visible, onClose, onAddSingle, onImportList }: AddressModalProps) {
+export default function AddressModal({ visible, onClose, onAddSingle, onImportList, onOpenAddress }: AddressModalProps) {
   const [tab, setTab] = useState<"manual" | "import">("manual")
   const [manualText, setManualText] = useState("")
   const [scannerVisible, setScannerVisible] = useState(false)
@@ -28,6 +37,24 @@ export default function AddressModal({ visible, onClose, onAddSingle, onImportLi
       setTab("manual")
       onClose()
     }
+  }
+
+  /** Avisa que o endereço já existe e abre a contagem dele */
+  const warnAndOpenExisting = (endereco: string, address: WmsAddress) => {
+    const title = "Endereço já existe"
+    const message = `"${endereco}" já está cadastrado neste inventário.\n\nAbrindo o endereço para iniciar a contagem.`
+    const open = () => {
+      setManualText("")
+      setTab("manual")
+      onOpenAddress(address)
+    }
+
+    if (Platform.OS === "web") {
+      if (typeof window !== "undefined") window.alert(`${title}\n\n${message}`)
+      open()
+      return
+    }
+    Alert.alert(title, message, [{ text: "Abrir Endereço", onPress: open }], { cancelable: false })
   }
 
   const handleAddManual = async () => {
@@ -42,8 +69,12 @@ export default function AddressModal({ visible, onClose, onAddSingle, onImportLi
     }
     try {
       setLoading(true)
-      await onAddSingle(clean)
+      const result = await onAddSingle(clean)
       setManualText("")
+      if (result?.existed) {
+        setLoading(false)
+        warnAndOpenExisting(clean, result.address)
+      }
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Falha ao adicionar endereço")
     } finally {
@@ -58,13 +89,21 @@ export default function AddressModal({ visible, onClose, onAddSingle, onImportLi
     if (!isValidAddress(clean)) {
       setManualText(clean)
       setTab("manual")
-      Alert.alert("Endereço inválido", `"${clean}" não segue os padrões aceitos (XX0000000 com 9 chars ou XX000000 com 8 chars).\n\nO valor foi inserido no campo manual para você corrigir.`)
+      Alert.alert(
+        "Endereço inválido",
+        `"${clean}" não segue os padrões aceitos (XX0000000 com 9 chars ou XX000000 com 8 chars).\n\nO valor foi inserido no campo manual para você corrigir.`,
+      )
       return
     }
     try {
       setLoading(true)
-      await onAddSingle(clean)
-      Alert.alert("Sucesso", `Endereço "${clean}" adicionado!`)
+      const result = await onAddSingle(clean)
+      if (result?.existed) {
+        setLoading(false)
+        warnAndOpenExisting(clean, result.address)
+      } else {
+        Alert.alert("Sucesso", `Endereço "${clean}" adicionado!`)
+      }
     } catch (error: any) {
       Alert.alert("Erro", error.message || "Falha ao adicionar endereço")
     } finally {
@@ -105,7 +144,10 @@ export default function AddressModal({ visible, onClose, onAddSingle, onImportLi
       const invalid = lines.filter((l) => !isValidAddress(l))
       if (invalid.length > 0) {
         const sample = invalid.slice(0, 5).join("\n")
-        Alert.alert("Endereços inválidos", `${invalid.length} endereço(s) não respeitam os padrões aceitos (XX0000000 com 9 chars ou XX000000 com 8 chars):\n\n${sample}${invalid.length > 5 ? "\n..." : ""}\n\nNenhum endereço foi importado.`)
+        Alert.alert(
+          "Endereços inválidos",
+          `${invalid.length} endereço(s) não respeitam os padrões aceitos (XX0000000 com 9 chars ou XX000000 com 8 chars):\n\n${sample}${invalid.length > 5 ? "\n..." : ""}\n\nNenhum endereço foi importado.`,
+        )
         return
       }
 
@@ -157,11 +199,7 @@ export default function AddressModal({ visible, onClose, onAddSingle, onImportLi
               <View style={styles.content}>
                 <View style={styles.patternBox}>
                   <Ionicons name="information-circle-outline" size={16} color="#007AFF" />
-                  <Text style={styles.patternText}>
-                    Padrões aceitos:{"\n"}
-                    <Text style={styles.patternCode}>XX0000000</Text> — 2 letras + 7 dígitos (9 chars){"\n"}
-                    <Text style={styles.patternCode}>XX000000</Text> — 2 letras + 6 dígitos (8 chars)
-                  </Text>
+                  <Text style={styles.patternText}>Padrões aceitos:{"\n"}<Text style={styles.patternCode}>XX0000000</Text> — 2 letras + 7 dígitos (9 chars){"\n"}<Text style={styles.patternCode}>XX000000</Text> — 2 letras + 6 dígitos (8 chars)</Text>
                 </View>
 
                 <TouchableOpacity style={styles.scanButton} onPress={() => setScannerVisible(true)} disabled={loading}>
@@ -172,7 +210,16 @@ export default function AddressModal({ visible, onClose, onAddSingle, onImportLi
                 <Text style={styles.separator}>— ou digite manualmente —</Text>
 
                 <View style={styles.inputRow}>
-                  <TextInput style={styles.inputFlex} value={manualText} onChangeText={(t) => setManualText(t.toUpperCase())} placeholder="Ex: AA0010101" placeholderTextColor="#999" autoCapitalize="characters" editable={!loading} maxLength={9} />
+                  <TextInput
+                    style={styles.inputFlex}
+                    value={manualText}
+                    onChangeText={(t) => setManualText(t.toUpperCase())}
+                    placeholder="Ex: AA0010101"
+                    placeholderTextColor="#999"
+                    autoCapitalize="characters"
+                    editable={!loading}
+                    maxLength={9}
+                  />
                   <TouchableOpacity style={[styles.addBtn, (!manualText.trim() || loading) && styles.addBtnDisabled]} onPress={handleAddManual} disabled={!manualText.trim() || loading}>
                     {loading ? <ActivityIndicator color="#FFFFFF" size="small" /> : <Ionicons name="add" size={24} color="#FFFFFF" />}
                   </TouchableOpacity>
@@ -224,16 +271,8 @@ const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: "bold", color: "#000" },
   tabs: { flexDirection: "row", gap: 8, marginHorizontal: 24, marginBottom: 16 },
   tab: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 10,
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: "#007AFF",
-    backgroundColor: "#F0F8FF",
+    flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center",
+    gap: 6, paddingVertical: 10, borderRadius: 10, borderWidth: 1.5, borderColor: "#007AFF", backgroundColor: "#F0F8FF",
   },
   tabActive: { backgroundColor: "#007AFF", borderColor: "#007AFF" },
   tabText: { fontSize: 13, fontWeight: "600", color: "#007AFF" },
@@ -243,28 +282,15 @@ const styles = StyleSheet.create({
   patternText: { flex: 1, fontSize: 13, color: "#333" },
   patternCode: { fontWeight: "bold", fontFamily: Platform.OS === "ios" ? "Courier" : "monospace" },
   scanButton: {
-    backgroundColor: "#34C759",
-    borderRadius: 12,
-    padding: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    minHeight: 52,
+    backgroundColor: "#34C759", borderRadius: 12, padding: 16,
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, minHeight: 52,
   },
   scanButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "bold" },
   separator: { textAlign: "center", color: "#8E8E93", fontSize: 13 },
   inputRow: { flexDirection: "row", gap: 8, alignItems: "center" },
   inputFlex: {
-    flex: 1,
-    backgroundColor: "#F2F2F7",
-    borderWidth: 1,
-    borderColor: "#E5E5EA",
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 16,
-    color: "#000",
-    minHeight: 50,
+    flex: 1, backgroundColor: "#F2F2F7", borderWidth: 1, borderColor: "#E5E5EA",
+    borderRadius: 12, padding: 14, fontSize: 16, color: "#000", minHeight: 50,
   },
   addBtn: { backgroundColor: "#007AFF", borderRadius: 12, padding: 13, minHeight: 50, justifyContent: "center", alignItems: "center" },
   addBtnDisabled: { backgroundColor: "#C7C7CC" },
