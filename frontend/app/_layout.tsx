@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from "react"
-import { AppState, AppStateStatus, Platform, StyleSheet, View, Text } from "react-native"
+import { AppState, AppStateStatus, Platform, StyleSheet, View, Text, ImageBackground } from "react-native"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { Drawer } from "expo-router/drawer"
 import { Ionicons } from "@expo/vector-icons"
@@ -17,12 +17,11 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 
   return (
     <View style={styles.drawerContainer}>
-      {/* Header do Drawer */}
-      <View style={[styles.drawerHeader, { paddingTop: insets.top + 16 }]}>
-        <View style={styles.logoContainer}>
-          <Ionicons name="cube" size={48} color="#FFFFFF" />
-        </View>
-        <Text style={styles.appTitle}>{t("appTitle") || "CaléOnline Inventário"}</Text>
+      {/* Faixa de imagem no topo */}
+      <ImageBackground source={require("../assets/images/drawer-bg.jpg")} style={[styles.imageBanner, { paddingTop: insets.top }]} resizeMode="cover" />
+
+      {/* Conteúdo com fundo azul, como antes */}
+      <View style={styles.drawerHeader}>
         <Text style={styles.appSubtitle}>{t("appSubtitle") || "Gestão de Estoque WMS"}</Text>
       </View>
 
@@ -236,12 +235,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFFFFF",
   },
+  imageBanner: {
+    width: "100%",
+    height: 180,
+  },
   drawerHeader: {
     backgroundColor: "#007AFF",
     paddingHorizontal: 20,
-    paddingBottom: 24,
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
+    paddingTop: 10,
+    paddingBottom: 10,
   },
   logoContainer: {
     width: 72,
@@ -259,6 +261,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   appSubtitle: {
+    fontWeight: "bold",
     fontSize: 14,
     color: "rgba(255, 255, 255, 0.8)",
   },
