@@ -14,7 +14,7 @@
     },
     "android": {
       "package": "com.ccaciano.inventorymanager.loja",
-      "versionCode": 6,
+      "versionCode": 7,
       "allowBackup": false,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
