@@ -113,10 +113,7 @@ export default function WmsCountingScreen() {
     if (!term) return items
     return items.filter((item) => {
       if (item.qtd === null || item.qtd === undefined) return false
-      const haystack = [item.codigo, item.EAN, item.descricao, item.lote, item.unit, item.validade ? convertFromISO(item.validade) : ""]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase()
+      const haystack = [item.codigo, item.EAN, item.descricao, item.lote, item.unit, item.validade ? convertFromISO(item.validade) : ""].filter(Boolean).join(" ").toLowerCase()
       return haystack.includes(term)
     })
   }, [items, itemSearch])
@@ -584,28 +581,14 @@ export default function WmsCountingScreen() {
           <View style={styles.itemsSection}>
             <View style={styles.itemsHeader}>
               <Text style={styles.sectionTitle}>Itens neste Endereço</Text>
-              <Text style={styles.itemCount}>
-                {itemSearch.trim()
-                  ? `${filteredItems.length} de ${totalCounted} item${totalCounted !== 1 ? "s" : ""}`
-                  : `${totalCounted} item${totalCounted !== 1 ? "s" : ""}`}
-              </Text>
+              <Text style={styles.itemCount}>{itemSearch.trim() ? `${filteredItems.length} de ${totalCounted} item${totalCounted !== 1 ? "s" : ""}` : `${totalCounted} item${totalCounted !== 1 ? "s" : ""}`}</Text>
             </View>
 
             {/* Busca nos itens já contados */}
             {totalCounted > 0 && (
               <View style={styles.searchBox}>
                 <Ionicons name="search" size={20} color="#8E8E93" />
-                <TextInput
-                  style={styles.searchInput}
-                  value={itemSearch}
-                  onChangeText={setItemSearch}
-                  placeholder="Buscar por código, descrição ou lote"
-                  placeholderTextColor="#999"
-                  autoCapitalize="characters"
-                  autoCorrect={false}
-                  returnKeyType="search"
-                  clearButtonMode="never"
-                />
+                <TextInput style={styles.searchInput} value={itemSearch} onChangeText={setItemSearch} placeholder="Buscar por código, descrição ou lote" placeholderTextColor="#999" autoCapitalize="characters" autoCorrect={false} returnKeyType="search" clearButtonMode="never" />
                 {itemSearch.length > 0 && (
                   <TouchableOpacity onPress={() => setItemSearch("")} style={styles.searchClear} accessibilityLabel="Limpar busca">
                     <Ionicons name="close-circle" size={20} color="#8E8E93" />

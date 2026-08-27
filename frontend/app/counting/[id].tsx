@@ -85,10 +85,7 @@ export default function CountingScreen() {
     const term = itemSearch.trim().toLowerCase()
     if (!term) return items
     return items.filter((item) => {
-      const haystack = [item.product_code, item.ean, item.description, item.lot, item.expiry_date ? convertFromISO(item.expiry_date) : ""]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase()
+      const haystack = [item.product_code, item.ean, item.description, item.lot, item.expiry_date ? convertFromISO(item.expiry_date) : ""].filter(Boolean).join(" ").toLowerCase()
       return haystack.includes(term)
     })
   }, [items, itemSearch])
@@ -266,7 +263,9 @@ export default function CountingScreen() {
               </View>
             )}
             <View style={styles.headerInfo}>
-              <Text style={styles.title} numberOfLines={1}>{inventory.description}</Text>
+              <Text style={styles.title} numberOfLines={1}>
+                {inventory.description}
+              </Text>
               <Text style={styles.subtitle}>{convertFromISO(inventory.date)}</Text>
             </View>
           </View>
@@ -288,14 +287,7 @@ export default function CountingScreen() {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Código do Produto</Text>
                 <View style={styles.inputWithButton}>
-                  <TextInput
-                    style={styles.inputFlex}
-                    value={formData.product_code}
-                    onChangeText={(text) => setFormData({ ...formData, product_code: text })}
-                    placeholder="Digite ou escaneie o código"
-                    placeholderTextColor="#999"
-                    autoCapitalize="characters"
-                  />
+                  <TextInput style={styles.inputFlex} value={formData.product_code} onChangeText={(text) => setFormData({ ...formData, product_code: text })} placeholder="Digite ou escaneie o código" placeholderTextColor="#999" autoCapitalize="characters" />
                 </View>
               </View>
 
@@ -303,15 +295,7 @@ export default function CountingScreen() {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Quantidade *</Text>
                 <View style={styles.inputWithButton}>
-                  <TextInput
-                    style={styles.inputFlex}
-                    value={formData.quantity}
-                    onChangeText={(text) => setFormData({ ...formData, quantity: text.replace(/[^0-9]/g, "").slice(0, 7) })}
-                    placeholder="0"
-                    placeholderTextColor="#999"
-                    keyboardType="numeric"
-                    maxLength={7}
-                  />
+                  <TextInput style={styles.inputFlex} value={formData.quantity} onChangeText={(text) => setFormData({ ...formData, quantity: text.replace(/[^0-9]/g, "").slice(0, 7) })} placeholder="0" placeholderTextColor="#999" keyboardType="numeric" maxLength={7} />
                   <TouchableOpacity style={styles.iconButton} onPress={() => setCalculatorVisible(true)} accessibilityLabel="Abrir calculadora">
                     <Ionicons name="calculator-outline" size={22} color="#007AFF" />
                   </TouchableOpacity>
@@ -322,15 +306,7 @@ export default function CountingScreen() {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Lote (opcional)</Text>
                 <View style={styles.inputWithButton}>
-                  <TextInput
-                    style={styles.inputFlex}
-                    value={formData.lot}
-                    onChangeText={(text) => setFormData({ ...formData, lot: text.slice(0, 7) })}
-                    placeholder="Ex: KG10001"
-                    placeholderTextColor="#999"
-                    autoCapitalize="characters"
-                    maxLength={7}
-                  />
+                  <TextInput style={styles.inputFlex} value={formData.lot} onChangeText={(text) => setFormData({ ...formData, lot: text.slice(0, 7) })} placeholder="Ex: KG10001" placeholderTextColor="#999" autoCapitalize="characters" maxLength={7} />
                   <TouchableOpacity style={styles.iconButton} onPress={() => openScanner("lot")} accessibilityLabel="Escanear lote">
                     <Ionicons name="scan-outline" size={22} color="#007AFF" />
                   </TouchableOpacity>
@@ -365,12 +341,10 @@ export default function CountingScreen() {
                 />
               </View>
 
-              <TouchableOpacity
-                style={[styles.addButton, (!formData.product_code.trim() || loading) && styles.addButtonDisabled]}
-                onPress={handleAddItem}
-                disabled={!formData.product_code.trim() || loading}
-              >
-                {loading ? <ActivityIndicator color="#FFFFFF" /> : (
+              <TouchableOpacity style={[styles.addButton, (!formData.product_code.trim() || loading) && styles.addButtonDisabled]} onPress={handleAddItem} disabled={!formData.product_code.trim() || loading}>
+                {loading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
                   <>
                     <Ionicons name="add-circle" size={24} color="#FFFFFF" />
                     <Text style={styles.addButtonText}>Adicionar Item</Text>
@@ -385,26 +359,14 @@ export default function CountingScreen() {
         <View style={styles.itemsSection}>
           <View style={styles.itemsHeader}>
             <Text style={styles.sectionTitle}>Itens Contados</Text>
-            <Text style={styles.itemCount}>
-              {itemSearch.trim() ? `${filteredItems.length} de ${items.length} itens` : `${items.length} itens`}
-            </Text>
+            <Text style={styles.itemCount}>{itemSearch.trim() ? `${filteredItems.length} de ${items.length} itens` : `${items.length} itens`}</Text>
           </View>
 
           {/* Busca nos itens já contados */}
           {items.length > 0 && (
             <View style={styles.searchBox}>
               <Ionicons name="search" size={20} color="#8E8E93" />
-              <TextInput
-                style={styles.searchInput}
-                value={itemSearch}
-                onChangeText={setItemSearch}
-                placeholder="Buscar por código, descrição ou lote"
-                placeholderTextColor="#999"
-                autoCapitalize="characters"
-                autoCorrect={false}
-                returnKeyType="search"
-                clearButtonMode="never"
-              />
+              <TextInput style={styles.searchInput} value={itemSearch} onChangeText={setItemSearch} placeholder="Buscar por código, lote ou validade" placeholderTextColor="#999" autoCapitalize="characters" autoCorrect={false} returnKeyType="search" clearButtonMode="never" />
               {itemSearch.length > 0 && (
                 <TouchableOpacity onPress={() => setItemSearch("")} style={styles.searchClear} accessibilityLabel="Limpar busca">
                   <Ionicons name="close-circle" size={20} color="#8E8E93" />
@@ -432,7 +394,9 @@ export default function CountingScreen() {
 
         {!isClosed && items.length > 0 && (
           <TouchableOpacity style={styles.closeButton} onPress={handleCloseInventory} disabled={loading}>
-            {loading ? <ActivityIndicator color="#FFFFFF" /> : (
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
               <>
                 <Ionicons name="lock-closed" size={24} color="#FFFFFF" />
                 <Text style={styles.closeButtonText}>Fechar Inventário</Text>
@@ -446,9 +410,7 @@ export default function CountingScreen() {
 
       <BarcodeScanner visible={scannerVisible} onClose={() => setScannerVisible(false)} onScan={handleScan} />
 
-      {editItem && (
-        <EditItemModal visible={!!editItem} item={editItem} inventoryId={inventoryId} onClose={() => setEditItem(null)} onSuccess={handleEditSuccess} />
-      )}
+      {editItem && <EditItemModal visible={!!editItem} item={editItem} inventoryId={inventoryId} onClose={() => setEditItem(null)} onSuccess={handleEditSuccess} />}
     </KeyboardAvoidingView>
   )
 }
