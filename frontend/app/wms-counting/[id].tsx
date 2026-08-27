@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react"
+import React, { useState, useCallback, useMemo } from "react"
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, FlatList, Modal } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router"
@@ -60,6 +60,7 @@ export default function WmsCountingScreen() {
   const [showUnitPicker, setShowUnitPicker] = useState(false)
   const [editingItem, setEditingItem] = useState<WmsCountedItem | null>(null)
   const [calculatorVisible, setCalculatorVisible] = useState(false)
+  const [itemSearch, setItemSearch] = useState("")
 
   const [formData, setFormData] = useState({
     quantity: "",
@@ -82,6 +83,7 @@ export default function WmsCountingScreen() {
     setProductFound(null)
     setEditingItem(null)
     setPendingSearchCode("")
+    setItemSearch("")
   }, [])
 
   const loadData = useCallback(async () => {
@@ -105,6 +107,18 @@ export default function WmsCountingScreen() {
       resetForm()
     }, [loadData, resetForm]),
   )
+
+  const filteredItems = useMemo(() => {
+    const term = itemSearch.trim().toLowerCase()
+    if (!term) return items
+    return items.filter((item) => {
+      if (item.qtd === null || item.qtd === undefined) return false
+      const haystack = [item.codigo, item.EAN, item.descricao, item.lote, item.unit, item.validade ? convertFromISO(item.validade) : ""].filter(Boolean).join(" ").toLowerCase()
+      return haystack.includes(term)
+    })
+  }, [items, itemSearch])
+
+  const totalCounted = useMemo(() => items.filter((i) => i.qtd !== null && i.qtd !== undefined).length, [items])
 
   const handleSearch = async (query: string) => {
     if (!query.trim()) {
@@ -567,17 +581,35 @@ export default function WmsCountingScreen() {
           <View style={styles.itemsSection}>
             <View style={styles.itemsHeader}>
               <Text style={styles.sectionTitle}>Itens neste Endereço</Text>
-              <Text style={styles.itemCount}>
-                {items.filter((i) => i.qtd !== null).length} item{items.filter((i) => i.qtd !== null).length !== 1 ? "s" : ""}
-              </Text>
+              <Text style={styles.itemCount}>{itemSearch.trim() ? `${filteredItems.length} de ${totalCounted} item${totalCounted !== 1 ? "s" : ""}` : `${totalCounted} item${totalCounted !== 1 ? "s" : ""}`}</Text>
             </View>
+
+            {/* Busca nos itens já contados */}
+            {totalCounted > 0 && (
+              <View style={styles.searchBox}>
+                <Ionicons name="search" size={20} color="#8E8E93" />
+                <TextInput style={styles.searchInput} value={itemSearch} onChangeText={setItemSearch} placeholder="Buscar por código, descrição ou lote" placeholderTextColor="#999" autoCapitalize="characters" autoCorrect={false} returnKeyType="search" clearButtonMode="never" />
+                {itemSearch.length > 0 && (
+                  <TouchableOpacity onPress={() => setItemSearch("")} style={styles.searchClear} accessibilityLabel="Limpar busca">
+                    <Ionicons name="close-circle" size={20} color="#8E8E93" />
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
+
             {items.length === 0 ? (
               <View style={styles.emptyState}>
                 <Ionicons name="cube-outline" size={40} color="#C7C7CC" />
                 <Text style={styles.emptyText}>Nenhum item ainda</Text>
               </View>
+            ) : filteredItems.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Ionicons name="search-outline" size={40} color="#C7C7CC" />
+                <Text style={styles.emptyText}>Nenhum item encontrado</Text>
+                <Text style={styles.emptySubtext}>Nenhum resultado para “{itemSearch.trim()}”</Text>
+              </View>
             ) : (
-              <FlatList data={items} renderItem={renderItem} keyExtractor={(item) => item._id} scrollEnabled={false} contentContainerStyle={{ gap: 8 }} />
+              <FlatList data={filteredItems} renderItem={renderItem} keyExtractor={(item) => item._id} scrollEnabled={false} contentContainerStyle={{ gap: 8 }} />
             )}
           </View>
         </ScrollView>
@@ -688,6 +720,19 @@ const styles = StyleSheet.create({
   itemsSection: { backgroundColor: "#FFFFFF", borderRadius: 16, padding: 16, gap: 12, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
   itemsHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   itemCount: { fontSize: 13, fontWeight: "600", color: "#8E8E93" },
+  searchBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#F2F2F7",
+    borderWidth: 1,
+    borderColor: "#E5E5EA",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    minHeight: 48,
+  },
+  searchInput: { flex: 1, fontSize: 16, color: "#000", paddingVertical: 12 },
+  searchClear: { padding: 4 },
   itemCard: { backgroundColor: "#F2F2F7", borderRadius: 12, padding: 12, gap: 4 },
   nullItemCard: { backgroundColor: "#FFF3E0", borderWidth: 1, borderColor: "#FFCC80" },
   editingItemCard: { borderWidth: 2, borderColor: "#007AFF", backgroundColor: "#EBF4FF" },
@@ -704,6 +749,7 @@ const styles = StyleSheet.create({
   actionBtn: { padding: 4 },
   emptyState: { alignItems: "center", padding: 24 },
   emptyText: { fontSize: 15, color: "#8E8E93", marginTop: 8 },
+  emptySubtext: { fontSize: 13, color: "#C7C7CC", marginTop: 4, textAlign: "center" },
   pickerOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.4)",
