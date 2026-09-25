@@ -131,16 +131,9 @@ export default function ProductFormModal({ visible, product, onClose, onSuccess 
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>{t("productCode")} *</Text>
                 <View style={styles.inputRow}>
-                  <TextInput
-                    style={styles.inputFlex}
-                    value={formData.code}
-                    onChangeText={(text) => setFormData({ ...formData, code: text })}
-                    placeholder={t("productCode")}
-                    placeholderTextColor="#999"
-                    editable={!loading}
-                  />
+                  <TextInput style={styles.inputFlex} value={formData.code} onChangeText={(text) => setFormData({ ...formData, code: text })} placeholder={t("productCode")} placeholderTextColor="#999" editable={!loading} />
                   <TouchableOpacity style={styles.scanBtn} onPress={() => openScanner("code")} disabled={loading}>
-                    <Ionicons name="scan-outline" size={22} color="#007AFF" />
+                    <Ionicons name="scan-outline" size={22} color="#1D6DA0" />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -148,16 +141,9 @@ export default function ProductFormModal({ visible, product, onClose, onSuccess 
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>{t("ean")} (opcional)</Text>
                 <View style={styles.inputRow}>
-                  <TextInput
-                    style={styles.inputFlex}
-                    value={formData.ean}
-                    onChangeText={(text) => setFormData({ ...formData, ean: text })}
-                    placeholder={t("ean")}
-                    placeholderTextColor="#999"
-                    editable={!loading}
-                  />
+                  <TextInput style={styles.inputFlex} value={formData.ean} onChangeText={(text) => setFormData({ ...formData, ean: text })} placeholder={t("ean")} placeholderTextColor="#999" editable={!loading} />
                   <TouchableOpacity style={styles.scanBtn} onPress={() => openScanner("ean")} disabled={loading}>
-                    <Ionicons name="scan-outline" size={22} color="#007AFF" />
+                    <Ionicons name="scan-outline" size={22} color="#1D6DA0" />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -266,7 +252,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: "#E3F2FD",
     borderWidth: 1,
-    borderColor: "#007AFF",
+    borderColor: "#1D6DA0",
   },
   input: {
     backgroundColor: "#F2F2F7",
@@ -307,7 +293,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   saveButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "#1D6DA0",
   },
   saveButtonText: {
     fontSize: 16,
