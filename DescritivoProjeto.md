@@ -175,7 +175,7 @@ A exclusão sempre pede confirmação. No build web usa `window.confirm`, no nat
 
 Modal que desce do topo. Pede descrição e data, com a data já preenchida com o dia corrente.
 
-Validações: ambos os campos obrigatórios; a data precisa estar em `DD/MM/AAAA`, com mês entre 1 e 12, dia entre 1 e 31 e ano entre 1900 e 2100. A validação é de formato e faixa, não de calendário — `31/02/2026` passa.
+Validações: ambos os campos obrigatórios; a data precisa estar em `DD/MM/AAAA`, com ano entre 1900 e 2100, e precisa existir no calendário — `31/02/2026` é recusado, e `29/02` só passa em ano bissexto.
 
 O inventário nasce com `status: "open"` e lista de itens vazia.
 
@@ -302,7 +302,7 @@ Concentradas em `services/api.ts`, valem independentemente da tela que chamar:
 1. **Contagem fechada é imutável.** `addCountedItem`, `updateCountedItem` e `deleteCountedItem` verificam `status === "open"` antes de agir e lançam exceção com mensagem específica em caso contrário.
 2. **Quantidade positiva.** Precisa ser inteiro maior que zero.
 3. **Lote limitado a 7 caracteres.** Aplicado por `maxLength`, por truncamento na digitação e por verificação explícita no retorno do scanner.
-4. **Data em `DD/MM/AAAA`.** Formato e faixa validados; não há checagem de calendário.
+4. **Data em `DD/MM/AAAA`.** Formato, faixa (1900–2100) e existência no calendário são validados: dia inexistente para o mês é recusado, incluindo 29/02 fora de ano bissexto.
 5. **Fechamento exige conteúdo.** Não se fecha um inventário sem nenhum item.
 6. **Exclusão sempre confirma.** Vale para item e para inventário.
 
@@ -351,8 +351,6 @@ O identificador é próprio deste aplicativo, o que o mantém instalável lado a
 Itens conhecidos, todos verificados no código. Nenhum impede o funcionamento.
 
 **Perda de dados.** Uma contagem existe apenas no aparelho, com backup automático desabilitado, até que seja exportada. Perda, formatação ou desinstalação do aparelho significa perda da contagem. É a contrapartida direta da escolha offline-first, e vale explicitar para quem opera.
-
-**Validação de data.** `31/02/2026` é aceito. A checagem é de formato e faixa, não de calendário.
 
 **Dívida de i18n.** Parte dos textos está em `i18n.ts`, parte fixa nas telas. Funciona, mas um segundo idioma exigiria consolidar isso antes.
 
