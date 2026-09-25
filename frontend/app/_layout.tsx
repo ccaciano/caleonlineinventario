@@ -22,7 +22,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 
       {/* Conteúdo com fundo azul, como antes */}
       <View style={styles.drawerHeader}>
-        <Text style={styles.appSubtitle}>{t("appSubtitle") || "Gestão de Estoque WMS & LOJA"}</Text>
+        <Text style={styles.appSubtitle}>{t("appSubtitle") || "Gestão de Estoque WMS"}</Text>
       </View>
 
       {/* Lista de itens do menu */}
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
   },
   imageBanner: {
     width: "100%",
-    height: 180,
+    height: 140,
   },
   drawerHeader: {
     backgroundColor: "#007AFF",
