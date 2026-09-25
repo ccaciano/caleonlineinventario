@@ -110,8 +110,9 @@ export default function WmsCountingScreen() {
 
   const filteredItems = useMemo(() => {
     const term = itemSearch.trim().toLowerCase()
-    if (!term) return items
-    return items.filter((item) => {
+    const newestFirst = [...items].reverse()
+    if (!term) return newestFirst
+    return newestFirst.filter((item) => {
       if (item.qtd === null || item.qtd === undefined) return false
       const haystack = [item.codigo, item.EAN, item.descricao, item.lote, item.unit, item.validade ? convertFromISO(item.validade) : ""]
         .filter(Boolean)

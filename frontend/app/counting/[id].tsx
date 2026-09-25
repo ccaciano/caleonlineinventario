@@ -83,8 +83,9 @@ export default function CountingScreen() {
 
   const filteredItems = useMemo(() => {
     const term = itemSearch.trim().toLowerCase()
-    if (!term) return items
-    return items.filter((item) => {
+    const newestFirst = [...items].reverse()
+    if (!term) return newestFirst
+    return newestFirst.filter((item) => {
       const haystack = [item.product_code, item.ean, item.description, item.lot, item.expiry_date ? convertFromISO(item.expiry_date) : ""]
         .filter(Boolean)
         .join(" ")
@@ -144,7 +145,7 @@ export default function CountingScreen() {
         lot: formData.lot.trim() || "",
         expiry_date: formData.expiry_date ? convertToISO(formData.expiry_date) : "",
       })
-      setItems([newItem, ...items])
+      setItems([...items, newItem])
       setFormData({ product_code: "", quantity: "", lot: "", expiry_date: "" })
       setItemSearch("")
       Alert.alert("Sucesso", "Item adicionado!")
