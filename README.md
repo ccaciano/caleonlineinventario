@@ -35,7 +35,7 @@ Inventários  ──►  Contagem  ──►  Fechamento  ──►  Excel
 **Lista do que já foi contado**
 
 - Itens mais recentes aparecem no topo
-- **Campo de busca** filtra por código, lote, descrição e validade — resolve a dúvida "esse código eu já contei?" sem sair da tela
+- **Campo de busca** filtra por código, lote e validade — resolve a dúvida "esse código eu já contei?" sem sair da tela
 - Editar ou excluir qualquer item enquanto a contagem estiver aberta
 
 **Inventários**
@@ -49,12 +49,12 @@ Inventários  ──►  Contagem  ──►  Fechamento  ──►  Excel
 
 Planilha `.xlsx` com duas abas:
 
-| Aba | Conteúdo |
-|---|---|
+| Aba          | Conteúdo                                       |
+| ------------ | ---------------------------------------------- |
 | **Produtos** | Total por código, somando todos os lançamentos |
-| **Lotes** | Detalhe por código + lote + validade |
+| **Lotes**    | Detalhe por código + lote + validade           |
 
-O arquivo sai como `inventario_<descrição>_<AAAAMMDD>.xlsx` e é entregue pela folha de compartilhamento (WhatsApp, e-mail, Drive, o que estiver instalado).
+O arquivo sai como `inventario_<descrição>_<AAAAMMDD>.xlsx` e é entregue pela folha de compartilhamento (dropbox, e-mail, etc).
 
 ---
 
@@ -122,16 +122,16 @@ As telas nunca acessam a persistência direto: passam por `services/api.ts`, que
 
 ## Stack
 
-| Camada | Tecnologia |
-|---|---|
-| Framework | Expo 54 / React Native 0.81 / React 19 |
-| Linguagem | TypeScript 5.9 |
-| Navegação | expo-router 6 (menu lateral) |
-| Armazenamento | expo-file-system (arquivo JSON local) |
-| Câmera | expo-camera (nativo) · html5-qrcode (web) |
-| Planilha | xlsx (SheetJS) |
-| Compartilhamento | expo-sharing |
-| Textos | i18next / react-i18next |
+| Camada           | Tecnologia                                |
+| ---------------- | ----------------------------------------- |
+| Framework        | Expo 54 / React Native 0.81 / React 19    |
+| Linguagem        | TypeScript 5.9                            |
+| Navegação        | expo-router 6 (menu lateral)              |
+| Armazenamento    | expo-file-system (arquivo JSON local)     |
+| Câmera           | expo-camera (nativo) · html5-qrcode (web) |
+| Planilha         | xlsx (SheetJS)                            |
+| Compartilhamento | expo-sharing                              |
+| Textos           | i18next / react-i18next                   |
 
 ---
 
@@ -143,12 +143,12 @@ Tudo fica em um único arquivo JSON no diretório privado do aplicativo:
 <documentDirectory>/data/inventories.json
 ```
 
-| Aspecto | Comportamento |
-|---|---|
-| Visibilidade | Nenhum outro app acessa o arquivo |
-| Backup | `allowBackup: false` — o Android não inclui os dados no backup automático |
-| Desinstalação | Os dados são apagados junto com o app |
-| Sincronização | Não existe; cada aparelho tem sua própria base |
+| Aspecto       | Comportamento                                                             |
+| ------------- | ------------------------------------------------------------------------- |
+| Visibilidade  | Nenhum outro app acessa o arquivo                                         |
+| Backup        | `allowBackup: false` — o Android não inclui os dados no backup automático |
+| Desinstalação | Os dados são apagados junto com o app                                     |
+| Sincronização | Não existe; cada aparelho tem sua própria base                            |
 
 > **Importante:** a contagem só sai do aparelho pela planilha Excel. Exporte antes de desinstalar o app ou trocar de aparelho.
 
@@ -164,12 +164,12 @@ Tudo fica em um único arquivo JSON no diretório privado do aplicativo:
 
 ### Identificação
 
-| Campo | Valor |
-|---|---|
-| Nome | ContAí LOJAS |
-| Slug | `contai-inventario` |
+| Campo   | Valor                                |
+| ------- | ------------------------------------ |
+| Nome    | ContAí LOJAS                         |
+| Slug    | `contai-inventario`                  |
 | Package | `com.ccaciano.inventorymanager.loja` |
-| Versão | 1.0.0 (`versionCode` 8) |
+| Versão  | 1.0.0 (`versionCode` 8)              |
 
 ### Permissões Android
 

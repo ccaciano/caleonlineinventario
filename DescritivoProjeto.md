@@ -19,7 +19,7 @@ Inventários  ──►  Contagem  ──►  Fechamento  ──►  Excel
 
 Características que definem o produto:
 
-- **Offline-first por decisão de arquitetura.** Não é um app online que funciona offline — ele nunca acessa a rede. Isso importa porque a contagem acontece em corredor de loja, estoque e depósito, onde não há sinal confiável.
+- **Offline-first por decisão de arquitetura.** Não é um app online que funciona offline, ele nunca acessa a rede. Isso importa porque a contagem acontece em corredor de loja, estoque e depósito, onde não há sinal confiável.
 - **Código de produto livre.** O código é texto puro: quem conta digita ou escaneia e o app aceita. Nenhuma leitura é recusada, e a contagem segue no ritmo de quem está no corredor.
 - **Imutabilidade após o fechamento.** Uma contagem fechada não aceita inclusão, edição nem exclusão de itens. A trava é aplicada na camada de serviço, não só na interface.
 
@@ -66,12 +66,12 @@ Os dados ficam em um único arquivo JSON dentro do diretório privado do app:
 
 `documentDirectory` é fornecido pelo `expo-file-system` e aponta para a área isolada do aplicativo. Consequências práticas:
 
-| Aspecto | Comportamento |
-|---|---|
-| Visibilidade | Nenhum outro app acessa o arquivo |
-| Backup | `allowBackup: false` no `app.json` — o Android **não** inclui os dados no backup automático |
-| Desinstalação | Os dados são apagados junto com o app |
-| Sincronização | Não existe. Cada aparelho tem sua própria base |
+| Aspecto       | Comportamento                                                                               |
+| ------------- | ------------------------------------------------------------------------------------------- |
+| Visibilidade  | Nenhum outro app acessa o arquivo                                                           |
+| Backup        | `allowBackup: false` no `app.json` — o Android **não** inclui os dados no backup automático |
+| Desinstalação | Os dados são apagados junto com o app                                                       |
+| Sincronização | Não existe. Cada aparelho tem sua própria base                                              |
 
 **A contagem não sai do aparelho a não ser pelo Excel gerado ao final.** Se o aparelho for perdido ou o app desinstalado antes da exportação, a contagem se perde.
 
@@ -83,30 +83,29 @@ Duas entidades, com os itens aninhados dentro do inventário:
 
 ```ts
 interface Inventory {
-  _id: string                    // UUID v4 gerado localmente
-  description: string            // nome dado pelo usuário
-  date: string                   // ISO: "AAAA-MM-DD"
+  _id: string // UUID v4 gerado localmente
+  description: string // nome dado pelo usuário
+  date: string // ISO: "AAAA-MM-DD"
   status: "open" | "closed"
   items: CountedItem[]
-  item_count?: number            // derivado em leitura, não persistido
+  item_count?: number // derivado em leitura, não persistido
 }
 
 interface CountedItem {
   _id: string
   inventory_id: string
-  product_code: string           // texto livre
+  product_code: string // texto livre
   quantity: number
-  lot?: string                   // máx. 7 caracteres
-  expiry_date?: string           // ISO: "AAAA-MM-DD"
-  ean?: string                   // não preenchido no fluxo atual
-  description?: string           // não preenchido no fluxo atual
+  lot?: string // máx. 7 caracteres
+  expiry_date?: string // ISO: "AAAA-MM-DD"
+  ean?: string // não preenchido no fluxo atual
+  description?: string // não preenchido no fluxo atual
 }
 ```
 
 Dois detalhes que valem registro:
 
 - `item_count` é calculado em `getInventories()` a cada leitura, nunca gravado. Não há contador para sair de sincronia com a realidade.
-- `ean` e `description` existem no tipo mas nenhuma tela os preenche, e a exportação para Excel os ignora. São campos opcionais sem uso no fluxo atual.
 
 O `_id` é um UUID v4 gerado por uma função própria (`generateUUID` em `localStorage.ts`) baseada em `Math.random()`. Não é criptograficamente forte, mas identificadores locais em um app monousuário não precisam ser.
 
@@ -167,7 +166,7 @@ Comportamentos:
 - **Cartão aberto** → toque leva à contagem; há um botão discreto de exclusão
 - **Cartão fechado** → não navega mais para a contagem; expõe **Compartilhar** (gera o Excel) e **Excluir Inventário**
 
-A exclusão sempre pede confirmação. No build web usa `window.confirm`, no nativo usa `Alert.alert` — a diferença existe porque o `Alert` do React Native não tem comportamento adequado no navegador.
+A exclusão sempre pede confirmação. No build web usa `window.confirm`, no nativo usa `Alert.alert`, a diferença existe porque o `Alert` do React Native não tem comportamento adequado no navegador.
 
 ### 4.2 Criação de inventário (`components/CreateInventoryModal.tsx`)
 
@@ -183,12 +182,12 @@ O inventário nasce com `status: "open"` e lista de itens vazia.
 
 **Formulário**
 
-| Campo | Regra |
-|---|---|
-| Código do Produto | Obrigatório. Texto livre, convertido para maiúsculas |
-| Quantidade | Obrigatória. Só dígitos, máx. 7 (até 9.999.999). Precisa ser maior que zero |
-| Lote | Opcional. Máx. 7 caracteres, maiúsculas |
-| Validade | Opcional. `DD/MM/AAAA` com máscara automática |
+| Campo             | Regra                                                                       |
+| ----------------- | --------------------------------------------------------------------------- |
+| Código do Produto | Obrigatório. Texto livre, convertido para maiúsculas                        |
+| Quantidade        | Obrigatória. Só dígitos, máx. 7 (até 9.999.999). Precisa ser maior que zero |
+| Lote              | Opcional. Máx. 7 caracteres, maiúsculas                                     |
+| Validade          | Opcional. `DD/MM/AAAA` com máscara automática                               |
 
 O botão **Escanear Código** abre a câmera para preencher o código do produto. Ao lado do campo Lote há um segundo botão de scanner — lotes costumam vir em etiqueta separada. Se o código lido para o lote passar de 7 caracteres, o app avisa e limpa o campo em vez de truncar em silêncio.
 
@@ -225,13 +224,7 @@ Platform.OS === "web"  ──►  WebBarcodeScanner    (html5-qrcode)
 Platform.OS !== "web"  ──►  NativeBarcodeScanner (expo-camera)
 ```
 
-O `expo-camera` só é carregado fora do build web, via `require()` condicional no topo do módulo. Sem isso o bundle web quebraria ao tentar resolver um módulo nativo.
-
 **Formatos suportados no nativo:** EAN-13, EAN-8, UPC-A, UPC-E, QR, Code 128, Code 39, Code 93, Codabar, ITF-14, PDF417, Aztec e DataMatrix — cobre o que se encontra em embalagem de varejo e em etiqueta de lote.
-
-A versão web enumera as câmeras disponíveis e permite alternar entre elas, porque em notebook a câmera frontal costuma ser a padrão e não serve para ler etiqueta.
-
-O componente cuida de encerrar o stream de vídeo e remover o container do DOM ao fechar. Câmera que não é liberada corretamente trava o próximo uso.
 
 ---
 
@@ -254,12 +247,12 @@ Escrever um parser em vez de chamar `eval` é o que impede que o campo de texto 
 **Aba "Produtos"** — total por código, somando todos os lançamentos:
 
 | CÓDIGO | QUANTIDADE |
-|---|---|
+| ------ | ---------- |
 
 **Aba "Lotes"** — detalhamento por combinação de código + lote + validade:
 
 | CÓDIGO PRODUTO | LOTE | QUANTIDADE | DATA FABRICAÇÃO | DATA VALIDADE |
-|---|---|---|---|---|
+| -------------- | ---- | ---------- | --------------- | ------------- |
 
 A coluna "Data Fabricação" existe no cabeçalho mas sai sempre vazia — o app não coleta esse dado. Foi mantida para compatibilidade com o formato esperado por quem recebe a planilha.
 
@@ -279,13 +272,13 @@ A entrega difere por plataforma: no web o download é direto; no nativo o arquiv
 
 **Paleta** (padrão iOS, aplicada de forma consistente):
 
-| Cor | Uso |
-|---|---|
+| Cor       | Uso                                  |
+| --------- | ------------------------------------ |
 | `#007AFF` | Primária — ações, ícones, identidade |
-| `#34C759` | Botão de escanear |
-| `#FF3B30` | Destrutivo — excluir, fechar |
-| `#F2F2F7` | Fundo |
-| `#8E8E93` | Texto secundário |
+| `#34C759` | Botão de escanear                    |
+| `#FF3B30` | Destrutivo — excluir, fechar         |
+| `#F2F2F7` | Fundo                                |
+| `#8E8E93` | Texto secundário                     |
 
 Alvos de toque têm no mínimo 44–48px, dimensionados para uso com o aparelho em uma das mãos.
 
@@ -310,18 +303,16 @@ Concentradas em `services/api.ts`, valem independentemente da tela que chamar:
 
 **Alvo principal:** Android, distribuído como APK via EAS Build (`eas.json`, perfil `production`).
 
-**iOS:** o `bundleIdentifier` está configurado e o código não usa nada exclusivo de Android além da barra de navegação imersiva, que é condicional. Não consta que tenha sido compilado ou testado.
-
-**Web:** funciona. Há 9 pontos com tratamento específico (`Platform.OS === "web"`), cobrindo scanner, confirmações, download do Excel e leitura de arquivo.
+**iOS:** o `bundleIdentifier` está configurado e o código não usa nada exclusivo de Android além da barra de navegação imersiva, que é condicional. Não foi compilado ou testado.
 
 ### Identificação
 
-| Campo | Valor |
-|---|---|
-| Nome | ContAí LOJAS |
-| Slug | `contai-inventario` |
+| Campo               | Valor                                |
+| ------------------- | ------------------------------------ |
+| Nome                | ContAí LOJAS                         |
+| Slug                | `contai-inventario`                  |
 | Package / Bundle ID | `com.ccaciano.inventorymanager.loja` |
-| Versão | 1.0.0 (`versionCode` 8) |
+| Versão              | 1.0.0 (`versionCode` 8)              |
 
 O identificador é próprio deste aplicativo, o que o mantém instalável lado a lado com outros apps da mesma família sem conflito.
 
@@ -331,55 +322,13 @@ O identificador é próprio deste aplicativo, o que o mantém instalável lado a
 
 ### Stack
 
-| Camada | Tecnologia |
-|---|---|
-| Framework | Expo 54 / React Native 0.81 / React 19 |
-| Linguagem | TypeScript 5.9 |
-| Navegação | expo-router 6 (drawer) |
-| Armazenamento | expo-file-system (JSON) |
-| Câmera | expo-camera (nativo) · html5-qrcode (web) |
-| Planilha | xlsx (SheetJS) |
-| Compartilhamento | expo-sharing |
-| Textos | i18next / react-i18next |
-
----
-
-## 11. Pontos de atenção
-
-Itens conhecidos, todos verificados no código. Nenhum impede o funcionamento.
-
-**Perda de dados.** Uma contagem existe apenas no aparelho, com backup automático desabilitado, até que seja exportada. Perda, formatação ou desinstalação do aparelho significa perda da contagem. É a contrapartida direta da escolha offline-first, e vale explicitar para quem opera.
-
-**Dívida de i18n.** Parte dos textos está em `i18n.ts`, parte fixa nas telas. Funciona, mas um segundo idioma exigiria consolidar isso antes.
-
-**Warnings de lint.** 3 no total, nenhum erro, e os três são deliberados: dois `require()` (é o carregamento condicional da câmera por plataforma — trocar por `import` estático quebra o bundle web) e um `exhaustive-deps` em `BarcodeScanner` (incluir a dependência reinicializaria a câmera a cada render).
-
-**Ausência de testes.** Não há suíte automatizada. As funções puras — `evaluateExpression` da calculadora, as conversões de data, a agregação da exportação — são candidatas naturais e baratas, caso se queira começar por algum lugar.
-
----
-
-## 12. Como rodar
-
-```bash
-cd frontend
-npm ci              # instala a partir do lockfile
-npx expo start      # abre o Metro; leia o QR com o Expo Go
-```
-
-Outros comandos úteis:
-
-```bash
-npx expo start --android    # abre direto no emulador/aparelho Android
-npx expo start --web        # abre no navegador
-npx expo lint               # ESLint
-npx tsc --noEmit            # checagem de tipos
-```
-
-Para gerar o APK de produção:
-
-```bash
-cd frontend
-eas build --platform android --profile production
-```
-
-**Estado atual da verificação:** `tsc` sem erros, `expo lint` sem erros (3 warnings), e `expo export --platform android` gerando bundle de 5,91 MB com sucesso.
+| Camada           | Tecnologia                                |
+| ---------------- | ----------------------------------------- |
+| Framework        | Expo 54 / React Native 0.81 / React 19    |
+| Linguagem        | TypeScript 5.9                            |
+| Navegação        | expo-router 6 (drawer)                    |
+| Armazenamento    | expo-file-system (JSON)                   |
+| Câmera           | expo-camera (nativo) · html5-qrcode (web) |
+| Planilha         | xlsx (SheetJS)                            |
+| Compartilhamento | expo-sharing                              |
+| Textos           | i18next / react-i18next                   |
