@@ -14,11 +14,11 @@
     },
     "android": {
       "package": "com.ccaciano.inventorymanager.wms",
-      "versionCode": 8,
+      "versionCode": 1,
       "allowBackup": false,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#007AFF"
+        "backgroundColor": "#1D6DA0"
       },
       "permissions": ["CAMERA", "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE", "android.permission.CAMERA", "android.permission.RECORD_AUDIO", "android.permission.READ_EXTERNAL_STORAGE", "android.permission.WRITE_EXTERNAL_STORAGE", "android.permission.INTERNET"]
     },
@@ -36,7 +36,7 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "280054ae-f791-468a-a457-2899f4b7adaa"
+        "projectId": "d4bb5d8f-53d9-4217-b90c-abf4faf6309f"
       }
     }
   }
