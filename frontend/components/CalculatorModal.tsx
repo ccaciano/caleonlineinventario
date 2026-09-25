@@ -244,7 +244,7 @@ export default function CalculatorModal({ visible, initialValue = "", accentColo
             ) : expr ? (
               <Text style={styles.displayError}>{preview.error}</Text>
             ) : (
-              <Text style={styles.displayHint}>Ex: (2*3)+(10/2)</Text>
+              <Text style={styles.displayHint}>Ex: 2x3</Text>
             )}
           </View>
 
@@ -255,11 +255,7 @@ export default function CalculatorModal({ visible, initialValue = "", accentColo
                 {row.map((key) => {
                   const isEquals = key.value === "="
                   return (
-                    <TouchableOpacity
-                      key={key.value}
-                      style={[styles.key, key.kind === "op" && styles.keyOp, key.kind === "action" && styles.keyAction, isEquals && { backgroundColor: accentColor }]}
-                      onPress={() => handleKey(key.value)}
-                    >
+                    <TouchableOpacity key={key.value} style={[styles.key, key.kind === "op" && styles.keyOp, key.kind === "action" && styles.keyAction, isEquals && { backgroundColor: accentColor }]} onPress={() => handleKey(key.value)}>
                       <Text style={[styles.keyText, key.kind === "op" && { color: accentColor }, isEquals && styles.keyTextEquals]}>{key.label}</Text>
                     </TouchableOpacity>
                   )
