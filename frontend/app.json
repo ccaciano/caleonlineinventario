@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "ContAí Inventário",
+    "name": "ContAí LOJAS",
     "slug": "contai-inventario",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -10,11 +10,11 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.ccaciano.inventorymanager"
+      "bundleIdentifier": "com.ccaciano.inventorymanager.loja"
     },
     "android": {
-      "package": "com.ccaciano.inventorymanager",
-      "versionCode": 9,
+      "package": "com.ccaciano.inventorymanager.loja",
+      "versionCode": 8,
       "allowBackup": false,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
