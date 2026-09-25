@@ -37,7 +37,6 @@ export default function CreateInventoryModal({ visible, onClose, onSuccess }: Cr
   const { t } = useTranslation()
   const [description, setDescription] = useState("")
   const [date, setDate] = useState(getCurrentDateFormatted())
-  const [type, setType] = useState<"loja" | "wms">("wms")
   const [loading, setLoading] = useState(false)
 
   const handleCreate = async () => {
@@ -51,10 +50,9 @@ export default function CreateInventoryModal({ visible, onClose, onSuccess }: Cr
     }
     try {
       setLoading(true)
-      await createInventory(description, convertToISO(date), type)
+      await createInventory(description, convertToISO(date))
       setDescription("")
       setDate(getCurrentDateFormatted())
-      setType("wms")
       onSuccess()
     } catch (error) {
       console.error("Error creating inventory:", error)
@@ -68,7 +66,6 @@ export default function CreateInventoryModal({ visible, onClose, onSuccess }: Cr
     if (!loading) {
       setDescription("")
       setDate(getCurrentDateFormatted())
-      setType("wms")
       onClose()
     }
   }
@@ -103,32 +100,6 @@ export default function CreateInventoryModal({ visible, onClose, onSuccess }: Cr
         <ScrollView bounces={false} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }}>
           <View style={styles.form}>
 
-            {/* Seleção de tipo */}
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Tipo de Inventário</Text>
-              <View style={styles.typeSelector}>
-                <TouchableOpacity
-                  style={[styles.typeButton, type === "wms" && styles.typeButtonActiveWms]}
-                  onPress={() => setType("wms")}
-                  disabled={loading}
-                >
-                  <Ionicons name="cube-outline" size={20} color={type === "wms" ? "#FFFFFF" : "#FF9500"} />
-                  <Text style={[styles.typeButtonText, type === "wms" && styles.typeButtonTextActive]}>Inv. WMS</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.typeButton, type === "loja" && styles.typeButtonActive]}
-                  onPress={() => setType("loja")}
-                  disabled={loading}
-                >
-                  <Ionicons name="storefront-outline" size={20} color={type === "loja" ? "#FFFFFF" : "#007AFF"} />
-                  <Text style={[styles.typeButtonText, type === "loja" && styles.typeButtonTextActive]}>Inv. Loja</Text>
-                </TouchableOpacity>
-              </View>
-              <Text style={styles.hint}>
-                {type === "loja" ? "Contagem simples por código, lote e validade" : "Contagem por endereço de armazenamento (Rua/Posição/Altura/Prof.)"}
-              </Text>
-            </View>
-
             <View style={styles.inputGroup}>
               <Text style={styles.label}>{t("description")}</Text>
               <TextInput
@@ -161,7 +132,7 @@ export default function CreateInventoryModal({ visible, onClose, onSuccess }: Cr
                 <Text style={styles.cancelButtonText}>{t("cancel")}</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.button, type === "wms" ? styles.createButtonWms : styles.createButton, loading && styles.buttonDisabled]}
+                style={[styles.button, styles.createButton, loading && styles.buttonDisabled]}
                 onPress={handleCreate}
                 disabled={loading}
               >
@@ -206,24 +177,6 @@ const styles = StyleSheet.create({
   form: { gap: 16 },
   inputGroup: { gap: 8 },
   label: { fontSize: 16, fontWeight: "600", color: "#000" },
-  typeSelector: { flexDirection: "row", gap: 12 },
-  typeButton: {
-    flex: 1,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "#007AFF",
-    backgroundColor: "#F0F8FF",
-  },
-  typeButtonActive: { backgroundColor: "#007AFF", borderColor: "#007AFF" },
-  typeButtonActiveWms: { backgroundColor: "#FF9500", borderColor: "#FF9500" },
-  typeButtonText: { fontSize: 15, fontWeight: "700", color: "#007AFF" },
-  typeButtonTextActive: { color: "#FFFFFF" },
   input: {
     backgroundColor: "#F2F2F7",
     borderWidth: 1,
@@ -240,7 +193,6 @@ const styles = StyleSheet.create({
   cancelButton: { backgroundColor: "#F2F2F7", borderWidth: 1, borderColor: "#E5E5EA" },
   cancelButtonText: { fontSize: 16, fontWeight: "600", color: "#000", textAlign: "center" },
   createButton: { backgroundColor: "#007AFF" },
-  createButtonWms: { backgroundColor: "#FF9500" },
   createButtonText: { fontSize: 16, fontWeight: "bold", color: "#FFFFFF", textAlign: "center" },
   buttonDisabled: { opacity: 0.6 },
 })
