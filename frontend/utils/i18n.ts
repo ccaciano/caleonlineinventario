@@ -48,6 +48,7 @@ const resources = {
       description: "Descrição",
       date: "Data",
       create: "Criar",
+      continue: "Continuar",
       cancel: "Cancelar",
 
       // Products Screen

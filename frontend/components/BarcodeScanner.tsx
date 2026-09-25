@@ -13,6 +13,9 @@ if (Platform.OS !== "web") {
   useCameraPermissions = cameraModule.useCameraPermissions
 }
 
+// Identidade estável: o hook precisa ser chamado incondicionalmente em todo render
+const useCameraPermissionsSafe: any = useCameraPermissions || (() => [null, () => {}])
+
 interface BarcodeScannerComponentProps {
   visible: boolean
   onClose: () => void
@@ -227,7 +230,7 @@ function WebBarcodeScanner({ visible, onClose, onScan }: BarcodeScannerComponent
           )}
           {status === "error" && (
             <View style={styles.statusContainer}>
-              <Ionicons name="camera-off" size={64} color="#FF3B30" />
+              <Ionicons name="videocam-off" size={64} color="#FF3B30" />
               <Text style={styles.errorText}>{errorMessage}</Text>
               <TouchableOpacity style={styles.retryButton} onPress={initScanner}>
                 <Text style={styles.retryButtonText}>Tentar Novamente</Text>
@@ -255,7 +258,7 @@ function WebBarcodeScanner({ visible, onClose, onScan }: BarcodeScannerComponent
 // Componente para dispositivos nativos (iOS/Android) usando expo-camera
 function NativeBarcodeScanner({ visible, onClose, onScan }: BarcodeScannerComponentProps) {
   const { t } = useTranslation()
-  const [permission, requestPermission] = useCameraPermissions ? useCameraPermissions() : [null, () => {}]
+  const [permission, requestPermission] = useCameraPermissionsSafe()
   const [scanned, setScanned] = useState(false)
   const [facing, setFacing] = useState<"front" | "back">("back")
 
@@ -298,7 +301,7 @@ function NativeBarcodeScanner({ visible, onClose, onScan }: BarcodeScannerCompon
     return (
       <Modal isVisible={visible} onBackdropPress={handleClose} style={styles.modal}>
         <View style={styles.permissionContainer}>
-          <Ionicons name="camera-off" size={64} color="#8E8E93" />
+          <Ionicons name="videocam-off" size={64} color="#8E8E93" />
           <Text style={styles.permissionTitle}>{t("cameraPermission")}</Text>
           <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
             <Text style={styles.permissionButtonText}>{t("grantPermission")}</Text>

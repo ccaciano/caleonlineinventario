@@ -99,7 +99,7 @@ export default function ProductsScreen() {
       setUploading(true)
 
       // Upload usando armazenamento local
-      const uploadResult = await uploadProductsFromContent(csvContent, true)
+      const uploadResult = await uploadProductsFromContent(csvContent)
 
       Alert.alert(t("uploadSuccess"), `${uploadResult.count} ${t("productsAdded")}`)
 
@@ -228,7 +228,7 @@ export default function ProductsScreen() {
       Alert.alert(t("uploadCSV"), t("csvWillReplace"), [
         { text: t("cancel"), style: "cancel" },
         {
-          text: t("continue") || "Continuar",
+          text: t("continue"),
           style: "destructive",
           onPress: async () => {
             await handleNativeUpload()

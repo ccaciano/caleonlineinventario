@@ -12,6 +12,9 @@ if (Platform.OS !== "web") {
   useCameraPermissions = cameraModule.useCameraPermissions
 }
 
+// Identidade estável: o hook precisa ser chamado incondicionalmente em todo render
+const useCameraPermissionsSafe: any = useCameraPermissions || (() => [null, async () => null])
+
 interface TorchButtonProps {
   accentColor?: string
   size?: number
@@ -31,7 +34,7 @@ const notify = (title: string, message: string) => {
  * Web: usa a constraint "torch" do MediaStreamTrack (disponível no Chrome Android).
  */
 export default function TorchButton({ accentColor = "#007AFF", size = 22 }: TorchButtonProps) {
-  const [permission, requestPermission] = useCameraPermissions ? useCameraPermissions() : [null, async () => null]
+  const [permission, requestPermission] = useCameraPermissionsSafe()
   const [torchOn, setTorchOn] = useState(false)
   const streamRef = useRef<any>(null)
 
