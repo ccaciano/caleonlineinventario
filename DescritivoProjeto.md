@@ -354,9 +354,7 @@ Itens conhecidos, todos verificados no código. Nenhum impede o funcionamento.
 
 **Dívida de i18n.** Parte dos textos está em `i18n.ts`, parte fixa nas telas. Funciona, mas um segundo idioma exigiria consolidar isso antes.
 
-**Plugin órfão no `app.json`.** `expo-document-picker` continua na lista de `plugins`, mas nenhuma tela do app abre seletor de arquivos. Sem efeito prático além do peso.
-
-**Warnings de lint.** 13 no total, nenhum erro: imports não utilizados, `catch (e)` com variável não usada, dois `require()` (necessários, é o carregamento condicional da câmera por plataforma) e dois `exhaustive-deps`.
+**Warnings de lint.** 3 no total, nenhum erro, e os três são deliberados: dois `require()` (é o carregamento condicional da câmera por plataforma — trocar por `import` estático quebra o bundle web) e um `exhaustive-deps` em `BarcodeScanner` (incluir a dependência reinicializaria a câmera a cada render).
 
 **Ausência de testes.** Não há suíte automatizada. As funções puras — `evaluateExpression` da calculadora, as conversões de data, a agregação da exportação — são candidatas naturais e baratas, caso se queira começar por algum lugar.
 
@@ -386,4 +384,4 @@ cd frontend
 eas build --platform android --profile production
 ```
 
-**Estado atual da verificação:** `tsc` sem erros, `expo lint` sem erros (13 warnings), e `expo export --platform android` gerando bundle de 5,91 MB com sucesso.
+**Estado atual da verificação:** `tsc` sem erros, `expo lint` sem erros (3 warnings), e `expo export --platform android` gerando bundle de 5,91 MB com sucesso.

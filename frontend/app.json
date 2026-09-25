@@ -30,8 +30,7 @@
           "cameraPermission": "Permitir uso da câmera para leitura de códigos de barras."
         }
       ],
-      "expo-file-system",
-      "expo-document-picker"
+      "expo-file-system"
     ],
     "extra": {
       "router": {},

@@ -4,7 +4,6 @@ import { useTranslation } from "react-i18next"
 import { Ionicons } from "@expo/vector-icons"
 import { useRouter } from "expo-router"
 import { getInventories, getExportData, deleteInventory, Inventory } from "../services/api"
-import Modal from "react-native-modal"
 import CreateInventoryModal from "../components/CreateInventoryModal"
 import { shareExcelReport } from "../utils/excelExport"
 import { useFocusEffect } from "@react-navigation/native"
@@ -93,7 +92,7 @@ export default function InventoriesScreen() {
       if (Platform.OS === "web") window.alert(t("inventoryDeleted"))
       else Alert.alert("Sucesso", t("inventoryDeleted"))
       loadInventories()
-    } catch (error) {
+    } catch {
       const errorMsg = "Falha ao excluir inventário"
       if (Platform.OS === "web") window.alert(errorMsg)
       else Alert.alert("Erro", errorMsg)
