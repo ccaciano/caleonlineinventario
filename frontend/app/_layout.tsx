@@ -174,13 +174,6 @@ export default function DrawerLayout() {
           }}
         />
         <Drawer.Screen
-          name="store-config"
-          options={{
-            drawerItemStyle: { display: "none" },
-            title: "Dados da Loja",
-          }}
-        />
-        <Drawer.Screen
           name="counting/[id]"
           options={{
             drawerLabel: t("counting"),
@@ -205,13 +198,6 @@ export default function DrawerLayout() {
             title: "Contagem por Endereço",
             drawerItemStyle: { display: "none" },
             drawerIcon: ({ color, size }) => <Ionicons name="location-outline" size={size} color={color} />,
-          }}
-        />
-        <Drawer.Screen
-          name="settings"
-          options={{
-            drawerItemStyle: { display: "none" },
-            title: "Configurações",
           }}
         />
       </Drawer>

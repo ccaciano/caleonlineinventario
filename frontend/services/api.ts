@@ -7,19 +7,11 @@ export type Inventory = LocalStorage.Inventory
 export type CountedItem = LocalStorage.CountedItem
 export type WmsCountedItem = LocalStorage.WmsCountedItem
 export type WmsAddress = LocalStorage.WmsAddress
-export type StoreConfig = LocalStorage.StoreConfig
 
 export interface ExportData {
   inventory: Inventory
   items: CountedItem[]
-  store: StoreConfig | null
 }
-
-// ==================== CONFIGURAÇÃO DA LOJA ====================
-
-export const getStoreConfig = async (): Promise<StoreConfig | null> => LocalStorage.getStoreConfig()
-
-export const saveStoreConfig = async (config: StoreConfig): Promise<StoreConfig> => LocalStorage.saveStoreConfig(config)
 
 // ==================== PRODUTOS ====================
 
@@ -226,21 +218,10 @@ export const deleteWmsItem = async (inventoryId: string, addressId: string, item
 export const getExportData = async (inventoryId: string): Promise<ExportData> => {
   const inventory = await LocalStorage.getInventoryById(inventoryId)
   if (!inventory) throw new Error("Inventário não encontrado")
-  const store = await LocalStorage.getStoreConfig()
-  return { inventory, items: inventory.items, store }
+  return { inventory, items: inventory.items }
 }
 
 // ==================== UTILITÁRIOS ====================
-
-export const clearAllData = async (onComplete?: () => void): Promise<void> => {
-  try {
-    await LocalStorage.clearAllData()
-    if (onComplete) onComplete()
-  } catch (error) {
-    console.error("Erro ao limpar banco de dados:", error)
-    throw error
-  }
-}
 
 export const seedDatabaseIfNeeded = async (): Promise<void> => {
   try {

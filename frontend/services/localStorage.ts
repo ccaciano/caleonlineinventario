@@ -5,7 +5,6 @@ const DATA_DIR = `${FileSystem.documentDirectory}data/`
 const FILES = {
   products: `${DATA_DIR}products.json`,
   inventories: `${DATA_DIR}inventories.json`,
-  storeConfig: `${DATA_DIR}store_config.json`,
 }
 
 const ensureDataDir = async (): Promise<void> => {
@@ -350,25 +349,6 @@ export const deleteWmsItem = async (inventoryId: string, addressId: string, item
   return true
 }
 
-// ==================== CONFIGURAÇÃO DA LOJA ====================
-
-export interface StoreConfig {
-  store_id: string
-  store_name: string
-  email: string
-  manager_phone: string
-  manager_name: string
-}
-
-export const getStoreConfig = async (): Promise<StoreConfig | null> => {
-  return readJsonFile<StoreConfig | null>(FILES.storeConfig, null)
-}
-
-export const saveStoreConfig = async (config: StoreConfig): Promise<StoreConfig> => {
-  await writeJsonFile(FILES.storeConfig, config)
-  return config
-}
-
 // ==================== UTILITÁRIOS ====================
 
 const generateUUID = (): string => {
@@ -377,12 +357,6 @@ const generateUUID = (): string => {
     const v = c === "x" ? r : (r & 0x3) | 0x8
     return v.toString(16)
   })
-}
-
-export const clearAllData = async (): Promise<void> => {
-  await saveProducts([])
-  await saveInventories([])
-  await writeJsonFile(FILES.storeConfig, null)
 }
 
 export const importProductsFromCSV = async (csvContent: string): Promise<number> => {
