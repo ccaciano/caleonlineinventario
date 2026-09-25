@@ -50,11 +50,7 @@ export default function InventoriesScreen() {
   }
 
   const handleInventoryPress = (inventory: Inventory) => {
-    if (inventory.type === "wms") {
-      router.push({ pathname: "/wms/[id]", params: { id: inventory._id || "" } })
-    } else {
-      router.push({ pathname: "/counting/[id]", params: { id: inventory._id || "" } })
-    }
+    router.push({ pathname: "/wms/[id]", params: { id: inventory._id || "" } })
   }
 
   const handleCreateSuccess = () => {
@@ -109,27 +105,22 @@ export default function InventoriesScreen() {
     const isClosed = item.status === "closed"
     const isExporting = exportingId === item._id
     const isDeleting = deletingId === item._id
-    const isWms = item.type === "wms"
-
-    const typeColor = isWms ? "#FF9500" : "#007AFF"
-    const typeLabel = isWms ? "WMS" : "Loja"
-    const typeIcon = isWms ? "cube-outline" : "storefront-outline"
-    const addressCount = isWms ? (item.enderecos?.length || 0) : null
+    const addressCount = item.enderecos?.length || 0
 
     return (
       <View style={styles.inventoryCard}>
         <TouchableOpacity onPress={() => handleInventoryPress(item)} activeOpacity={0.7} disabled={isExporting || isDeleting}>
           <View style={styles.cardHeader}>
             <View style={styles.cardTitleContainer}>
-              <Ionicons name={isClosed ? "folder" : "folder-open"} size={24} color={isClosed ? "#8E8E93" : typeColor} />
+              <Ionicons name={isClosed ? "folder" : "folder-open"} size={24} color={isClosed ? "#8E8E93" : "#FF9500"} />
               <Text style={styles.cardTitle} numberOfLines={1}>
                 {typeof item.description === "string" ? item.description : "Inventário sem nome"}
               </Text>
             </View>
             <View style={styles.badgesRow}>
-              <View style={[styles.typeBadge, { backgroundColor: isWms ? "#FFF3E0" : "#E3F2FD", borderColor: typeColor }]}>
-                <Ionicons name={typeIcon} size={12} color={typeColor} />
-                <Text style={[styles.typeBadgeText, { color: typeColor }]}>{typeLabel}</Text>
+              <View style={styles.typeBadge}>
+                <Ionicons name="cube-outline" size={12} color="#FF9500" />
+                <Text style={styles.typeBadgeText}>WMS</Text>
               </View>
               <View style={[styles.statusBadge, isClosed ? styles.statusClosed : styles.statusOpen]}>
                 <Text style={styles.statusText}>{isClosed ? t("closed") : t("open")}</Text>
@@ -142,26 +133,17 @@ export default function InventoriesScreen() {
               <Ionicons name="calendar-outline" size={16} color="#8E8E93" />
               <Text style={styles.infoText}>{typeof item.date === "string" ? convertFromISO(item.date) : "Data não disponível"}</Text>
             </View>
-            {isWms ? (
-              <View style={styles.infoRow}>
-                <Ionicons name="location-outline" size={16} color="#8E8E93" />
-                <Text style={styles.infoText}>
-                  {addressCount} endereço{addressCount !== 1 ? "s" : ""} · {item.item_count || 0} {t("items")}
-                </Text>
-              </View>
-            ) : (
-              <View style={styles.infoRow}>
-                <Ionicons name="cube-outline" size={16} color="#8E8E93" />
-                <Text style={styles.infoText}>
-                  {item.item_count || 0} {t("items")}
-                </Text>
-              </View>
-            )}
+            <View style={styles.infoRow}>
+              <Ionicons name="location-outline" size={16} color="#8E8E93" />
+              <Text style={styles.infoText}>
+                {addressCount} endereço{addressCount !== 1 ? "s" : ""} · {item.item_count || 0} {t("items")}
+              </Text>
+            </View>
           </View>
 
           {!isClosed && (
             <View style={styles.cardFooter}>
-              <Ionicons name="chevron-forward" size={20} color={typeColor} />
+              <Ionicons name="chevron-forward" size={20} color="#FF9500" />
             </View>
           )}
         </TouchableOpacity>
@@ -265,8 +247,10 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 8,
     borderWidth: 1,
+    backgroundColor: "#FFF3E0",
+    borderColor: "#FF9500",
   },
-  typeBadgeText: { fontSize: 11, fontWeight: "700" },
+  typeBadgeText: { fontSize: 11, fontWeight: "700", color: "#FF9500" },
   statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
   statusOpen: { backgroundColor: "#E8F5E9" },
   statusClosed: { backgroundColor: "#F5F5F5" },

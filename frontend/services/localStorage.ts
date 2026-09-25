@@ -105,17 +105,6 @@ export const getProductsPaginated = async (page: number, limit: number, search?:
 
 // ==================== TIPOS ====================
 
-export interface CountedItem {
-  _id: string
-  inventory_id: string
-  product_code: string
-  ean?: string
-  description?: string
-  quantity: number
-  lot?: string
-  expiry_date?: string
-}
-
 export interface WmsCountedItem {
   _id: string
   codigo: string
@@ -139,9 +128,7 @@ export interface Inventory {
   description: string
   date: string
   status: "open" | "closed"
-  type: "loja" | "wms"
-  items: CountedItem[]
-  enderecos?: WmsAddress[]
+  enderecos: WmsAddress[]
   item_count?: number
 }
 
@@ -155,16 +142,14 @@ export const saveInventories = async (inventories: Inventory[]): Promise<void> =
   await writeJsonFile(FILES.inventories, inventories)
 }
 
-export const createInventory = async (description: string, date: string, type: "loja" | "wms" = "loja"): Promise<Inventory> => {
+export const createInventory = async (description: string, date: string): Promise<Inventory> => {
   const inventories = await getInventories()
   const newInventory: Inventory = {
     _id: generateUUID(),
     description,
     date,
     status: "open",
-    type,
-    items: [],
-    enderecos: type === "wms" ? [] : undefined,
+    enderecos: [],
   }
   inventories.push(newInventory)
   await saveInventories(inventories)
@@ -198,45 +183,6 @@ export const deleteInventory = async (id: string): Promise<boolean> => {
 
 export const closeInventory = async (id: string): Promise<Inventory | null> => {
   return updateInventory(id, { status: "closed" })
-}
-
-// ==================== ITENS CONTADOS (InvLoja) ====================
-
-export const addCountedItem = async (inventoryId: string, item: Omit<CountedItem, "_id" | "inventory_id">): Promise<CountedItem | null> => {
-  const inventories = await getInventories()
-  const index = inventories.findIndex((inv) => inv._id === inventoryId)
-  if (index === -1) return null
-  const newItem: CountedItem = { ...item, _id: generateUUID(), inventory_id: inventoryId }
-  inventories[index].items.push(newItem)
-  await saveInventories(inventories)
-  return newItem
-}
-
-export const updateCountedItem = async (inventoryId: string, itemId: string, updates: Partial<CountedItem>): Promise<CountedItem | null> => {
-  const inventories = await getInventories()
-  const invIndex = inventories.findIndex((inv) => inv._id === inventoryId)
-  if (invIndex === -1) return null
-  const itemIndex = inventories[invIndex].items.findIndex((item) => item._id === itemId)
-  if (itemIndex === -1) return null
-  inventories[invIndex].items[itemIndex] = { ...inventories[invIndex].items[itemIndex], ...updates }
-  await saveInventories(inventories)
-  return inventories[invIndex].items[itemIndex]
-}
-
-export const deleteCountedItem = async (inventoryId: string, itemId: string): Promise<boolean> => {
-  const inventories = await getInventories()
-  const invIndex = inventories.findIndex((inv) => inv._id === inventoryId)
-  if (invIndex === -1) return false
-  const itemIndex = inventories[invIndex].items.findIndex((item) => item._id === itemId)
-  if (itemIndex === -1) return false
-  inventories[invIndex].items.splice(itemIndex, 1)
-  await saveInventories(inventories)
-  return true
-}
-
-export const getCountedItems = async (inventoryId: string): Promise<CountedItem[]> => {
-  const inventory = await getInventoryById(inventoryId)
-  return inventory?.items || []
 }
 
 // ==================== ENDEREÇOS WMS ====================
