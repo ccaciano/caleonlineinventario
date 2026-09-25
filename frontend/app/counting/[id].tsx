@@ -1,13 +1,12 @@
 import React, { useState, useCallback, useMemo } from "react"
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, FlatList } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
-import { useLocalSearchParams, useRouter } from "expo-router"
-import { getInventory, getCountedItems, addCountedItem, deleteCountedItem, closeInventory, updateCountedItem, Inventory, CountedItem } from "../../services/api"
+import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router"
+import { getInventory, getCountedItems, addCountedItem, deleteCountedItem, closeInventory, Inventory, CountedItem } from "../../services/api"
 import BarcodeScanner from "../../components/BarcodeScanner"
 import EditItemModal from "../../components/EditItemModal"
 import CalculatorModal from "../../components/CalculatorModal"
 import TorchButton from "../../components/TorchButton"
-import { useFocusEffect } from "expo-router"
 
 const isValidDate = (dateStr: string): boolean => {
   if (!dateStr) return true
