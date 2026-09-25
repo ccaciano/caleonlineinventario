@@ -286,7 +286,7 @@ export default function ProductsScreen() {
         </View>
         <View style={styles.productActions}>
           <TouchableOpacity onPress={() => handleEditProduct(item)} style={styles.actionButton}>
-            <Ionicons name="create-outline" size={22} color="#007AFF" />
+            <Ionicons name="create-outline" size={22} color="#1D6DA0" />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => handleDeleteProduct(item)} style={styles.actionButton}>
             <Ionicons name="trash-outline" size={22} color="#FF3B30" />
@@ -300,7 +300,7 @@ export default function ProductsScreen() {
     if (!loadingMore) return null
     return (
       <View style={styles.footer}>
-        <ActivityIndicator size="small" color="#007AFF" />
+        <ActivityIndicator size="small" color="#1D6DA0" />
         <Text style={styles.footerText}>{t("loadingMore")}</Text>
       </View>
     )
@@ -318,7 +318,7 @@ export default function ProductsScreen() {
   if (loading && products.length === 0) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color="#1D6DA0" />
       </View>
     )
   }
@@ -354,7 +354,7 @@ export default function ProductsScreen() {
         </View>
 
         <View style={styles.csvHintBox}>
-          <Ionicons name="information-circle-outline" size={15} color="#007AFF" />
+          <Ionicons name="information-circle-outline" size={15} color="#1D6DA0" />
           <Text style={styles.csvHintText}>
             <Text style={styles.csvHintBold}>Formato do CSV: </Text>Separado por vírgula (,){"\n"}
             Ex: CÓDIGO,EAN,DESCRIÇÃO{"\n"}
@@ -428,7 +428,7 @@ const styles = StyleSheet.create({
   },
   uploadButton: {
     flex: 1,
-    backgroundColor: "#34C759",
+    backgroundColor: "#2BA74A",
     borderRadius: 12,
     padding: 12,
     flexDirection: "row",
@@ -443,7 +443,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   addButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "#1D6DA0",
     borderRadius: 12,
     width: 48,
     height: 48,
@@ -487,7 +487,7 @@ const styles = StyleSheet.create({
   },
   productEan: {
     fontSize: 14,
-    color: "#007AFF",
+    color: "#1D6DA0",
     marginBottom: 4,
   },
   productDescription: {

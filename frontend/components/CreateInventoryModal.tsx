@@ -102,57 +102,30 @@ export default function CreateInventoryModal({ visible, onClose, onSuccess }: Cr
 
         <ScrollView bounces={false} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }}>
           <View style={styles.form}>
-
             {/* Seleção de tipo */}
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Tipo de Inventário</Text>
               <View style={styles.typeSelector}>
-                <TouchableOpacity
-                  style={[styles.typeButton, type === "wms" && styles.typeButtonActiveWms]}
-                  onPress={() => setType("wms")}
-                  disabled={loading}
-                >
+                <TouchableOpacity style={[styles.typeButton, type === "wms" && styles.typeButtonActiveWms]} onPress={() => setType("wms")} disabled={loading}>
                   <Ionicons name="cube-outline" size={20} color={type === "wms" ? "#FFFFFF" : "#FF9500"} />
                   <Text style={[styles.typeButtonText, type === "wms" && styles.typeButtonTextActive]}>Inv. WMS</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.typeButton, type === "loja" && styles.typeButtonActive]}
-                  onPress={() => setType("loja")}
-                  disabled={loading}
-                >
-                  <Ionicons name="storefront-outline" size={20} color={type === "loja" ? "#FFFFFF" : "#007AFF"} />
+                <TouchableOpacity style={[styles.typeButton, type === "loja" && styles.typeButtonActive]} onPress={() => setType("loja")} disabled={loading}>
+                  <Ionicons name="storefront-outline" size={20} color={type === "loja" ? "#FFFFFF" : "#1D6DA0"} />
                   <Text style={[styles.typeButtonText, type === "loja" && styles.typeButtonTextActive]}>Inv. Loja</Text>
                 </TouchableOpacity>
               </View>
-              <Text style={styles.hint}>
-                {type === "loja" ? "Contagem simples por código, lote e validade" : "Contagem por endereço de armazenamento (Rua/Posição/Altura/Prof.)"}
-              </Text>
+              <Text style={styles.hint}>{type === "loja" ? "Contagem simples por código, lote e validade" : "Contagem por endereço de armazenamento (Rua/Posição/Altura/Prof.)"}</Text>
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>{t("description")}</Text>
-              <TextInput
-                style={styles.input}
-                value={description}
-                onChangeText={setDescription}
-                placeholder={t("description")}
-                placeholderTextColor="#999"
-                editable={!loading}
-              />
+              <TextInput style={styles.input} value={description} onChangeText={setDescription} placeholder={t("description")} placeholderTextColor="#999" editable={!loading} />
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>{t("date")}</Text>
-              <TextInput
-                style={styles.input}
-                value={date}
-                onChangeText={handleDateChange}
-                placeholder="DD/MM/AAAA"
-                placeholderTextColor="#999"
-                keyboardType="numeric"
-                maxLength={10}
-                editable={!loading}
-              />
+              <TextInput style={styles.input} value={date} onChangeText={handleDateChange} placeholder="DD/MM/AAAA" placeholderTextColor="#999" keyboardType="numeric" maxLength={10} editable={!loading} />
               <Text style={styles.hint}>Formato: DD/MM/AAAA</Text>
             </View>
 
@@ -160,11 +133,7 @@ export default function CreateInventoryModal({ visible, onClose, onSuccess }: Cr
               <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={handleClose} disabled={loading}>
                 <Text style={styles.cancelButtonText}>{t("cancel")}</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.button, type === "wms" ? styles.createButtonWms : styles.createButton, loading && styles.buttonDisabled]}
-                onPress={handleCreate}
-                disabled={loading}
-              >
+              <TouchableOpacity style={[styles.button, type === "wms" ? styles.createButtonWms : styles.createButton, loading && styles.buttonDisabled]} onPress={handleCreate} disabled={loading}>
                 {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.createButtonText}>{t("create")}</Text>}
               </TouchableOpacity>
             </View>
@@ -217,12 +186,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 12,
     borderWidth: 2,
-    borderColor: "#007AFF",
+    borderColor: "#1D6DA0",
     backgroundColor: "#F0F8FF",
   },
-  typeButtonActive: { backgroundColor: "#007AFF", borderColor: "#007AFF" },
+  typeButtonActive: { backgroundColor: "#1D6DA0", borderColor: "#1D6DA0" },
   typeButtonActiveWms: { backgroundColor: "#FF9500", borderColor: "#FF9500" },
-  typeButtonText: { fontSize: 15, fontWeight: "700", color: "#007AFF" },
+  typeButtonText: { fontSize: 15, fontWeight: "700", color: "#1D6DA0" },
   typeButtonTextActive: { color: "#FFFFFF" },
   input: {
     backgroundColor: "#F2F2F7",
@@ -239,7 +208,7 @@ const styles = StyleSheet.create({
   button: { flex: 1, borderRadius: 12, padding: 16, alignItems: "center", justifyContent: "center", minHeight: 52 },
   cancelButton: { backgroundColor: "#F2F2F7", borderWidth: 1, borderColor: "#E5E5EA" },
   cancelButtonText: { fontSize: 16, fontWeight: "600", color: "#000", textAlign: "center" },
-  createButton: { backgroundColor: "#007AFF" },
+  createButton: { backgroundColor: "#1D6DA0" },
   createButtonWms: { backgroundColor: "#FF9500" },
   createButtonText: { fontSize: 16, fontWeight: "bold", color: "#FFFFFF", textAlign: "center" },
   buttonDisabled: { opacity: 0.6 },
