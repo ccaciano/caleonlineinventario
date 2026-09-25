@@ -8,7 +8,6 @@ import { DrawerContentScrollView, DrawerItemList, DrawerContentComponentProps } 
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import * as NavigationBar from "expo-navigation-bar"
 import "../utils/i18n"
-import { seedDatabaseIfNeeded } from "../services/api" // Importante!
 
 // Componente customizado para o conteúdo do Drawer
 function CustomDrawerContent(props: DrawerContentComponentProps) {
@@ -22,7 +21,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 
       {/* Conteúdo com fundo azul, como antes */}
       <View style={styles.drawerHeader}>
-        <Text style={styles.appSubtitle}>{t("appSubtitle") || "Gestão de Estoque WMS & LOJA"}</Text>
+        <Text style={styles.appSubtitle}>{t("appSubtitle") || "Gestão de Estoque - LOJA"}</Text>
       </View>
 
       {/* Lista de itens do menu */}
@@ -63,19 +62,6 @@ export default function DrawerLayout() {
       hideNavigationBar()
     }, 3000)
   }, [hideNavigationBar])
-
-  // --- EFEITO DE CARGA INICIAL (SEED) ---
-  useEffect(() => {
-    const runSeed = async () => {
-      try {
-        await seedDatabaseIfNeeded()
-        console.log("✅ Base de produtos verificada.")
-      } catch (error) {
-        console.error("❌ Erro no seed:", error)
-      }
-    }
-    runSeed()
-  }, [])
 
   // Configurar Navigation Bar no Android para modo imersivo
   useEffect(() => {
@@ -166,38 +152,12 @@ export default function DrawerLayout() {
           }}
         />
         <Drawer.Screen
-          name="products"
-          options={{
-            drawerLabel: t("products"),
-            title: t("products"),
-            drawerIcon: ({ color, size }) => <Ionicons name="cart-outline" size={size} color={color} />,
-          }}
-        />
-        <Drawer.Screen
           name="counting/[id]"
           options={{
             drawerLabel: t("counting"),
             title: t("counting"),
             drawerItemStyle: { display: "none" },
             drawerIcon: ({ color, size }) => <Ionicons name="barcode-outline" size={size} color={color} />,
-          }}
-        />
-        <Drawer.Screen
-          name="wms/[id]"
-          options={{
-            drawerLabel: "WMS",
-            title: "Inventário WMS",
-            drawerItemStyle: { display: "none" },
-            drawerIcon: ({ color, size }) => <Ionicons name="cube-outline" size={size} color={color} />,
-          }}
-        />
-        <Drawer.Screen
-          name="wms-counting/[id]"
-          options={{
-            drawerLabel: "Contagem WMS",
-            title: "Contagem por Endereço",
-            drawerItemStyle: { display: "none" },
-            drawerIcon: ({ color, size }) => <Ionicons name="location-outline" size={size} color={color} />,
           }}
         />
       </Drawer>

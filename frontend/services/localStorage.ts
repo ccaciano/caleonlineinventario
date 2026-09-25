@@ -3,7 +3,6 @@ import * as FileSystem from "expo-file-system/legacy"
 const DATA_DIR = `${FileSystem.documentDirectory}data/`
 
 const FILES = {
-  products: `${DATA_DIR}products.json`,
   inventories: `${DATA_DIR}inventories.json`,
 }
 
@@ -12,10 +11,6 @@ const ensureDataDir = async (): Promise<void> => {
   if (!dirInfo.exists) {
     await FileSystem.makeDirectoryAsync(DATA_DIR, { intermediates: true })
   }
-}
-
-export const saveRawProducts = async (products: Product[]): Promise<void> => {
-  await writeJsonFile(FILES.products, products)
 }
 
 export const readJsonFile = async <T>(filePath: string, defaultValue: T): Promise<T> => {
@@ -42,67 +37,6 @@ export const writeJsonFile = async <T>(filePath: string, data: T): Promise<void>
   }
 }
 
-// ==================== PRODUTOS ====================
-
-export interface Product {
-  _id: string
-  code: string
-  ean: string
-  description: string
-}
-
-export const getProducts = async (): Promise<Product[]> => {
-  return readJsonFile<Product[]>(FILES.products, [])
-}
-
-export const saveProducts = async (products: Product[]): Promise<void> => {
-  await writeJsonFile(FILES.products, products)
-}
-
-export const addProduct = async (product: Omit<Product, "_id">): Promise<Product> => {
-  const products = await getProducts()
-  const newProduct: Product = { ...product, _id: generateUUID() }
-  products.push(newProduct)
-  await saveProducts(products)
-  return newProduct
-}
-
-export const updateProduct = async (id: string, updates: Partial<Product>): Promise<Product | null> => {
-  const products = await getProducts()
-  const index = products.findIndex((p) => p._id === id)
-  if (index === -1) return null
-  products[index] = { ...products[index], ...updates }
-  await saveProducts(products)
-  return products[index]
-}
-
-export const deleteProduct = async (id: string): Promise<boolean> => {
-  const products = await getProducts()
-  const index = products.findIndex((p) => p._id === id)
-  if (index === -1) return false
-  products.splice(index, 1)
-  await saveProducts(products)
-  return true
-}
-
-export const searchProductByCodeOrEan = async (query: string): Promise<Product | null> => {
-  const products = await getProducts()
-  const queryLower = query.toLowerCase()
-  return products.find((p) => p.code.toLowerCase().replace(" ", "") === queryLower || p.ean.toLowerCase().replace(" ", "") === queryLower) || null
-}
-
-export const getProductsPaginated = async (page: number, limit: number, search?: string): Promise<{ products: Product[]; total: number; page: number; totalPages: number }> => {
-  let products = await getProducts()
-  if (search) {
-    const searchLower = search.toLowerCase()
-    products = products.filter((p) => p.code.toLowerCase().includes(searchLower) || p.ean.toLowerCase().includes(searchLower) || p.description.toLowerCase().includes(searchLower))
-  }
-  const total = products.length
-  const totalPages = Math.ceil(total / limit)
-  const startIndex = (page - 1) * limit
-  return { products: products.slice(startIndex, startIndex + limit), total, page, totalPages }
-}
-
 // ==================== TIPOS ====================
 
 export interface CountedItem {
@@ -116,32 +50,12 @@ export interface CountedItem {
   expiry_date?: string
 }
 
-export interface WmsCountedItem {
-  _id: string
-  codigo: string
-  EAN?: string
-  descricao?: string
-  unit?: string
-  fator?: number
-  lote: string
-  validade: string
-  qtd: number
-}
-
-export interface WmsAddress {
-  _id: string
-  endereco: string
-  itens: WmsCountedItem[]
-}
-
 export interface Inventory {
   _id: string
   description: string
   date: string
   status: "open" | "closed"
-  type: "loja" | "wms"
   items: CountedItem[]
-  enderecos?: WmsAddress[]
   item_count?: number
 }
 
@@ -155,16 +69,14 @@ export const saveInventories = async (inventories: Inventory[]): Promise<void> =
   await writeJsonFile(FILES.inventories, inventories)
 }
 
-export const createInventory = async (description: string, date: string, type: "loja" | "wms" = "loja"): Promise<Inventory> => {
+export const createInventory = async (description: string, date: string): Promise<Inventory> => {
   const inventories = await getInventories()
   const newInventory: Inventory = {
     _id: generateUUID(),
     description,
     date,
     status: "open",
-    type,
     items: [],
-    enderecos: type === "wms" ? [] : undefined,
   }
   inventories.push(newInventory)
   await saveInventories(inventories)
@@ -239,116 +151,6 @@ export const getCountedItems = async (inventoryId: string): Promise<CountedItem[
   return inventory?.items || []
 }
 
-// ==================== ENDEREÇOS WMS ====================
-
-export const addWmsAddress = async (inventoryId: string, endereco: string): Promise<WmsAddress | null> => {
-  const inventories = await getInventories()
-  const index = inventories.findIndex((inv) => inv._id === inventoryId)
-  if (index === -1) return null
-  if (!inventories[index].enderecos) inventories[index].enderecos = []
-  const newAddress: WmsAddress = { _id: generateUUID(), endereco, itens: [] }
-  inventories[index].enderecos!.push(newAddress)
-  await saveInventories(inventories)
-  return newAddress
-}
-
-export const deleteWmsAddress = async (inventoryId: string, addressId: string): Promise<boolean> => {
-  const inventories = await getInventories()
-  const invIndex = inventories.findIndex((inv) => inv._id === inventoryId)
-  if (invIndex === -1) return false
-  const enderecos = inventories[invIndex].enderecos || []
-  const addrIndex = enderecos.findIndex((a) => a._id === addressId)
-  if (addrIndex === -1) return false
-  enderecos.splice(addrIndex, 1)
-  inventories[invIndex].enderecos = enderecos
-  await saveInventories(inventories)
-  return true
-}
-
-export const getWmsAddresses = async (inventoryId: string): Promise<WmsAddress[]> => {
-  const inv = await getInventoryById(inventoryId)
-  return inv?.enderecos || []
-}
-
-export const updateWmsAddress = async (inventoryId: string, addressId: string, newEndereco: string): Promise<WmsAddress | null> => {
-  const inventories = await getInventories()
-  const invIndex = inventories.findIndex((inv) => inv._id === inventoryId)
-  if (invIndex === -1) return null
-  const enderecos = inventories[invIndex].enderecos || []
-  const addrIndex = enderecos.findIndex((a) => a._id === addressId)
-  if (addrIndex === -1) return null
-  enderecos[addrIndex] = { ...enderecos[addrIndex], endereco: newEndereco }
-  inventories[invIndex].enderecos = enderecos
-  await saveInventories(inventories)
-  return enderecos[addrIndex]
-}
-
-export const importWmsAddresses = async (inventoryId: string, enderecosList: string[]): Promise<WmsAddress[]> => {
-  const inventories = await getInventories()
-  const invIndex = inventories.findIndex((inv) => inv._id === inventoryId)
-  if (invIndex === -1) return []
-  if (!inventories[invIndex].enderecos) inventories[invIndex].enderecos = []
-  const existing = inventories[invIndex].enderecos!.map((e) => e.endereco.trim().toUpperCase())
-  const added: WmsAddress[] = []
-  for (const end of enderecosList) {
-    const clean = end.trim().toUpperCase()
-    if (clean && !existing.includes(clean)) {
-      const newAddr: WmsAddress = { _id: generateUUID(), endereco: clean, itens: [] }
-      inventories[invIndex].enderecos!.push(newAddr)
-      existing.push(clean)
-      added.push(newAddr)
-    }
-  }
-  await saveInventories(inventories)
-  return added
-}
-
-// ==================== ITENS WMS ====================
-
-export const addWmsItem = async (inventoryId: string, addressId: string, item: Omit<WmsCountedItem, "_id">): Promise<WmsCountedItem | null> => {
-  const inventories = await getInventories()
-  const invIndex = inventories.findIndex((inv) => inv._id === inventoryId)
-  if (invIndex === -1) return null
-  const enderecos = inventories[invIndex].enderecos || []
-  const addrIndex = enderecos.findIndex((a) => a._id === addressId)
-  if (addrIndex === -1) return null
-  const newItem: WmsCountedItem = { ...item, _id: generateUUID() }
-  enderecos[addrIndex].itens.push(newItem)
-  inventories[invIndex].enderecos = enderecos
-  await saveInventories(inventories)
-  return newItem
-}
-
-export const updateWmsItem = async (inventoryId: string, addressId: string, itemId: string, updates: Partial<WmsCountedItem>): Promise<WmsCountedItem | null> => {
-  const inventories = await getInventories()
-  const invIndex = inventories.findIndex((inv) => inv._id === inventoryId)
-  if (invIndex === -1) return null
-  const enderecos = inventories[invIndex].enderecos || []
-  const addrIndex = enderecos.findIndex((a) => a._id === addressId)
-  if (addrIndex === -1) return null
-  const itemIndex = enderecos[addrIndex].itens.findIndex((i) => i._id === itemId)
-  if (itemIndex === -1) return null
-  enderecos[addrIndex].itens[itemIndex] = { ...enderecos[addrIndex].itens[itemIndex], ...updates }
-  inventories[invIndex].enderecos = enderecos
-  await saveInventories(inventories)
-  return enderecos[addrIndex].itens[itemIndex]
-}
-
-export const deleteWmsItem = async (inventoryId: string, addressId: string, itemId: string): Promise<boolean> => {
-  const inventories = await getInventories()
-  const invIndex = inventories.findIndex((inv) => inv._id === inventoryId)
-  if (invIndex === -1) return false
-  const enderecos = inventories[invIndex].enderecos || []
-  const addrIndex = enderecos.findIndex((a) => a._id === addressId)
-  if (addrIndex === -1) return false
-  const itemIndex = enderecos[addrIndex].itens.findIndex((i) => i._id === itemId)
-  if (itemIndex === -1) return false
-  enderecos[addrIndex].itens.splice(itemIndex, 1)
-  inventories[invIndex].enderecos = enderecos
-  await saveInventories(inventories)
-  return true
-}
-
 // ==================== UTILITÁRIOS ====================
 
 const generateUUID = (): string => {
@@ -357,81 +159,4 @@ const generateUUID = (): string => {
     const v = c === "x" ? r : (r & 0x3) | 0x8
     return v.toString(16)
   })
-}
-
-export const importProductsFromCSV = async (csvContent: string): Promise<number> => {
-  // Strip BOM and normalize line endings
-  const normalized = csvContent.replace(/^﻿/, "").replace(/\r\n/g, "\n").replace(/\r/g, "\n")
-  const lines = normalized.split("\n").filter((line) => line.trim())
-  if (lines.length === 0) return 0
-
-  const firstLine = lines[0].trim()
-
-  // Detect delimiter by counting occurrences in first line
-  const semicolonCount = (firstLine.match(/;/g) || []).length
-  const commaCount = (firstLine.match(/,/g) || []).length
-  const delimiter = semicolonCount >= commaCount && semicolonCount > 0 ? ";" : ","
-
-  // Strip accents for accent-insensitive header matching (handles UTF-8 and Latin-1 encodings)
-  const stripAccents = (s: string) => s.normalize("NFD").replace(/[̀-ͯ]/g, "")
-
-  // Split first line into fields and check each field for header keywords
-  const firstFields = firstLine.split(delimiter).map((f) => f.trim().toLowerCase().replace(/['"]/g, ""))
-  const isHeaderField = (f: string) => {
-    const n = stripAccents(f)
-    return n === "codigo" || n === "code" || n === "cod" ||
-      n === "ean" || n === "ean/gtin" || n === "gtin" ||
-      n === "descricao" || n === "description" || n === "desc" || n === "nome"
-  }
-  const hasHeader = firstFields.some(isHeaderField)
-
-  const startIndex = hasHeader ? 1 : 0
-  let codeIndex = 0
-  let eanIndex = 1
-  let descIndex = 2
-
-  if (hasHeader) {
-    firstFields.forEach((header, index) => {
-      const n = stripAccents(header)
-      if (n.includes("codigo") || n === "code" || n === "cod") codeIndex = index
-      else if (n === "ean" || n === "ean/gtin" || n === "gtin") eanIndex = index
-      else if (n.includes("descri") || n === "desc" || n === "nome" || n === "description") descIndex = index
-    })
-  }
-
-  const products: Product[] = []
-
-  for (let i = startIndex; i < lines.length; i++) {
-    const line = lines[i].trim()
-    if (!line) continue
-
-    const values: string[] = []
-    let currentValue = ""
-    let inQuotes = false
-
-    for (let j = 0; j < line.length; j++) {
-      const char = line[j]
-      if (char === '"' || char === "'") {
-        inQuotes = !inQuotes
-      } else if (char === delimiter && !inQuotes) {
-        values.push(currentValue.trim())
-        currentValue = ""
-      } else {
-        currentValue += char
-      }
-    }
-    values.push(currentValue.trim())
-
-    const cleanValues = values.map((v) => v.replace(/^["']|["']$/g, "").trim())
-    const code = cleanValues[codeIndex] || ""
-    const ean = cleanValues[eanIndex] || ""
-    const description = cleanValues[descIndex] || ""
-
-    if (code) {
-      products.push({ _id: generateUUID(), code, ean, description })
-    }
-  }
-
-  await saveProducts(products)
-  return products.length
 }
