@@ -32,7 +32,7 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 
       {/* Footer do Drawer */}
       <View style={[styles.drawerFooter, { paddingBottom: insets.bottom + 16 }]}>
-        <Text style={styles.versionText}>v1.0.1</Text>
+        <Text style={styles.versionText}>v1.0.0</Text>
       </View>
     </View>
   )
