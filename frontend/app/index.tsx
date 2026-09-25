@@ -111,14 +111,14 @@ export default function InventoriesScreen() {
         <TouchableOpacity onPress={() => handleInventoryPress(item)} activeOpacity={0.7} disabled={isExporting || isDeleting}>
           <View style={styles.cardHeader}>
             <View style={styles.cardTitleContainer}>
-              <Ionicons name={isClosed ? "folder" : "folder-open"} size={24} color={isClosed ? "#8E8E93" : "#007AFF"} />
+              <Ionicons name={isClosed ? "folder" : "folder-open"} size={24} color={isClosed ? "#8E8E93" : "#1D6DA0"} />
               <Text style={styles.cardTitle} numberOfLines={1}>
                 {typeof item.description === "string" ? item.description : "Inventário sem nome"}
               </Text>
             </View>
             <View style={styles.badgesRow}>
               <View style={styles.typeBadge}>
-                <Ionicons name="storefront-outline" size={12} color="#007AFF" />
+                <Ionicons name="storefront-outline" size={12} color="#1D6DA0" />
                 <Text style={styles.typeBadgeText}>Loja</Text>
               </View>
               <View style={[styles.statusBadge, isClosed ? styles.statusClosed : styles.statusOpen]}>
@@ -142,7 +142,7 @@ export default function InventoriesScreen() {
 
           {!isClosed && (
             <View style={styles.cardFooter}>
-              <Ionicons name="chevron-forward" size={20} color="#007AFF" />
+              <Ionicons name="chevron-forward" size={20} color="#1D6DA0" />
             </View>
           )}
         </TouchableOpacity>
@@ -151,10 +151,10 @@ export default function InventoriesScreen() {
           <View style={styles.exportActions}>
             <TouchableOpacity style={[styles.exportButton, styles.downloadButton]} onPress={() => handleDownload(item)} disabled={isExporting || isDeleting}>
               {isExporting ? (
-                <ActivityIndicator size="small" color="#007AFF" />
+                <ActivityIndicator size="small" color="#1D6DA0" />
               ) : (
                 <>
-                  <Ionicons name="share-outline" size={20} color="#007AFF" />
+                  <Ionicons name="share-outline" size={20} color="#1D6DA0" />
                   <Text style={styles.downloadButtonText}>Compartilhar</Text>
                 </>
               )}
@@ -194,7 +194,7 @@ export default function InventoriesScreen() {
   if (loading && inventories.length === 0) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color="#1D6DA0" />
       </View>
     )
   }
@@ -247,9 +247,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     backgroundColor: "#E3F2FD",
-    borderColor: "#007AFF",
+    borderColor: "#1D6DA0",
   },
-  typeBadgeText: { fontSize: 11, fontWeight: "700", color: "#007AFF" },
+  typeBadgeText: { fontSize: 11, fontWeight: "700", color: "#1D6DA0" },
   statusBadge: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12 },
   statusOpen: { backgroundColor: "#E8F5E9" },
   statusClosed: { backgroundColor: "#F5F5F5" },
@@ -260,8 +260,8 @@ const styles = StyleSheet.create({
   cardFooter: { alignItems: "flex-end" },
   exportActions: { flexDirection: "row", gap: 8, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: "#E5E5EA" },
   exportButton: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 12, minHeight: 48 },
-  downloadButton: { backgroundColor: "#E3F2FD", borderWidth: 1, borderColor: "#007AFF" },
-  downloadButtonText: { fontSize: 14, fontWeight: "600", color: "#007AFF" },
+  downloadButton: { backgroundColor: "#E3F2FD", borderWidth: 1, borderColor: "#1D6DA0" },
+  downloadButtonText: { fontSize: 14, fontWeight: "600", color: "#1D6DA0" },
   deleteButton: { backgroundColor: "#FFF0F0", borderWidth: 1, borderColor: "#FF3B30" },
   deleteButtonText: { fontSize: 14, fontWeight: "600", color: "#FF3B30" },
   openInventoryActions: { position: "absolute", bottom: 16, right: 16 },
@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: "#007AFF",
+    backgroundColor: "#1D6DA0",
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#000",

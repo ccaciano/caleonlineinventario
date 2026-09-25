@@ -87,10 +87,7 @@ export default function CountingScreen() {
     const newestFirst = [...items].reverse()
     if (!term) return newestFirst
     return newestFirst.filter((item) => {
-      const haystack = [item.product_code, item.ean, item.description, item.lot, item.expiry_date ? convertFromISO(item.expiry_date) : ""]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase()
+      const haystack = [item.product_code, item.ean, item.description, item.lot, item.expiry_date ? convertFromISO(item.expiry_date) : ""].filter(Boolean).join(" ").toLowerCase()
       return haystack.includes(term)
     })
   }, [items, itemSearch])
@@ -211,12 +208,12 @@ export default function CountingScreen() {
     <View style={styles.itemCard}>
       <View style={styles.itemHeader}>
         <View style={styles.itemCodeContainer}>
-          <Ionicons name="barcode-outline" size={20} color="#007AFF" />
+          <Ionicons name="barcode-outline" size={20} color="#1D6DA0" />
           <Text style={styles.itemCode}>{item.product_code}</Text>
         </View>
         <View style={styles.itemActions}>
           <TouchableOpacity onPress={() => !isClosed && setEditItem(item)} style={[styles.actionButton, isClosed && { opacity: 0.3 }]} disabled={isClosed}>
-            <Ionicons name="create-outline" size={20} color="#007AFF" />
+            <Ionicons name="create-outline" size={20} color="#1D6DA0" />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => handleDeleteItem(item)} style={[styles.actionButton, isClosed && { opacity: 0.3 }]} disabled={isClosed}>
             <Ionicons name="trash-outline" size={20} color="#FF3B30" />
@@ -243,7 +240,7 @@ export default function CountingScreen() {
   if (loading && !inventory) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color="#1D6DA0" />
       </View>
     )
   }
@@ -258,7 +255,7 @@ export default function CountingScreen() {
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="#007AFF" />
+            <Ionicons name="arrow-back" size={24} color="#1D6DA0" />
           </TouchableOpacity>
           <View style={styles.headerContent}>
             {isClosed && (
@@ -268,7 +265,9 @@ export default function CountingScreen() {
               </View>
             )}
             <View style={styles.headerInfo}>
-              <Text style={styles.title} numberOfLines={1}>{inventory.description}</Text>
+              <Text style={styles.title} numberOfLines={1}>
+                {inventory.description}
+              </Text>
               <Text style={styles.subtitle}>{convertFromISO(inventory.date)}</Text>
             </View>
           </View>
@@ -290,14 +289,7 @@ export default function CountingScreen() {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Código do Produto</Text>
                 <View style={styles.inputWithButton}>
-                  <TextInput
-                    style={styles.inputFlex}
-                    value={formData.product_code}
-                    onChangeText={(text) => setFormData({ ...formData, product_code: text })}
-                    placeholder="Digite ou escaneie o código"
-                    placeholderTextColor="#999"
-                    autoCapitalize="characters"
-                  />
+                  <TextInput style={styles.inputFlex} value={formData.product_code} onChangeText={(text) => setFormData({ ...formData, product_code: text })} placeholder="Digite ou escaneie o código" placeholderTextColor="#999" autoCapitalize="characters" />
                 </View>
               </View>
 
@@ -305,17 +297,9 @@ export default function CountingScreen() {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Quantidade *</Text>
                 <View style={styles.inputWithButton}>
-                  <TextInput
-                    style={styles.inputFlex}
-                    value={formData.quantity}
-                    onChangeText={(text) => setFormData({ ...formData, quantity: text.replace(/[^0-9]/g, "").slice(0, 7) })}
-                    placeholder="0"
-                    placeholderTextColor="#999"
-                    keyboardType="numeric"
-                    maxLength={7}
-                  />
+                  <TextInput style={styles.inputFlex} value={formData.quantity} onChangeText={(text) => setFormData({ ...formData, quantity: text.replace(/[^0-9]/g, "").slice(0, 7) })} placeholder="0" placeholderTextColor="#999" keyboardType="numeric" maxLength={7} />
                   <TouchableOpacity style={styles.iconButton} onPress={() => setCalculatorVisible(true)} accessibilityLabel="Abrir calculadora">
-                    <Ionicons name="calculator-outline" size={22} color="#007AFF" />
+                    <Ionicons name="calculator-outline" size={22} color="#1D6DA0" />
                   </TouchableOpacity>
                 </View>
               </View>
@@ -324,19 +308,11 @@ export default function CountingScreen() {
               <View style={styles.inputGroup}>
                 <Text style={styles.label}>Lote (opcional)</Text>
                 <View style={styles.inputWithButton}>
-                  <TextInput
-                    style={styles.inputFlex}
-                    value={formData.lot}
-                    onChangeText={(text) => setFormData({ ...formData, lot: text.slice(0, 7) })}
-                    placeholder="Ex: KG10001"
-                    placeholderTextColor="#999"
-                    autoCapitalize="characters"
-                    maxLength={7}
-                  />
+                  <TextInput style={styles.inputFlex} value={formData.lot} onChangeText={(text) => setFormData({ ...formData, lot: text.slice(0, 7) })} placeholder="Ex: KG10001" placeholderTextColor="#999" autoCapitalize="characters" maxLength={7} />
                   <TouchableOpacity style={styles.iconButton} onPress={() => openScanner("lot")} accessibilityLabel="Escanear lote">
-                    <Ionicons name="scan-outline" size={22} color="#007AFF" />
+                    <Ionicons name="scan-outline" size={22} color="#1D6DA0" />
                   </TouchableOpacity>
-                  <TorchButton accentColor="#007AFF" />
+                  <TorchButton accentColor="#1D6DA0" />
                 </View>
               </View>
 
@@ -367,12 +343,10 @@ export default function CountingScreen() {
                 />
               </View>
 
-              <TouchableOpacity
-                style={[styles.addButton, (!formData.product_code.trim() || loading) && styles.addButtonDisabled]}
-                onPress={handleAddItem}
-                disabled={!formData.product_code.trim() || loading}
-              >
-                {loading ? <ActivityIndicator color="#FFFFFF" /> : (
+              <TouchableOpacity style={[styles.addButton, (!formData.product_code.trim() || loading) && styles.addButtonDisabled]} onPress={handleAddItem} disabled={!formData.product_code.trim() || loading}>
+                {loading ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
                   <>
                     <Ionicons name="add-circle" size={24} color="#FFFFFF" />
                     <Text style={styles.addButtonText}>Adicionar Item</Text>
@@ -387,26 +361,14 @@ export default function CountingScreen() {
         <View style={styles.itemsSection}>
           <View style={styles.itemsHeader}>
             <Text style={styles.sectionTitle}>Itens Contados</Text>
-            <Text style={styles.itemCount}>
-              {itemSearch.trim() ? `${filteredItems.length} de ${items.length} itens` : `${items.length} itens`}
-            </Text>
+            <Text style={styles.itemCount}>{itemSearch.trim() ? `${filteredItems.length} de ${items.length} itens` : `${items.length} itens`}</Text>
           </View>
 
           {/* Busca nos itens já contados */}
           {items.length > 0 && (
             <View style={styles.searchBox}>
               <Ionicons name="search" size={20} color="#8E8E93" />
-              <TextInput
-                style={styles.searchInput}
-                value={itemSearch}
-                onChangeText={setItemSearch}
-                placeholder="Buscar por código, descrição ou lote"
-                placeholderTextColor="#999"
-                autoCapitalize="characters"
-                autoCorrect={false}
-                returnKeyType="search"
-                clearButtonMode="never"
-              />
+              <TextInput style={styles.searchInput} value={itemSearch} onChangeText={setItemSearch} placeholder="Buscar por código, descrição ou lote" placeholderTextColor="#999" autoCapitalize="characters" autoCorrect={false} returnKeyType="search" clearButtonMode="never" />
               {itemSearch.length > 0 && (
                 <TouchableOpacity onPress={() => setItemSearch("")} style={styles.searchClear} accessibilityLabel="Limpar busca">
                   <Ionicons name="close-circle" size={20} color="#8E8E93" />
@@ -434,7 +396,9 @@ export default function CountingScreen() {
 
         {!isClosed && items.length > 0 && (
           <TouchableOpacity style={styles.closeButton} onPress={handleCloseInventory} disabled={loading}>
-            {loading ? <ActivityIndicator color="#FFFFFF" /> : (
+            {loading ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
               <>
                 <Ionicons name="lock-closed" size={24} color="#FFFFFF" />
                 <Text style={styles.closeButtonText}>Fechar Inventário</Text>
@@ -444,13 +408,11 @@ export default function CountingScreen() {
         )}
       </ScrollView>
 
-      <CalculatorModal visible={calculatorVisible} initialValue={formData.quantity} accentColor="#007AFF" integerOnly onClose={() => setCalculatorVisible(false)} onApply={handleCalculatorResult} />
+      <CalculatorModal visible={calculatorVisible} initialValue={formData.quantity} accentColor="#1D6DA0" integerOnly onClose={() => setCalculatorVisible(false)} onApply={handleCalculatorResult} />
 
       <BarcodeScanner visible={scannerVisible} onClose={() => setScannerVisible(false)} onScan={handleScan} />
 
-      {editItem && (
-        <EditItemModal visible={!!editItem} item={editItem} inventoryId={inventoryId} onClose={() => setEditItem(null)} onSuccess={handleEditSuccess} />
-      )}
+      {editItem && <EditItemModal visible={!!editItem} item={editItem} inventoryId={inventoryId} onClose={() => setEditItem(null)} onSuccess={handleEditSuccess} />}
     </KeyboardAvoidingView>
   )
 }
@@ -506,8 +468,8 @@ const styles = StyleSheet.create({
     color: "#000",
     minHeight: 48,
   },
-  iconButton: { width: 44, height: 44, justifyContent: "center", alignItems: "center", borderRadius: 10, backgroundColor: "#E8F1FF", borderWidth: 1, borderColor: "#007AFF" },
-  addButton: { backgroundColor: "#007AFF", borderRadius: 12, padding: 14, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 8, minHeight: 52 },
+  iconButton: { width: 44, height: 44, justifyContent: "center", alignItems: "center", borderRadius: 10, backgroundColor: "#E8F1FF", borderWidth: 1, borderColor: "#1D6DA0" },
+  addButton: { backgroundColor: "#1D6DA0", borderRadius: 12, padding: 14, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 8, minHeight: 52 },
   addButtonDisabled: { backgroundColor: "#C7C7CC" },
   addButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "bold" },
   itemsSection: { backgroundColor: "#FFFFFF", borderRadius: 16, padding: 16, gap: 16 },
