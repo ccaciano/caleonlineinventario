@@ -4,8 +4,6 @@ Aplicativo móvel de contagem de inventário para lojas. Funciona **inteiramente
 
 Este documento descreve o que o aplicativo faz e como está construído. Reflete o estado do código na branch `new_LOJAS`.
 
-> **Atenção:** o `README.md` na raiz está desatualizado. Ele descreve um backend FastAPI + MongoDB, persistência em AsyncStorage, tela de configuração de loja, suporte a inglês e envio por e-mail — nada disso existe mais. Considere este documento a referência corrente.
-
 ---
 
 ## 1. Visão geral
