@@ -117,37 +117,17 @@ export default function EditItemModal({ visible, item, inventoryId, onClose, onS
           <View style={styles.form}>
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Código do Produto</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.product_code}
-                onChangeText={(text) => setFormData({ ...formData, product_code: text })}
-                placeholder="Código do produto"
-                autoCapitalize="characters"
-                editable={!loading}
-              />
+              <TextInput style={styles.input} value={formData.product_code} onChangeText={(text) => setFormData({ ...formData, product_code: text })} placeholder="Código do produto" autoCapitalize="characters" editable={!loading} />
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Quantidade *</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.quantity}
-                onChangeText={(text) => setFormData({ ...formData, quantity: text.replace(/[^0-9]/g, "") })}
-                placeholder="Quantidade"
-                keyboardType="numeric"
-                editable={!loading}
-              />
+              <TextInput style={styles.input} value={formData.quantity} onChangeText={(text) => setFormData({ ...formData, quantity: text.replace(/[^0-9]/g, "") })} placeholder="Quantidade" keyboardType="numeric" editable={!loading} />
             </View>
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Lote (opcional)</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.lot}
-                onChangeText={(text) => setFormData({ ...formData, lot: text })}
-                placeholder="Lote"
-                editable={!loading}
-              />
+              <TextInput style={styles.input} value={formData.lot} onChangeText={(text) => setFormData({ ...formData, lot: text })} placeholder="Lote" editable={!loading} />
             </View>
 
             <View style={styles.inputGroup}>
@@ -216,7 +196,7 @@ const styles = StyleSheet.create({
   button: { flex: 1, borderRadius: 12, padding: 16, alignItems: "center", justifyContent: "center", minHeight: 52 },
   cancelButton: { backgroundColor: "#F2F2F7", borderWidth: 1, borderColor: "#E5E5EA" },
   cancelButtonText: { fontSize: 16, fontWeight: "600", color: "#000", textAlign: "center" },
-  saveButton: { backgroundColor: "#007AFF" },
+  saveButton: { backgroundColor: "#1D6DA0" },
   saveButtonText: { fontSize: 16, fontWeight: "bold", color: "#FFFFFF", textAlign: "center" },
   buttonDisabled: { opacity: 0.6 },
 })

@@ -433,7 +433,7 @@ const styles = StyleSheet.create({
   inputSection: { backgroundColor: "#FFFFFF", borderRadius: 16, padding: 16, gap: 12 },
   sectionTitle: { fontSize: 18, fontWeight: "bold", color: "#000" },
   scanButton: {
-    backgroundColor: "#34C759",
+    backgroundColor: "#2BA74A",
     borderRadius: 16,
     padding: 18,
     flexDirection: "row",

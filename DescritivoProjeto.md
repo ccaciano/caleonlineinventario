@@ -274,8 +274,8 @@ A entrega difere por plataforma: no web o download é direto; no nativo o arquiv
 
 | Cor       | Uso                                  |
 | --------- | ------------------------------------ |
-| `#007AFF` | Primária — ações, ícones, identidade |
-| `#34C759` | Botão de escanear                    |
+| `#1D6DA0` | Primária — ações, ícones, identidade |
+| `#2BA74A` | Botão de escanear                    |
 | `#FF3B30` | Destrutivo — excluir, fechar         |
 | `#F2F2F7` | Fundo                                |
 | `#8E8E93` | Texto secundário                     |
