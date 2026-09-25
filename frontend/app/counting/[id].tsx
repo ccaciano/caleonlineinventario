@@ -1,23 +1,24 @@
 import React, { useState, useCallback, useMemo } from "react"
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, FlatList } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
-import { useLocalSearchParams, useRouter } from "expo-router"
-import { getInventory, getCountedItems, addCountedItem, deleteCountedItem, closeInventory, updateCountedItem, Inventory, CountedItem } from "../../services/api"
+import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router"
+import { getInventory, getCountedItems, addCountedItem, deleteCountedItem, closeInventory, Inventory, CountedItem } from "../../services/api"
 import BarcodeScanner from "../../components/BarcodeScanner"
 import EditItemModal from "../../components/EditItemModal"
 import CalculatorModal from "../../components/CalculatorModal"
 import TorchButton from "../../components/TorchButton"
-import { useFocusEffect } from "expo-router"
 
 const isValidDate = (dateStr: string): boolean => {
   if (!dateStr) return true
-  const regex = /^(\d{2})\/(\d{2})\/(\d{4})$/
-  const match = dateStr.match(regex)
+  const match = dateStr.match(/^(\d{2})\/(\d{2})\/(\d{4})$/)
   if (!match) return false
-  const day = parseInt(match[1])
-  const month = parseInt(match[2])
-  const year = parseInt(match[3])
-  return month >= 1 && month <= 12 && day >= 1 && day <= 31 && year >= 1900 && year <= 2100
+  const day = parseInt(match[1], 10)
+  const month = parseInt(match[2], 10)
+  const year = parseInt(match[3], 10)
+  if (year < 1900 || year > 2100) return false
+  // Date normaliza data inexistente (31/02 vira 03/03), entao conferimos de volta
+  const d = new Date(year, month - 1, day)
+  return d.getFullYear() === year && d.getMonth() === month - 1 && d.getDate() === day
 }
 
 const convertToISO = (dateStr: string): string => {

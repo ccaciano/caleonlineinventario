@@ -153,7 +153,7 @@ export default function ProductsScreen() {
       }
 
       await processCSVUpload(csvContent)
-    } catch (error) {
+    } catch {
       Alert.alert(t("uploadError"), "Falha ao ler o arquivo")
     }
 
