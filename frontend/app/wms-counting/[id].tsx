@@ -327,7 +327,7 @@ export default function WmsCountingScreen() {
               {!isClosed && (
                 <View style={styles.itemActions}>
                   <TouchableOpacity onPress={() => startEditItem(item)} style={styles.actionBtn}>
-                    <Ionicons name="create-outline" size={18} color="#007AFF" />
+                    <Ionicons name="create-outline" size={18} color="#1D6DA0" />
                   </TouchableOpacity>
                   <TouchableOpacity onPress={() => handleDeleteItem(item)} style={styles.actionBtn}>
                     <Ionicons name="trash-outline" size={18} color="#FF3B30" />
@@ -453,7 +453,7 @@ export default function WmsCountingScreen() {
               {productFound && (
                 <View style={styles.productFound}>
                   <View style={styles.productFoundHeader}>
-                    <Ionicons name="checkmark-circle" size={20} color="#34C759" />
+                    <Ionicons name="checkmark-circle" size={20} color="#2BA74A" />
                     <Text style={styles.productFoundTitle}>Produto Encontrado</Text>
                   </View>
                   <Text style={styles.productCode}>{productFound.code}</Text>
@@ -709,13 +709,13 @@ const styles = StyleSheet.create({
   },
   totalPecasValue: { fontSize: 18, fontWeight: "bold", color: "#FF9500" },
   totalPecasHint: { fontSize: 12, color: "#8E8E93", marginLeft: "auto" },
-  productFound: { backgroundColor: "#E8F5E9", borderRadius: 12, padding: 12, borderWidth: 1, borderColor: "#34C759", gap: 4 },
+  productFound: { backgroundColor: "#E8F5E9", borderRadius: 12, padding: 12, borderWidth: 1, borderColor: "#2BA74A", gap: 4 },
   productFoundHeader: { flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 2 },
-  productFoundTitle: { fontSize: 14, fontWeight: "bold", color: "#34C759" },
+  productFoundTitle: { fontSize: 14, fontWeight: "bold", color: "#2BA74A" },
   productCode: { fontSize: 16, fontWeight: "bold", color: "#000" },
   productMeta: { fontSize: 13, color: "#555" },
   addButton: { backgroundColor: "#FF9500", borderRadius: 12, padding: 14, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 4, minHeight: 52 },
-  saveButton: { backgroundColor: "#007AFF" },
+  saveButton: { backgroundColor: "#1D6DA0" },
   addButtonDisabled: { backgroundColor: "#C7C7CC" },
   addButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "bold" },
   itemsSection: { backgroundColor: "#FFFFFF", borderRadius: 16, padding: 16, gap: 12, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
@@ -736,15 +736,15 @@ const styles = StyleSheet.create({
   searchClear: { padding: 4 },
   itemCard: { backgroundColor: "#F2F2F7", borderRadius: 12, padding: 12, gap: 4 },
   nullItemCard: { backgroundColor: "#FFF3E0", borderWidth: 1, borderColor: "#FFCC80" },
-  editingItemCard: { borderWidth: 2, borderColor: "#007AFF", backgroundColor: "#EBF4FF" },
+  editingItemCard: { borderWidth: 2, borderColor: "#1D6DA0", backgroundColor: "#EBF4FF" },
   nullItemText: { fontSize: 13, color: "#FF9500", fontStyle: "italic", textAlign: "center", paddingVertical: 4 },
   itemHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   itemCodeRow: { flexDirection: "row", alignItems: "center", gap: 6, flex: 1 },
   itemCode: { fontSize: 15, fontWeight: "bold", color: "#000" },
   itemDesc: { fontSize: 13, color: "#555" },
   itemDetails: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 4 },
-  detailChip: { fontSize: 12, backgroundColor: "#E3F2FD", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, color: "#555" },
-  totalChip: { backgroundColor: "#FFF3E0" },
+  detailChip: { fontSize: 12, backgroundColor: "#E3F2FD", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, color: "#555", maxHeight: 24 },
+  totalChip: { backgroundColor: "#FFF3E0", maxHeight: 24 },
   detailValue: { fontWeight: "bold", color: "#000" },
   itemActions: { flexDirection: "row", gap: 4 },
   actionBtn: { padding: 4 },

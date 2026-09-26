@@ -33,7 +33,7 @@ const notify = (title: string, message: string) => {
  * Nativo: monta uma CameraView invisível com enableTorch (a câmera precisa estar ativa para o flash acender).
  * Web: usa a constraint "torch" do MediaStreamTrack (disponível no Chrome Android).
  */
-export default function TorchButton({ accentColor = "#007AFF", size = 22 }: TorchButtonProps) {
+export default function TorchButton({ accentColor = "#1D6DA0", size = 22 }: TorchButtonProps) {
   const [permission, requestPermission] = useCameraPermissionsSafe()
   const [torchOn, setTorchOn] = useState(false)
   const streamRef = useRef<any>(null)

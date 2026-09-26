@@ -125,7 +125,7 @@ export default function DrawerLayout() {
       <Drawer
         drawerContent={(props) => <CustomDrawerContent {...props} />}
         screenOptions={{
-          drawerActiveTintColor: "#007AFF",
+          drawerActiveTintColor: "#1D6DA0",
           drawerInactiveTintColor: "#3C3C43",
           drawerActiveBackgroundColor: "#E3F2FD",
           drawerLabelStyle: {
@@ -140,7 +140,7 @@ export default function DrawerLayout() {
             paddingHorizontal: 8,
           },
           headerStyle: {
-            backgroundColor: "#007AFF",
+            backgroundColor: "#1D6DA0",
             elevation: 4,
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
@@ -215,7 +215,7 @@ const styles = StyleSheet.create({
     height: 180,
   },
   drawerHeader: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "#1D6DA0",
     paddingHorizontal: 20,
     paddingTop: 10,
     paddingBottom: 10,
