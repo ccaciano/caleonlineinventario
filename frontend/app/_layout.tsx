@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
   },
   imageBanner: {
     width: "100%",
-    height: 180,
+    height: 140,
   },
   drawerHeader: {
     backgroundColor: "#1D6DA0",

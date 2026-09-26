@@ -47,13 +47,13 @@ function WebBarcodeScanner({ visible, onClose, onScan }: BarcodeScannerComponent
       if (html5QrCodeRef.current) {
         try {
           await html5QrCodeRef.current.stop()
-        } catch (e) {}
+        } catch {}
         try {
           html5QrCodeRef.current.clear()
-        } catch (e) {}
+        } catch {}
         html5QrCodeRef.current = null
       }
-    } catch (e) {}
+    } catch {}
 
     // Remover container do DOM
     if (typeof document !== "undefined") {
@@ -82,7 +82,7 @@ function WebBarcodeScanner({ visible, onClose, onScan }: BarcodeScannerComponent
       let devices
       try {
         devices = await Html5Qrcode.getCameras()
-      } catch (e: any) {
+      } catch {
         setStatus("error")
         setErrorMessage("Não foi possível acessar as câmeras. Verifique as permissões.")
         return
