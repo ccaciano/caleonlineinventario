@@ -746,7 +746,7 @@ const styles = StyleSheet.create({
   itemDesc: { fontSize: 13, color: "#555" },
   itemDetails: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 4 },
   detailChip: { fontSize: 12, backgroundColor: "#E3F2FD", paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, color: "#555", maxHeight: 24 },
-  totalChip: { backgroundColor: "#FFF3E0" },
+  totalChip: { backgroundColor: "#FFF3E0", maxHeight: 24 },
   detailValue: { fontWeight: "bold", color: "#000" },
   itemActions: { flexDirection: "row", gap: 4 },
   actionBtn: { padding: 4 },
