@@ -115,6 +115,7 @@ export interface WmsCountedItem {
   lote: string
   validade: string
   qtd: number
+  regCount?: string // ISO 8601: data/hora da inclusao ou da ultima edicao
 }
 
 export interface WmsAddress {

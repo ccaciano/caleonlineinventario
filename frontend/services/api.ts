@@ -153,7 +153,7 @@ export const closeWmsInventory = async (inventoryId: string): Promise<Inventory 
 export const addWmsItem = async (inventoryId: string, addressId: string, item: Omit<WmsCountedItem, "_id">): Promise<WmsCountedItem> => {
   const inventory = await LocalStorage.getInventoryById(inventoryId)
   if (inventory?.status !== "open") throw new Error("Inventário fechado")
-  const added = await LocalStorage.addWmsItem(inventoryId, addressId, item)
+  const added = await LocalStorage.addWmsItem(inventoryId, addressId, { ...item, regCount: new Date().toISOString() })
   if (!added) throw new Error("Endereço não encontrado")
   return added
 }
@@ -161,7 +161,7 @@ export const addWmsItem = async (inventoryId: string, addressId: string, item: O
 export const updateWmsItem = async (inventoryId: string, addressId: string, itemId: string, updates: Partial<WmsCountedItem>): Promise<WmsCountedItem> => {
   const inventory = await LocalStorage.getInventoryById(inventoryId)
   if (inventory?.status !== "open") throw new Error("Inventário fechado")
-  const updated = await LocalStorage.updateWmsItem(inventoryId, addressId, itemId, updates)
+  const updated = await LocalStorage.updateWmsItem(inventoryId, addressId, itemId, { ...updates, regCount: new Date().toISOString() })
   if (!updated) throw new Error("Item não encontrado")
   return updated
 }

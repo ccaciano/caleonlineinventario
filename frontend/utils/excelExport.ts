@@ -15,16 +15,24 @@ const formatDate = (isoStr: string | undefined | null): string => {
   }
 };
 
+const formatDateTime = (isoStr: string | undefined | null): string => {
+  if (!isoStr) return '';
+  const d = new Date(isoStr);
+  if (isNaN(d.getTime())) return '';
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+};
+
 const buildWmsWorkbook = (data: ExportData): XLSX.WorkBook => {
   const inventory = data.inventory;
   const enderecos = inventory.enderecos || [];
 
   const rows: any[][] = [
-    ['Data de Criação:', formatDate(inventory.date) || inventory.date, '', '', '', '', '', '', '', ''],
-    ['Descrição:', inventory.description, '', '', '', '', '', '', '', ''],
-    ['Tipo de Contagem:', 'WMS', '', '', '', '', '', '', '', ''],
+    ['Data de Criação:', formatDate(inventory.date) || inventory.date, '', '', '', '', '', '', '', '', ''],
+    ['Descrição:', inventory.description, '', '', '', '', '', '', '', '', ''],
+    ['Tipo de Contagem:', 'WMS', '', '', '', '', '', '', '', '', ''],
     [],
-    ['Endereço', 'SKU', 'EAN', 'Descrição', 'UM', 'Fator de Conversão', 'Lote', 'Validade', 'Quantidade', 'Total Peças'],
+    ['Endereço', 'regCount', 'SKU', 'EAN', 'Descrição', 'UM', 'Fator de Conversão', 'Lote', 'Validade', 'Quantidade', 'Total Peças'],
   ];
 
   for (const addr of enderecos) {
@@ -32,6 +40,7 @@ const buildWmsWorkbook = (data: ExportData): XLSX.WorkBook => {
       const totalPecas = item.qtd != null && item.fator != null ? item.qtd * item.fator : null;
       rows.push([
         addr.endereco,
+        formatDateTime(item.regCount) || null,
         item.codigo ?? null,
         item.EAN ?? null,
         item.descricao ?? null,
@@ -47,8 +56,8 @@ const buildWmsWorkbook = (data: ExportData): XLSX.WorkBook => {
 
   const sheet = XLSX.utils.aoa_to_sheet(rows);
   sheet['!cols'] = [
-    { wch: 12 }, { wch: 15 }, { wch: 15 }, { wch: 30 }, { wch: 6 },
-    { wch: 18 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
+    { wch: 12 }, { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 30 },
+    { wch: 6 }, { wch: 18 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
   ];
 
   const workbook = XLSX.utils.book_new();
