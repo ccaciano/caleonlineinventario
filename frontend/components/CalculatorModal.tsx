@@ -140,7 +140,7 @@ const KEYS: { label: string; value: string; kind: "digit" | "op" | "action" }[][
 
 const displayExpr = (expr: string): string => expr.replace(/\*/g, "×").replace(/\//g, "÷").replace(/\./g, ",")
 
-export default function CalculatorModal({ visible, initialValue = "", accentColor = "#007AFF", integerOnly = false, onClose, onApply }: CalculatorModalProps) {
+export default function CalculatorModal({ visible, initialValue = "", accentColor = "#1D6DA0", integerOnly = false, onClose, onApply }: CalculatorModalProps) {
   const [expr, setExpr] = useState("")
 
   useEffect(() => {

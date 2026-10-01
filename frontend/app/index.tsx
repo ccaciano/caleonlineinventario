@@ -152,10 +152,10 @@ export default function InventoriesScreen() {
           <View style={styles.exportActions}>
             <TouchableOpacity style={[styles.exportButton, styles.downloadButton]} onPress={() => handleDownload(item)} disabled={isExporting || isDeleting}>
               {isExporting ? (
-                <ActivityIndicator size="small" color="#007AFF" />
+                <ActivityIndicator size="small" color="#1D6DA0" />
               ) : (
                 <>
-                  <Ionicons name="share-outline" size={20} color="#007AFF" />
+                  <Ionicons name="share-outline" size={20} color="#1D6DA0" />
                   <Text style={styles.downloadButtonText}>Compartilhar</Text>
                 </>
               )}
@@ -195,7 +195,7 @@ export default function InventoriesScreen() {
   if (loading && inventories.length === 0) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color="#1D6DA0" />
       </View>
     )
   }
@@ -261,8 +261,8 @@ const styles = StyleSheet.create({
   cardFooter: { alignItems: "flex-end" },
   exportActions: { flexDirection: "row", gap: 8, marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: "#E5E5EA" },
   exportButton: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, paddingVertical: 12, paddingHorizontal: 16, borderRadius: 12, minHeight: 48 },
-  downloadButton: { backgroundColor: "#E3F2FD", borderWidth: 1, borderColor: "#007AFF" },
-  downloadButtonText: { fontSize: 14, fontWeight: "600", color: "#007AFF" },
+  downloadButton: { backgroundColor: "#E3F2FD", borderWidth: 1, borderColor: "#1D6DA0" },
+  downloadButtonText: { fontSize: 14, fontWeight: "600", color: "#1D6DA0" },
   deleteButton: { backgroundColor: "#FFF0F0", borderWidth: 1, borderColor: "#FF3B30" },
   deleteButtonText: { fontSize: 14, fontWeight: "600", color: "#FF3B30" },
   openInventoryActions: { position: "absolute", bottom: 16, right: 16 },
@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    backgroundColor: "#007AFF",
+    backgroundColor: "#1D6DA0",
     justifyContent: "center",
     alignItems: "center",
     shadowColor: "#000",
