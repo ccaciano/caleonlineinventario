@@ -14,7 +14,7 @@
     },
     "android": {
       "package": "com.ccaciano.inventorymanager.wms",
-      "versionCode": 3,
+      "versionCode": 4,
       "allowBackup": false,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
@@ -40,7 +40,9 @@
         }
       ],
       "expo-file-system",
-      "expo-document-picker"
+      "expo-document-picker",
+      "expo-font",
+      "expo-web-browser"
     ],
     "extra": {
       "router": {},
