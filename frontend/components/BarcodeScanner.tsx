@@ -17,7 +17,7 @@ if (Platform.OS !== "web") {
 const useCameraPermissionsSafe: any = useCameraPermissions || (() => [null, () => {}])
 
 const SCAN_W = 300
-const SCAN_H = 160
+const SCAN_H = 280
 
 // Tipos com dígito verificador validável.
 // UPC-E fica de fora de propósito: o dígito dele é calculado sobre o UPC-A expandido,
@@ -50,11 +50,8 @@ function useScanFilter(onAccept: (code: string) => void) {
 
     if (GTIN_VALIDATED_TYPES.includes(type) && !isValidGtin(code)) return
 
-    const required = type.startsWith("qr") ? 1 : 3
-    lastRef.current =
-      lastRef.current.code === code
-        ? { code, count: lastRef.current.count + 1 }
-        : { code, count: 1 }
+    const required = type.startsWith("qr") ? 1 : GTIN_VALIDATED_TYPES.includes(type) ? 1 : 2
+    lastRef.current = lastRef.current.code === code ? { code, count: lastRef.current.count + 1 } : { code, count: 1 }
 
     if (lastRef.current.count >= required) {
       lastRef.current = { code: "", count: 0 }
@@ -314,18 +311,21 @@ function NativeBarcodeScanner({ visible, onClose, onScan }: BarcodeScannerCompon
   }, [visible, resetFilter])
 
   // O código precisa estar TODO dentro da moldura, com uma folga pequena.
-  const isInsideScanArea = (bounds?: {
-    origin: { x: number; y: number }
-    size: { width: number; height: number }
-  }) => {
+  const isInsideScanArea = (bounds?: { origin: { x: number; y: number }; size: { width: number; height: number } }) => {
     if (!bounds || !layout.width) return false
-    const tol = 8
-    const left = (layout.width - SCAN_W) / 2 - tol
-    const top = (layout.height - SCAN_H) / 2 - tol
-    const right = left + SCAN_W + tol * 2
-    const bottom = top + SCAN_H + tol * 2
-    const { x, y } = bounds.origin
-    return x >= left && y >= top && x + bounds.size.width <= right && y + bounds.size.height <= bottom
+
+    const left = (layout.width - SCAN_W) / 2
+    const top = (layout.height - SCAN_H) / 2
+
+    const cx = bounds.origin.x + bounds.size.width / 2
+    const cy = bounds.origin.y + bounds.size.height / 2
+
+    const centerInside = cx >= left && cx <= left + SCAN_W && cy >= top && cy <= top + SCAN_H
+
+    // Evita pegar um código grande vizinho que só "passa" pelo centro da moldura
+    const notTooBig = bounds.size.width <= SCAN_W * 1.15 && bounds.size.height <= SCAN_H * 1.15
+
+    return centerInside && notTooBig
   }
 
   const handleBarCodeScanned = (result: any) => {
