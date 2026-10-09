@@ -70,14 +70,21 @@ export default function InventoriesScreen() {
       setExportingId(inventory._id)
       const exportData = await getExportData(inventory._id)
       await shareExcelReport(exportData)
+      // No Android o arquivo é gravado direto na pasta escolhida, sem nenhuma
+      // tela depois: sem este aviso o usuário não saberia que deu certo.
+      if (Platform.OS === "android") {
+        Alert.alert("Sucesso", "Planilha salva na pasta escolhida.")
+      }
     } catch (error: any) {
-      console.error("Error sharing report:", error)
+      // Fechar o seletor de pasta é desistência, não erro.
+      if (error?.message === "EXPORT_CANCELLED") return
+      console.error("Error exporting report:", error)
       const busy = String(error?.message || "").includes("Another share request")
       Alert.alert(
         "Erro",
         busy
           ? "Já há um compartilhamento em andamento. Se a tela de compartilhar não abrir, feche e reabra o aplicativo."
-          : error.message || "Falha ao compartilhar relatório",
+          : error.message || "Falha ao exportar relatório",
       )
     } finally {
       sharingRef.current = false

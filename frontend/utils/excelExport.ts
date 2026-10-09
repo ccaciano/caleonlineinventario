@@ -1,8 +1,11 @@
 import * as FileSystem from 'expo-file-system/legacy';
+import { StorageAccessFramework as SAF } from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
 import XLSX from 'xlsx';
 import { ExportData } from '../services/api';
+
+const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 
 const formatDate = (isoStr: string | undefined | null): string => {
   if (!isoStr) return '';
@@ -62,19 +65,33 @@ export const shareExcelReport = async (data: ExportData): Promise<void> => {
   const dateStr = new Date().toISOString().split('T')[0].replace(/-/g, '');
   const fileName = `inventario_${sanitizedName}_${dateStr}.xlsx`;
 
+  // Na web o navegador ja baixa o arquivo direto.
   if (Platform.OS === 'web') {
     XLSX.writeFile(workbook, fileName);
     return;
   }
 
   const excelBase64 = XLSX.write(workbook, { type: 'base64', bookType: 'xlsx' });
-  const fileUri = `${FileSystem.cacheDirectory}${fileName}`;
 
   try {
+    // Android: grava na pasta que o usuario escolher, sem passar pela tela de
+    // compartilhamento. O seletor do sistema lembra o ultimo local usado.
+    if (Platform.OS === 'android') {
+      const perm = await SAF.requestDirectoryPermissionsAsync();
+      if (!perm.granted) throw new Error('EXPORT_CANCELLED');
+
+      const targetUri = await SAF.createFileAsync(perm.directoryUri, fileName, XLSX_MIME);
+      await FileSystem.writeAsStringAsync(targetUri, excelBase64, { encoding: 'base64' });
+      return;
+    }
+
+    // iOS nao tem pasta de downloads acessivel: salvar passa pela folha de
+    // compartilhamento, que e o caminho nativo para "Salvar em Arquivos".
+    const fileUri = `${FileSystem.cacheDirectory}${fileName}`;
     await FileSystem.writeAsStringAsync(fileUri, excelBase64, { encoding: 'base64' });
     await Sharing.shareAsync(fileUri, {
-      mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-      dialogTitle: 'Compartilhar Relatório de Inventário',
+      mimeType: XLSX_MIME,
+      dialogTitle: 'Salvar Relatório de Inventário',
     });
   } catch (error) {
     console.error('Erro ao exportar Excel:', error);
