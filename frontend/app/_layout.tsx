@@ -1,5 +1,5 @@
 import { useEffect, useRef, useCallback } from "react"
-import { AppState, AppStateStatus, Platform, StyleSheet, View, Text } from "react-native"
+import { AppState, AppStateStatus, Platform, StyleSheet, View, Text, ImageBackground } from "react-native"
 import { GestureHandlerRootView } from "react-native-gesture-handler"
 import { Drawer } from "expo-router/drawer"
 import { Ionicons } from "@expo/vector-icons"
@@ -17,13 +17,12 @@ function CustomDrawerContent(props: DrawerContentComponentProps) {
 
   return (
     <View style={styles.drawerContainer}>
-      {/* Header do Drawer */}
-      <View style={[styles.drawerHeader, { paddingTop: insets.top + 16 }]}>
-        <View style={styles.logoContainer}>
-          <Ionicons name="cube" size={48} color="#FFFFFF" />
-        </View>
-        <Text style={styles.appTitle}>{t("appTitle") || "CaléOnline Inventário"}</Text>
-        <Text style={styles.appSubtitle}>{t("appSubtitle") || "Gestão de Estoque"}</Text>
+      {/* Faixa de imagem no topo */}
+      <ImageBackground source={require("../assets/images/drawer-bg.jpg")} style={[styles.imageBanner, { paddingTop: insets.top }]} resizeMode="cover" />
+
+      {/* Conteúdo com fundo azul, como antes */}
+      <View style={styles.drawerHeader}>
+        <Text style={styles.appSubtitle}>{t("appSubtitle") || "Gestão de Estoque WMS & LOJA"}</Text>
       </View>
 
       {/* Lista de itens do menu */}
@@ -57,11 +56,9 @@ export default function DrawerLayout() {
 
   // Função para iniciar o timer de auto-ocultação
   const startHideTimer = useCallback(() => {
-    // Limpa timer existente
     if (hideTimerRef.current) {
       clearTimeout(hideTimerRef.current)
     }
-    // Inicia novo timer de 3 segundos
     hideTimerRef.current = setTimeout(() => {
       hideNavigationBar()
     }, 3000)
@@ -85,12 +82,8 @@ export default function DrawerLayout() {
     if (Platform.OS === "android") {
       const setupNavigationBar = async () => {
         try {
-          // Definir comportamento da Navigation Bar para "overlay-swipe"
-          // Isso faz a barra ocultar e reaparecer com gestos
           await NavigationBar.setVisibilityAsync("hidden")
           await NavigationBar.setBehaviorAsync("overlay-swipe")
-
-          // Definir cor de fundo transparente quando visível
           await NavigationBar.setBackgroundColorAsync("#00000000")
           await NavigationBar.setButtonStyleAsync("light")
         } catch (error) {
@@ -99,13 +92,10 @@ export default function DrawerLayout() {
       }
       setupNavigationBar()
 
-      // Listener para mudanças na visibilidade da Navigation Bar
       const subscription = NavigationBar.addVisibilityListener(({ visibility }) => {
         if (visibility === "visible") {
-          // Navigation Bar ficou visível, iniciar timer para ocultar
           startHideTimer()
         } else {
-          // Navigation Bar foi ocultada, cancelar timer se existir
           if (hideTimerRef.current) {
             clearTimeout(hideTimerRef.current)
             hideTimerRef.current = null
@@ -113,10 +103,8 @@ export default function DrawerLayout() {
         }
       })
 
-      // Listener para quando o app volta ao foco (foreground)
       const appStateSubscription = AppState.addEventListener("change", (nextAppState: AppStateStatus) => {
         if (appState.current.match(/inactive|background/) && nextAppState === "active") {
-          // App voltou ao foreground, ocultar navigation bar
           hideNavigationBar()
         }
         appState.current = nextAppState
@@ -137,7 +125,7 @@ export default function DrawerLayout() {
       <Drawer
         drawerContent={(props) => <CustomDrawerContent {...props} />}
         screenOptions={{
-          drawerActiveTintColor: "#007AFF",
+          drawerActiveTintColor: "#1D6DA0",
           drawerInactiveTintColor: "#3C3C43",
           drawerActiveBackgroundColor: "#E3F2FD",
           drawerLabelStyle: {
@@ -152,7 +140,7 @@ export default function DrawerLayout() {
             paddingHorizontal: 8,
           },
           headerStyle: {
-            backgroundColor: "#007AFF",
+            backgroundColor: "#1D6DA0",
             elevation: 4,
             shadowColor: "#000",
             shadowOffset: { width: 0, height: 2 },
@@ -186,28 +174,30 @@ export default function DrawerLayout() {
           }}
         />
         <Drawer.Screen
-          name="store-config"
-          options={{
-            drawerLabel: t("storeConfig"),
-            title: t("storeConfig"),
-            drawerIcon: ({ color, size }) => <Ionicons name="storefront-outline" size={size} color={color} />,
-          }}
-        />
-        <Drawer.Screen
           name="counting/[id]"
           options={{
             drawerLabel: t("counting"),
             title: t("counting"),
-            drawerItemStyle: { display: "none" }, // Ocultar do menu drawer
+            drawerItemStyle: { display: "none" },
             drawerIcon: ({ color, size }) => <Ionicons name="barcode-outline" size={size} color={color} />,
           }}
         />
         <Drawer.Screen
-          name="settings"
+          name="wms/[id]"
           options={{
-            drawerLabel: t("dadosConfig"),
-            title: t("dadosConfig"),
-            drawerIcon: ({ color, size }) => <Ionicons name="settings-outline" size={size} color={color} />,
+            drawerLabel: "WMS",
+            title: "Inventário WMS",
+            drawerItemStyle: { display: "none" },
+            drawerIcon: ({ color, size }) => <Ionicons name="cube-outline" size={size} color={color} />,
+          }}
+        />
+        <Drawer.Screen
+          name="wms-counting/[id]"
+          options={{
+            drawerLabel: "Contagem WMS",
+            title: "Contagem por Endereço",
+            drawerItemStyle: { display: "none" },
+            drawerIcon: ({ color, size }) => <Ionicons name="location-outline" size={size} color={color} />,
           }}
         />
       </Drawer>
@@ -220,12 +210,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#FFFFFF",
   },
+  imageBanner: {
+    width: "100%",
+    height: 140,
+  },
   drawerHeader: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "#1D6DA0",
     paddingHorizontal: 20,
-    paddingBottom: 24,
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
+    paddingTop: 10,
+    paddingBottom: 10,
   },
   logoContainer: {
     width: 72,
@@ -243,6 +236,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   appSubtitle: {
+    fontWeight: "bold",
     fontSize: 14,
     color: "rgba(255, 255, 255, 0.8)",
   },

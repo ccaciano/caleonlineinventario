@@ -5,17 +5,20 @@ A professional mobile inventory management application with barcode/QR scanning,
 ## ✨ Features
 
 ### 🏪 Store Configuration
+
 - Configure store details (ID, Name, Email, Manager info)
 - Data saved both locally (AsyncStorage) and in database
 - Multi-language support (Portuguese 🇧🇷 / English 🇺🇸)
 
 ### 📊 Inventory Management
+
 - Create multiple inventory counting sessions
 - Track inventory date and description
 - View open and closed inventory status
 - Item count tracking per inventory
 
 ### 📱 Item Counting
+
 - **Barcode & QR Code Scanner** using device camera
 - Manual input option
 - Fields: Product Code, Quantity, Lot, Expiry Date
@@ -23,6 +26,7 @@ A professional mobile inventory management application with barcode/QR scanning,
 - Edit/Delete items before export
 
 ### 📤 Export & Email
+
 - Generate Excel (.xlsx) reports
 - Report includes:
   - Store configuration
@@ -34,6 +38,7 @@ A professional mobile inventory management application with barcode/QR scanning,
 ## 🛠 Tech Stack
 
 ### Frontend
+
 - **Expo** (React Native)
 - **Expo Router** (file-based navigation)
 - **TypeScript**
@@ -44,6 +49,7 @@ A professional mobile inventory management application with barcode/QR scanning,
 - **react-native-modal** (bottom sheets)
 
 ### Backend
+
 - **FastAPI** (Python)
 - **MongoDB** (database)
 - **Motor** (async MongoDB driver)
@@ -101,49 +107,58 @@ A professional mobile inventory management application with barcode/QR scanning,
 ## 🔐 Permissions
 
 ### iOS
+
 - **Camera**: "Scan barcodes to add products"
 - Configured in `app.json` → `ios.infoPlist`
 
 ### Android
+
 - **Camera**: CAMERA permission
 - Configured in `app.json` → `android.permissions`
 
 ## 📡 API Endpoints
 
 ### Store Configuration
+
 - `POST /api/store/config` - Save store config
 - `GET /api/store/config` - Get store config
 
 ### Inventories
+
 - `GET /api/inventories` - List all inventories
 - `POST /api/inventories` - Create inventory
 - `GET /api/inventories/{id}` - Get inventory
 - `PUT /api/inventories/{id}/close` - Close inventory
 
 ### Counted Items
+
 - `GET /api/inventories/{id}/items` - List items
 - `POST /api/inventories/{id}/items` - Add item
 - `PUT /api/inventories/{id}/items/{item_id}` - Update item
 - `DELETE /api/inventories/{id}/items/{item_id}` - Delete item
 
 ### Export
+
 - `GET /api/inventories/{id}/export` - Get export data
 
 ## 🚀 Running the App
 
 ### Backend
+
 ```bash
 cd /app/backend
 python server.py
 ```
 
 ### Frontend
+
 ```bash
 cd /app/frontend
 yarn start
 ```
 
 ### Access
+
 - **Web Preview**: https://stock-counter-pwa.preview.emergentagent.com
 - **Expo Go**: Scan QR code in Expo Go app
 
@@ -183,6 +198,7 @@ yarn start
 The app supports Portuguese and English. Toggle language in Store Config screen.
 
 ### Supported Translations
+
 - All UI elements
 - Error messages
 - Form labels
@@ -192,30 +208,32 @@ The app supports Portuguese and English. Toggle language in Store Config screen.
 ## 📦 Data Storage
 
 ### Local (AsyncStorage)
+
 - Store configuration (backup)
 - Language preference
 
 ### Database (MongoDB)
+
 - Store configuration
 - Inventory sessions
 - Counted items
 
 ## 🎯 Key Features Implemented
 
-✅ Multi-language support (PT/EN)  
-✅ Camera-based barcode/QR scanning  
-✅ Manual item entry  
-✅ Edit/Delete functionality  
-✅ Excel report generation  
-✅ Email integration (mailto)  
-✅ Local + Database storage  
-✅ Date validation  
-✅ Quantity validation  
-✅ Closed inventory protection  
-✅ Duplicate handling (new entry)  
-✅ Pull-to-refresh  
-✅ Status badges  
-✅ Item count display  
+✅ Multi-language support (PT/EN)
+✅ Camera-based barcode/QR scanning
+✅ Manual item entry
+✅ Edit/Delete functionality
+✅ Excel report generation
+✅ Email integration (mailto)
+✅ Local + Database storage
+✅ Date validation
+✅ Quantity validation
+✅ Closed inventory protection
+✅ Duplicate handling (new entry)
+✅ Pull-to-refresh
+✅ Status badges
+✅ Item count display
 
 ## 🔒 Validation Rules
 
@@ -235,8 +253,8 @@ The app supports Portuguese and English. Toggle language in Store Config screen.
 
 ## 🎨 Color Scheme
 
-- **Primary Blue**: #007AFF (iOS standard)
-- **Success Green**: #34C759
+- **Primary Blue**: #1D6DA0 (iOS standard)
+- **Success Green**: #2BA74A
 - **Danger Red**: #FF3B30
 - **Background**: #F2F2F7
 - **Card White**: #FFFFFF

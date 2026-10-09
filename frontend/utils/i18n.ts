@@ -6,29 +6,14 @@ const resources = {
     translation: {
       // App Info
       appTitle: "CaléOnline Inventário",
-      appSubtitle: "Contagem de Estoque",
+      appSubtitle: "Contagem de Estoque - WMS & LOJA",
 
       // Menu / Navigation
-      storeConfig: "  Dados da Loja",
       inventories: "  Inventários",
       products: "  Base de Produtos",
       counting: "Contagem",
-      dadosConfig: "  Configurações",
 
-      // Store Config Screen
-      storeConfigTitle: "Configuração da Loja",
-      storeId: "Código da Loja *",
-      storeName: "Nome da Loja *",
-      email: "E-mail (opcional)",
-      managerPhone: "Celular do Gerente (opcional)",
-      managerName: "Nome do Gerente (opcional)",
-      storeIdInput: "Código da Loja",
-      storeNameInput: "Nome da Loja",
-      emailInput: "E-mail",
-      managerPhoneInput: "Celular do Gerente",
-      managerNameInput: "Nome do Gerente",
-      saveConfig: "Salvar Configuração",
-      configSaved: "Configuração salva com sucesso!",
+      // Validação (compartilhado)
       fillAllFields: "Por favor, preencha todos os campos",
 
       // Inventories Screen
@@ -48,6 +33,7 @@ const resources = {
       description: "Descrição",
       date: "Data",
       create: "Criar",
+      continue: "Continuar",
       cancel: "Cancelar",
 
       // Products Screen

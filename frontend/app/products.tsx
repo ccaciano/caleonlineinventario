@@ -99,7 +99,7 @@ export default function ProductsScreen() {
       setUploading(true)
 
       // Upload usando armazenamento local
-      const uploadResult = await uploadProductsFromContent(csvContent, true)
+      const uploadResult = await uploadProductsFromContent(csvContent)
 
       Alert.alert(t("uploadSuccess"), `${uploadResult.count} ${t("productsAdded")}`)
 
@@ -153,7 +153,7 @@ export default function ProductsScreen() {
       }
 
       await processCSVUpload(csvContent)
-    } catch (error) {
+    } catch {
       Alert.alert(t("uploadError"), "Falha ao ler o arquivo")
     }
 
@@ -186,7 +186,7 @@ export default function ProductsScreen() {
       let csvContent = buffer.toString("utf8")
 
       // Se houver sinal de erro de encoding (caractere diamante com interrogação)
-      if (csvContent.includes("\ufffd") || csvContent.includes("")) {
+      if (csvContent.includes("\ufffd")) {
         console.log("🔄 Detectado erro de encoding. Convertendo para Latin1...")
         csvContent = buffer.toString("latin1")
       }
@@ -228,7 +228,7 @@ export default function ProductsScreen() {
       Alert.alert(t("uploadCSV"), t("csvWillReplace"), [
         { text: t("cancel"), style: "cancel" },
         {
-          text: t("continue") || "Continuar",
+          text: t("continue"),
           style: "destructive",
           onPress: async () => {
             await handleNativeUpload()
@@ -286,7 +286,7 @@ export default function ProductsScreen() {
         </View>
         <View style={styles.productActions}>
           <TouchableOpacity onPress={() => handleEditProduct(item)} style={styles.actionButton}>
-            <Ionicons name="create-outline" size={22} color="#007AFF" />
+            <Ionicons name="create-outline" size={22} color="#1D6DA0" />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => handleDeleteProduct(item)} style={styles.actionButton}>
             <Ionicons name="trash-outline" size={22} color="#FF3B30" />
@@ -300,7 +300,7 @@ export default function ProductsScreen() {
     if (!loadingMore) return null
     return (
       <View style={styles.footer}>
-        <ActivityIndicator size="small" color="#007AFF" />
+        <ActivityIndicator size="small" color="#1D6DA0" />
         <Text style={styles.footerText}>{t("loadingMore")}</Text>
       </View>
     )
@@ -318,7 +318,7 @@ export default function ProductsScreen() {
   if (loading && products.length === 0) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#007AFF" />
+        <ActivityIndicator size="large" color="#1D6DA0" />
       </View>
     )
   }
@@ -351,6 +351,15 @@ export default function ProductsScreen() {
           <TouchableOpacity style={styles.addButton} onPress={handleAddProduct}>
             <Ionicons name="add" size={24} color="#FFFFFF" />
           </TouchableOpacity>
+        </View>
+
+        <View style={styles.csvHintBox}>
+          <Ionicons name="information-circle-outline" size={15} color="#1D6DA0" />
+          <Text style={styles.csvHintText}>
+            <Text style={styles.csvHintBold}>Formato do CSV: </Text>Separado por vírgula (,){"\n"}
+            Ex: CÓDIGO,EAN,DESCRIÇÃO{"\n"}
+            BROBVS100542,3253581971000,CR CAPIM LIMÃO
+          </Text>
         </View>
       </View>
 
@@ -419,7 +428,7 @@ const styles = StyleSheet.create({
   },
   uploadButton: {
     flex: 1,
-    backgroundColor: "#34C759",
+    backgroundColor: "#2BA74A",
     borderRadius: 12,
     padding: 12,
     flexDirection: "row",
@@ -434,7 +443,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   addButton: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "#1D6DA0",
     borderRadius: 12,
     width: 48,
     height: 48,
@@ -478,7 +487,7 @@ const styles = StyleSheet.create({
   },
   productEan: {
     fontSize: 14,
-    color: "#007AFF",
+    color: "#1D6DA0",
     marginBottom: 4,
   },
   productDescription: {
@@ -516,6 +525,23 @@ const styles = StyleSheet.create({
     marginTop: 16,
     textAlign: "center",
     fontStyle: "italic",
+  },
+  csvHintBox: {
+    flexDirection: "row",
+    gap: 8,
+    backgroundColor: "#E3F2FD",
+    borderRadius: 10,
+    padding: 10,
+    alignItems: "flex-start",
+  },
+  csvHintText: {
+    flex: 1,
+    fontSize: 12,
+    color: "#333",
+    lineHeight: 18,
+  },
+  csvHintBold: {
+    fontWeight: "bold",
   },
   footer: {
     paddingVertical: 16,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react"
+import React, { useState, useEffect, useRef, useCallback } from "react"
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from "react-native"
 import { useTranslation } from "react-i18next"
 import { Ionicons } from "@expo/vector-icons"
@@ -11,6 +11,59 @@ if (Platform.OS !== "web") {
   const cameraModule = require("expo-camera")
   CameraView = cameraModule.CameraView
   useCameraPermissions = cameraModule.useCameraPermissions
+}
+
+// Identidade estável: o hook precisa ser chamado incondicionalmente em todo render
+const useCameraPermissionsSafe: any = useCameraPermissions || (() => [null, () => {}])
+
+const SCAN_W = 300
+const SCAN_H = 280
+
+// Tipos com dígito verificador validável.
+// UPC-E fica de fora de propósito: o dígito dele é calculado sobre o UPC-A expandido,
+// então a conta direta nos 8 dígitos daria falso negativo.
+const GTIN_VALIDATED_TYPES = ["ean13", "ean8", "upca"]
+
+// "EAN_13", "ean13", "UPC_A", "upc_a", "QR_CODE", "qr" -> "ean13", "upca", "qrcode", "qr"
+const normType = (t: string) => (t || "").toLowerCase().replace(/[_\s-]/g, "")
+
+function isValidGtin(code: string): boolean {
+  if (!/^\d+$/.test(code) || ![8, 12, 13].includes(code.length)) return false
+  const digits = code.split("").map(Number)
+  const check = digits.pop()!
+  const sum = digits.reverse().reduce((acc, d, i) => acc + d * (i % 2 === 0 ? 3 : 1), 0)
+  return (10 - (sum % 10)) % 10 === check
+}
+
+// Exige N leituras consecutivas iguais antes de aceitar.
+// QR é robusto contra leitura parcial, então exige menos.
+function useScanFilter(onAccept: (code: string) => void) {
+  const lastRef = useRef({ code: "", count: 0 })
+  const onAcceptRef = useRef(onAccept)
+  onAcceptRef.current = onAccept // evita callback desatualizado dentro do scanner
+
+  // Só mexem em refs, então a identidade pode ser estável e entrar em deps de efeito.
+  const accept = useCallback((raw: string, rawType: string) => {
+    const code = (raw || "").trim()
+    const type = normType(rawType)
+    if (!code) return
+
+    if (GTIN_VALIDATED_TYPES.includes(type) && !isValidGtin(code)) return
+
+    const required = type.startsWith("qr") ? 1 : GTIN_VALIDATED_TYPES.includes(type) ? 1 : 2
+    lastRef.current = lastRef.current.code === code ? { code, count: lastRef.current.count + 1 } : { code, count: 1 }
+
+    if (lastRef.current.count >= required) {
+      lastRef.current = { code: "", count: 0 }
+      onAcceptRef.current(code)
+    }
+  }, [])
+
+  const reset = useCallback(() => {
+    lastRef.current = { code: "", count: 0 }
+  }, [])
+
+  return { accept, reset }
 }
 
 interface BarcodeScannerComponentProps {
@@ -29,6 +82,22 @@ function WebBarcodeScanner({ visible, onClose, onScan }: BarcodeScannerComponent
   const html5QrCodeRef = useRef<any>(null)
   const containerIdRef = useRef(`qr-scanner-${Date.now()}`)
 
+  const { accept: acceptScan, reset: resetFilter } = useScanFilter(async (code) => {
+    await cleanup()
+    onScan(code)
+  })
+
+  // A lib só decodifica a região do qrbox, então a moldura também delimita a leitura.
+  const buildStartConfig = () => ({
+    fps: 10,
+    qrbox: { width: SCAN_W, height: SCAN_H },
+    videoConstraints: {
+      width: { ideal: 1280 },
+      height: { ideal: 720 },
+      focusMode: "continuous",
+    } as any,
+  })
+
   useEffect(() => {
     if (visible && Platform.OS === "web") {
       initScanner()
@@ -44,13 +113,13 @@ function WebBarcodeScanner({ visible, onClose, onScan }: BarcodeScannerComponent
       if (html5QrCodeRef.current) {
         try {
           await html5QrCodeRef.current.stop()
-        } catch (e) {}
+        } catch {}
         try {
           html5QrCodeRef.current.clear()
-        } catch (e) {}
+        } catch {}
         html5QrCodeRef.current = null
       }
-    } catch (e) {}
+    } catch {}
 
     // Remover container do DOM
     if (typeof document !== "undefined") {
@@ -70,16 +139,17 @@ function WebBarcodeScanner({ visible, onClose, onScan }: BarcodeScannerComponent
 
     setStatus("loading")
     setErrorMessage("")
+    resetFilter()
 
     try {
       // Importar html5-qrcode
-      const { Html5Qrcode } = await import("html5-qrcode")
+      const { Html5Qrcode, Html5QrcodeSupportedFormats: F } = await import("html5-qrcode")
 
       // Obter lista de câmeras
       let devices
       try {
         devices = await Html5Qrcode.getCameras()
-      } catch (e: any) {
+      } catch {
         setStatus("error")
         setErrorMessage("Não foi possível acessar as câmeras. Verifique as permissões.")
         return
@@ -117,38 +187,17 @@ function WebBarcodeScanner({ visible, onClose, onScan }: BarcodeScannerComponent
       `
       document.body.appendChild(container)
 
-      // Iniciar scanner
-      html5QrCodeRef.current = new Html5Qrcode(containerIdRef.current)
+      // Iniciar scanner. formatsToSupport precisa ir no construtor: em start() é ignorado.
+      html5QrCodeRef.current = new Html5Qrcode(containerIdRef.current, {
+        verbose: false,
+        formatsToSupport: [F.QR_CODE, F.CODE_128, F.EAN_13, F.EAN_8, F.UPC_A, F.UPC_E],
+        useBarCodeDetectorIfSupported: true,
+      })
 
       await html5QrCodeRef.current.start(
         devices[preferredIndex].id,
-        {
-          fps: 15,
-          qrbox: { width: 350, height: 150 }, // Formato retangular para códigos de barras
-          aspectRatio: 1.333, // 4:3 para melhor captura de códigos de barras
-          formatsToSupport: [
-            0, // QR_CODE
-            1, // AZTEC
-            2, // CODABAR
-            3, // CODE_39
-            4, // CODE_93
-            5, // CODE_128
-            6, // DATA_MATRIX
-            7, // MAXICODE
-            8, // ITF
-            9, // EAN_13
-            10, // EAN_8
-            11, // PDF_417
-            12, // RSS_14
-            13, // RSS_EXPANDED
-            14, // UPC_A
-            15, // UPC_E
-            16, // UPC_EAN_EXTENSION
-          ],
-        },
-        (decodedText: string) => {
-          handleScan(decodedText)
-        },
+        buildStartConfig(),
+        (text: string, result: any) => acceptScan(text, result?.result?.format?.formatName ?? ""),
         () => {}, // Ignorar erros de scan
       )
 
@@ -158,11 +207,6 @@ function WebBarcodeScanner({ visible, onClose, onScan }: BarcodeScannerComponent
       setStatus("error")
       setErrorMessage(e.message || "Erro ao inicializar scanner")
     }
-  }
-
-  const handleScan = async (code: string) => {
-    await cleanup()
-    onScan(code)
   }
 
   const handleClose = async () => {
@@ -175,21 +219,15 @@ function WebBarcodeScanner({ visible, onClose, onScan }: BarcodeScannerComponent
 
     const nextIndex = (currentCameraIndex + 1) % cameras.length
     setCurrentCameraIndex(nextIndex)
+    resetFilter()
 
     try {
       if (html5QrCodeRef.current) {
         await html5QrCodeRef.current.stop()
         await html5QrCodeRef.current.start(
           cameras[nextIndex].id,
-          {
-            fps: 15,
-            qrbox: { width: 350, height: 150 },
-            aspectRatio: 1.333,
-            formatsToSupport: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16],
-          },
-          (decodedText: string) => {
-            handleScan(decodedText)
-          },
+          buildStartConfig(),
+          (text: string, result: any) => acceptScan(text, result?.result?.format?.formatName ?? ""),
           () => {},
         )
       }
@@ -227,7 +265,7 @@ function WebBarcodeScanner({ visible, onClose, onScan }: BarcodeScannerComponent
           )}
           {status === "error" && (
             <View style={styles.statusContainer}>
-              <Ionicons name="camera-off" size={64} color="#FF3B30" />
+              <Ionicons name="videocam-off" size={64} color="#FF3B30" />
               <Text style={styles.errorText}>{errorMessage}</Text>
               <TouchableOpacity style={styles.retryButton} onPress={initScanner}>
                 <Text style={styles.retryButtonText}>Tentar Novamente</Text>
@@ -236,7 +274,7 @@ function WebBarcodeScanner({ visible, onClose, onScan }: BarcodeScannerComponent
           )}
           {status === "ready" && (
             <View style={styles.scanOverlay}>
-              <View style={styles.scanArea} />
+              <View style={[styles.scanArea, { width: SCAN_W, height: SCAN_H }]} />
             </View>
           )}
         </View>
@@ -255,21 +293,46 @@ function WebBarcodeScanner({ visible, onClose, onScan }: BarcodeScannerComponent
 // Componente para dispositivos nativos (iOS/Android) usando expo-camera
 function NativeBarcodeScanner({ visible, onClose, onScan }: BarcodeScannerComponentProps) {
   const { t } = useTranslation()
-  const [permission, requestPermission] = useCameraPermissions ? useCameraPermissions() : [null, () => {}]
+  const [permission, requestPermission] = useCameraPermissionsSafe()
   const [scanned, setScanned] = useState(false)
   const [facing, setFacing] = useState<"front" | "back">("back")
+  const [layout, setLayout] = useState({ width: 0, height: 0 })
+
+  const { accept: acceptScan, reset: resetFilter } = useScanFilter((code) => {
+    setScanned(true)
+    onScan(code)
+  })
 
   useEffect(() => {
     if (visible) {
       setScanned(false)
+      resetFilter()
     }
-  }, [visible])
+  }, [visible, resetFilter])
 
-  const handleBarCodeScanned = (result: { data: string; type: string }) => {
-    if (!scanned && result.data) {
-      setScanned(true)
-      onScan(result.data)
-    }
+  // O código precisa estar TODO dentro da moldura, com uma folga pequena.
+  const isInsideScanArea = (bounds?: { origin: { x: number; y: number }; size: { width: number; height: number } }) => {
+    if (!bounds || !layout.width) return false
+
+    const left = (layout.width - SCAN_W) / 2
+    const top = (layout.height - SCAN_H) / 2
+
+    const cx = bounds.origin.x + bounds.size.width / 2
+    const cy = bounds.origin.y + bounds.size.height / 2
+
+    const centerInside = cx >= left && cx <= left + SCAN_W && cy >= top && cy <= top + SCAN_H
+
+    // Evita pegar um código grande vizinho que só "passa" pelo centro da moldura
+    const notTooBig = bounds.size.width <= SCAN_W * 1.15 && bounds.size.height <= SCAN_H * 1.15
+
+    return centerInside && notTooBig
+  }
+
+  const handleBarCodeScanned = (result: any) => {
+    if (scanned || !result?.data) return
+    if (__DEV__) console.log("[scan]", result.type, result.data, result.bounds, layout)
+    if (!isInsideScanArea(result.bounds)) return
+    acceptScan(result.data, result.type)
   }
 
   const handleClose = () => {
@@ -298,7 +361,7 @@ function NativeBarcodeScanner({ visible, onClose, onScan }: BarcodeScannerCompon
     return (
       <Modal isVisible={visible} onBackdropPress={handleClose} style={styles.modal}>
         <View style={styles.permissionContainer}>
-          <Ionicons name="camera-off" size={64} color="#8E8E93" />
+          <Ionicons name="videocam-off" size={64} color="#8E8E93" />
           <Text style={styles.permissionTitle}>{t("cameraPermission")}</Text>
           <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
             <Text style={styles.permissionButtonText}>{t("grantPermission")}</Text>
@@ -326,17 +389,17 @@ function NativeBarcodeScanner({ visible, onClose, onScan }: BarcodeScannerCompon
           </View>
         </View>
 
-        <View style={styles.cameraContainer}>
+        <View style={styles.cameraContainer} onLayout={(e) => setLayout(e.nativeEvent.layout)}>
           <CameraView
             style={StyleSheet.absoluteFillObject}
             facing={facing}
             barcodeScannerSettings={{
-              barcodeTypes: ["ean13", "ean8", "upc_e", "upc_a", "qr", "code128", "code39", "code93", "codabar", "itf14", "pdf417", "aztec", "datamatrix"],
+              barcodeTypes: ["qr", "ean13", "ean8", "code128", "upc_a", "upc_e"],
             }}
             onBarcodeScanned={scanned ? undefined : handleBarCodeScanned}
           />
           <View style={styles.scanOverlay}>
-            <View style={styles.scanArea} />
+            <View style={[styles.scanArea, { width: SCAN_W, height: SCAN_H }]} />
           </View>
         </View>
 
@@ -344,7 +407,13 @@ function NativeBarcodeScanner({ visible, onClose, onScan }: BarcodeScannerCompon
           <Text style={styles.instructionsText}>{t("scannerInstructions")}</Text>
           <Text style={styles.cameraTypeText}>Câmera: {facing === "front" ? "Frontal" : "Traseira"}</Text>
           {scanned && (
-            <TouchableOpacity style={styles.retryButton} onPress={() => setScanned(false)}>
+            <TouchableOpacity
+              style={styles.retryButton}
+              onPress={() => {
+                resetFilter()
+                setScanned(false)
+              }}
+            >
               <Ionicons name="refresh" size={20} color="#FFFFFF" />
               <Text style={styles.retryButtonText}>Escanear Novamente</Text>
             </TouchableOpacity>
@@ -374,7 +443,7 @@ const styles = StyleSheet.create({
     maxWidth: 320,
   },
   permissionTitle: { fontSize: 18, fontWeight: "bold", color: "#000", textAlign: "center" },
-  permissionButton: { backgroundColor: "#007AFF", borderRadius: 12, padding: 16, width: "100%", alignItems: "center" },
+  permissionButton: { backgroundColor: "#1D6DA0", borderRadius: 12, padding: 16, width: "100%", alignItems: "center" },
   permissionButtonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "bold" },
   cancelButton: { padding: 12 },
   cancelButtonText: { color: "#8E8E93", fontSize: 16 },
@@ -409,7 +478,7 @@ const styles = StyleSheet.create({
   errorText: { color: "#FF3B30", fontSize: 16, textAlign: "center" },
   retryButton: {
     flexDirection: "row",
-    backgroundColor: "#007AFF",
+    backgroundColor: "#1D6DA0",
     paddingHorizontal: 24,
     paddingVertical: 12,
     borderRadius: 12,
@@ -424,10 +493,8 @@ const styles = StyleSheet.create({
     zIndex: 50,
   },
   scanArea: {
-    width: 280,
-    height: 280,
     borderWidth: 3,
-    borderColor: "#34C759",
+    borderColor: "#2BA74A",
     borderRadius: 16,
     backgroundColor: "transparent",
   },
@@ -439,6 +506,6 @@ const styles = StyleSheet.create({
     zIndex: 100,
   },
   instructionsText: { fontSize: 16, color: "#FFFFFF", textAlign: "center" },
-  cameraTypeText: { fontSize: 14, color: "#34C759", fontWeight: "600", textAlign: "center" },
+  cameraTypeText: { fontSize: 14, color: "#2BA74A", fontWeight: "600", textAlign: "center" },
   tipText: { fontSize: 12, color: "#FFD60A", textAlign: "center" },
 })
