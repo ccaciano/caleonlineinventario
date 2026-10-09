@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react"
+import React, { useState, useCallback, useRef } from "react"
 import { View, Text, TouchableOpacity, StyleSheet, FlatList, Alert, ActivityIndicator, RefreshControl, Platform } from "react-native"
 import { useTranslation } from "react-i18next"
 import { Ionicons } from "@expo/vector-icons"
@@ -23,6 +23,7 @@ export default function InventoriesScreen() {
   const [modalVisible, setModalVisible] = useState(false)
   const [exportingId, setExportingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const sharingRef = useRef(false)
 
   useFocusEffect(
     useCallback(() => {
@@ -60,14 +61,26 @@ export default function InventoriesScreen() {
 
   const handleDownload = async (inventory: Inventory) => {
     if (!inventory._id) return
+    // Trava síncrona: setExportingId só desabilita o botão no próximo render, e a
+    // geração do xlsx bloqueia a thread JS. Sem isso, um segundo toque entra aqui
+    // antes do primeiro terminar e o expo-sharing recusa com "Another share request".
+    if (sharingRef.current) return
+    sharingRef.current = true
     try {
       setExportingId(inventory._id)
       const exportData = await getExportData(inventory._id)
       await shareExcelReport(exportData)
     } catch (error: any) {
       console.error("Error sharing report:", error)
-      Alert.alert("Erro", error.message || "Falha ao compartilhar relatório")
+      const busy = String(error?.message || "").includes("Another share request")
+      Alert.alert(
+        "Erro",
+        busy
+          ? "Já há um compartilhamento em andamento. Se a tela de compartilhar não abrir, feche e reabra o aplicativo."
+          : error.message || "Falha ao compartilhar relatório",
+      )
     } finally {
+      sharingRef.current = false
       setExportingId(null)
     }
   }
