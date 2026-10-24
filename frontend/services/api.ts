@@ -190,6 +190,30 @@ export const closeWmsInventory = async (inventoryId: string): Promise<Inventory 
 
 // ==================== ITENS WMS ====================
 
+// Marca o endereco como vazio (nada encontrado no fisico). Reaproveita o mesmo
+// registro nulo que o fechamento do inventario ja cria, mas passa por addWmsItem
+// para que a data/hora da contagem seja carimbada como em qualquer outro item.
+export const markWmsAddressEmpty = async (inventoryId: string, addressId: string): Promise<WmsCountedItem> => {
+  const inventory = await LocalStorage.getInventoryById(inventoryId)
+  if (inventory?.status !== "open") throw new Error("Inventário fechado")
+  const addr = (inventory.enderecos || []).find((a) => a._id === addressId)
+  if (!addr) throw new Error("Endereço não encontrado")
+  if ((addr.itens || []).length > 0) {
+    throw new Error("Este endereço já possui itens contados. Exclua os itens antes de marcá-lo como vazio.")
+  }
+  return addWmsItem(inventoryId, addressId, {
+    codigo: null as any,
+    EAN: null as any,
+    descricao: null as any,
+    unit: null as any,
+    fator: null as any,
+    lote: null as any,
+    validade: null as any,
+    qtd: null as any,
+  })
+}
+
+
 export const addWmsItem = async (inventoryId: string, addressId: string, item: Omit<WmsCountedItem, "_id">): Promise<WmsCountedItem> => {
   const inventory = await LocalStorage.getInventoryById(inventoryId)
   if (inventory?.status !== "open") throw new Error("Inventário fechado")

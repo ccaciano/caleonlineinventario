@@ -67,8 +67,9 @@ export default function EditItemModal({ visible, item, inventoryId, onClose, onS
       return
     }
     const quantity = parseInt(formData.quantity)
-    if (isNaN(quantity) || quantity <= 0) {
-      Alert.alert("Quantidade inválida", "A quantidade deve ser um número maior que zero")
+    // 0 e valido: significa produto sem saldo fisico, e zera o saldo no sistema.
+    if (isNaN(quantity) || quantity < 0) {
+      Alert.alert("Quantidade inválida", "A quantidade não pode ser negativa")
       return
     }
     if (formData.expiry_date && !isValidDate(formData.expiry_date)) {

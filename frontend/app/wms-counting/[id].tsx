@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo } from "react"
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView, KeyboardAvoidingView, Platform, Alert, ActivityIndicator, FlatList, Modal } from "react-native"
 import { Ionicons } from "@expo/vector-icons"
 import { useLocalSearchParams, useRouter, useFocusEffect } from "expo-router"
-import { getInventory, searchProduct, addWmsItem, updateWmsItem, deleteWmsItem, WmsCountedItem, Inventory, Product } from "../../services/api"
+import { getInventory, searchProduct, addWmsItem, updateWmsItem, deleteWmsItem, markWmsAddressEmpty, WmsCountedItem, Inventory, Product } from "../../services/api"
 import BarcodeScanner from "../../components/BarcodeScanner"
 import ProductFormModal from "../../components/ProductFormModal"
 import CalculatorModal from "../../components/CalculatorModal"
@@ -38,6 +38,14 @@ const convertFromISO = (isoStr: any): string => {
   } catch {
     return "-"
   }
+}
+
+const formatDateTime = (isoStr: string | undefined | null): string => {
+  if (!isoStr) return ""
+  const d = new Date(isoStr)
+  if (isNaN(d.getTime())) return ""
+  const p = (n: number) => String(n).padStart(2, "0")
+  return `${p(d.getDate())}/${p(d.getMonth() + 1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`
 }
 
 type ScanTarget = "code" | "lot"
@@ -122,6 +130,59 @@ export default function WmsCountingScreen() {
   }, [items, itemSearch])
 
   const totalCounted = useMemo(() => items.filter((i) => i.qtd !== null && i.qtd !== undefined).length, [items])
+
+  // Endereco declarado vazio: carrega so o registro nulo e nao aceita mais itens.
+  const emptyMarker = useMemo(() => items.find((i) => i.qtd === null || i.qtd === undefined), [items])
+  const isAddressEmpty = !!emptyMarker
+
+  const handleMarkEmpty = () => {
+    Alert.alert(
+      "Endereço Vazio",
+      `Confirma que o endereço ${addrName || addrId} está vazio?
+
+A contagem dele será encerrada e não aceitará mais produtos.`,
+      [
+        { text: "Cancelar", style: "cancel" },
+        {
+          text: "Confirmar",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              setLoading(true)
+              const marker = await markWmsAddressEmpty(invId, addrId)
+              setItems([marker])
+              resetForm()
+            } catch (error: any) {
+              Alert.alert("Erro", error.message || "Falha ao marcar endereço como vazio")
+            } finally {
+              setLoading(false)
+            }
+          },
+        },
+      ],
+    )
+  }
+
+  const handleUndoEmpty = () => {
+    if (!emptyMarker) return
+    Alert.alert("Reabrir Endereço", "Desfazer a marcação de vazio e voltar a aceitar produtos neste endereço?", [
+      { text: "Cancelar", style: "cancel" },
+      {
+        text: "Reabrir",
+        onPress: async () => {
+          try {
+            setLoading(true)
+            await deleteWmsItem(invId, addrId, emptyMarker._id)
+            setItems([])
+          } catch (error: any) {
+            Alert.alert("Erro", error.message || "Falha ao reabrir o endereço")
+          } finally {
+            setLoading(false)
+          }
+        },
+      },
+    ])
+  }
 
   const handleSearch = async (query: string) => {
     if (!query.trim()) {
@@ -411,8 +472,26 @@ export default function WmsCountingScreen() {
             </View>
           </View>
 
+          {/* Endereço declarado vazio: contagem encerrada para este endereço */}
+          {isAddressEmpty && (
+            <View style={styles.emptyAddressCard}>
+              <Ionicons name="file-tray-outline" size={28} color="#FF9500" />
+              <Text style={styles.emptyAddressTitle}>Endereço vazio</Text>
+              <Text style={styles.emptyAddressHint}>
+                A contagem deste endereço está encerrada e não aceita mais produtos.
+              </Text>
+              {emptyMarker?.regCount ? <Text style={styles.emptyAddressWhen}>Registrado em {formatDateTime(emptyMarker.regCount)}</Text> : null}
+              {!isClosed && (
+                <TouchableOpacity style={styles.undoEmptyBtn} onPress={handleUndoEmpty} disabled={loading}>
+                  <Ionicons name="arrow-undo-outline" size={18} color="#007AFF" />
+                  <Text style={styles.undoEmptyText}>Reabrir endereço</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          )}
+
           {/* Formulário */}
-          {!isClosed && (
+          {!isClosed && !isAddressEmpty && (
             <View style={styles.formSection}>
               <View style={styles.formTitleRow}>
                 <Text style={styles.sectionTitle}>{editingItem ? "Editar Item" : "Adicionar Item"}</Text>
@@ -554,6 +633,13 @@ export default function WmsCountingScreen() {
                 />
               </View>
 
+              {!editingItem && totalCounted === 0 && (
+                <TouchableOpacity style={styles.markEmptyBtn} onPress={handleMarkEmpty} disabled={loading}>
+                  <Ionicons name="file-tray-outline" size={20} color="#FF9500" />
+                  <Text style={styles.markEmptyText}>Endereço Vazio</Text>
+                </TouchableOpacity>
+              )}
+
               {editingItem ? (
                 <TouchableOpacity style={[styles.addButton, styles.saveButton, loading && styles.addButtonDisabled]} onPress={handleUpdateItem} disabled={loading}>
                   {loading ? (
@@ -656,6 +742,33 @@ const styles = StyleSheet.create({
   closedText: { fontSize: 11, fontWeight: "bold", color: "#D32F2F" },
   addressTitle: { fontSize: 22, fontWeight: "bold", color: "#FF9500" },
   inventoryName: { fontSize: 13, color: "#8E8E93" },
+  emptyAddressCard: {
+    backgroundColor: "#FFF8EF",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#FFD9A8",
+    padding: 20,
+    alignItems: "center",
+    gap: 6,
+  },
+  emptyAddressTitle: { fontSize: 17, fontWeight: "bold", color: "#B36B00" },
+  emptyAddressHint: { fontSize: 14, color: "#8E8E93", textAlign: "center" },
+  emptyAddressWhen: { fontSize: 12, color: "#8E8E93", marginTop: 2 },
+  undoEmptyBtn: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 10, paddingVertical: 10, paddingHorizontal: 16, borderRadius: 10, backgroundColor: "#E8F1FF", borderWidth: 1, borderColor: "#007AFF" },
+  undoEmptyText: { color: "#007AFF", fontSize: 15, fontWeight: "600" },
+  markEmptyBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#FF9500",
+    backgroundColor: "#FFF8EF",
+    minHeight: 52,
+  },
+  markEmptyText: { color: "#FF9500", fontSize: 16, fontWeight: "bold" },
   formSection: { backgroundColor: "#FFFFFF", borderRadius: 16, padding: 16, gap: 12, shadowColor: "#000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 2 },
   formTitleRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   sectionTitle: { fontSize: 17, fontWeight: "bold", color: "#000" },
