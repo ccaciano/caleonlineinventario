@@ -218,7 +218,9 @@ export default function WmsInventoryScreen() {
     const isEditing = editingAddressId === item._id
     const isSaving = savingEditId === item._id
     const itemCount = item.itens?.filter((i) => i.qtd !== null).length || 0
-    const canEdit = !isClosed && itemCount === 0
+    // Registro nulo = endereco conferido e declarado vazio, diferente de nunca contado.
+    const isMarkedEmpty = (item.itens || []).some((i) => i.qtd === null || i.qtd === undefined)
+    const canEdit = !isClosed && itemCount === 0 && !isMarkedEmpty
 
     let parsed = { rua: "--", posicao: "---", altura: "--", profundidade: "--" }
     if (item.endereco && item.endereco.length >= 8) {
@@ -248,9 +250,16 @@ export default function WmsInventoryScreen() {
             <Text style={styles.addressMeta}>
               Rua <Text style={styles.bold}>{parsed.rua}</Text> · Pos <Text style={styles.bold}>{parsed.posicao}</Text> · Alt <Text style={styles.bold}>{parsed.altura}</Text> · Prof <Text style={styles.bold}>{parsed.profundidade}</Text>
             </Text>
-            <Text style={styles.addressItemCount}>
-              {itemCount} item{itemCount !== 1 ? "s" : ""} contado{itemCount !== 1 ? "s" : ""}
-            </Text>
+            {isMarkedEmpty ? (
+              <View style={styles.emptyBadge}>
+                <Ionicons name="file-tray-outline" size={12} color="#B36B00" />
+                <Text style={styles.emptyBadgeText}>Endereço vazio</Text>
+              </View>
+            ) : (
+              <Text style={styles.addressItemCount}>
+                {itemCount} item{itemCount !== 1 ? "s" : ""} contado{itemCount !== 1 ? "s" : ""}
+              </Text>
+            )}
           </View>
         </View>
         {!isEditing && (
@@ -415,6 +424,20 @@ const styles = StyleSheet.create({
   addressCode: { fontSize: 17, fontWeight: "bold", color: "#000" },
   addressMeta: { fontSize: 12, color: "#8E8E93" },
   bold: { fontWeight: "700", color: "#555" },
+  emptyBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    alignSelf: "flex-start",
+    marginTop: 2,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+    backgroundColor: "#FFF8EF",
+    borderWidth: 1,
+    borderColor: "#FFD9A8",
+  },
+  emptyBadgeText: { fontSize: 11, fontWeight: "700", color: "#B36B00" },
   addressItemCount: { fontSize: 13, color: "#FF9500", fontWeight: "600", marginTop: 2 },
   addressRight: { flexDirection: "row", alignItems: "center", gap: 6 },
   editBtn: { padding: 6, borderRadius: 8, backgroundColor: "#E3F2FD" },
